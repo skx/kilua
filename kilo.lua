@@ -1,7 +1,12 @@
 
 function on_key(k)
-
-   insert(k)
+   if ( string.byte(k) == 1 ) then
+      sol()
+   elseif ( string.byte(k) == 5 ) then
+      eol()
+   else
+      insert(k)
+   end
 end
 
 

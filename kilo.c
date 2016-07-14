@@ -720,7 +720,24 @@ static int insert_lua(lua_State *L) {
         }
     }
     return 0;
+}
 
+static int eol_lua(lua_State *L) {
+    (void)L;
+    int filerow = E.rowoff+E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    if (row )
+        E.cx = row->size;
+    return 0;
+}
+
+static int sol_lua(lua_State *L) {
+    (void)L;
+    int filerow = E.rowoff+E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    if (row )
+        E.cx = 0;
+    return 0;
 }
 
 /* Inserting a newline is slightly complex as we have to handle inserting a
@@ -1300,6 +1317,10 @@ void initEditor(void) {
      * Lua bindings.
      */
     lua_register(lua, "insert", insert_lua);
+    lua_register(lua, "sol", sol_lua);
+    lua_register(lua, "start-of-line", sol_lua);
+    lua_register(lua, "eol", eol_lua);
+    lua_register(lua, "end-of-line", eol_lua);
 
     /*
      * Load our init-function.
