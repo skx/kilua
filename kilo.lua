@@ -16,36 +16,34 @@ keymap['PAGE_DOWN'] = page_down
 
 
 --
--- Expand values less than "a" to be Ctrl-X.
+-- Expand the given keyboard character.
 --
--- TODO: BUGFIX - A-Z works.  a-z works.  Numbers and " ( ), etc, fail.
---       Perhaps I need to learn ascii? ;)
+--  e.g. "ctrl-a" -> "^A".
 --
 function expand_key(k)
-   -- Upper-case
-   if ( ( string.byte(k) > string.byte('A') ) and
-        ( string.byte(k) < string.byte('a') ) )
-   then
-      return k
-   end
 
-   -- Ctrl
-   if ( string.byte(k) < string.byte('a') ) then
-      k = "^" .. ( string.char( string.byte(k) + string.byte('A')-1 ))
-      return k
-   end
-
-   --
-   -- Convert to int and look for special characters
-   --
+   -- Convert to decimal
    local b = string.byte(k)
+
+   -- Control-code
+   if ( b < 32 ) then
+      return( "^" .. ( string.char( b + string.byte("A" ) - 1 ) ) )
+   end
+
+   -- Normal ASCII
+   if ( b < 128 ) then
+      return k
+   end
+
+   -- These were learned by trial and error.
+   if ( b == 237 )  then return "HOME"      end
+   if ( b == 238 )  then return "END"       end
    if ( b == 239 )  then return "PAGE_UP"   end
    if ( b == 240 )  then return "PAGE_DOWN" end
 
-   --
-   -- Unmodified character
-   --
-   return(k)
+   -- Expand for debugging
+   k = "NONE-ASCII: " .. k .. " " .. string.byte(k) .. " ";
+   return( k )
 end
 
 
