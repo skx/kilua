@@ -1,7 +1,7 @@
 all: kilo
 
 kilo: kilo.c
-	$(CC) -o kilo kilo.c -Wall -W -pedantic -std=c99 $(shell pkg-config --cflags --libs lua5.2)
+	$(CC) -o kilo kilo.c -Wall -Wextra -Werror -W -pedantic -std=c99 $(shell pkg-config --cflags --libs lua5.2)
 
 clean:
-	rm kilo
+	rm kilo || true
