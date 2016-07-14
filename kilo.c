@@ -52,6 +52,12 @@
 #include <time.h>
 #include <fcntl.h>
 
+/* Lua interface */
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+
+
 /* Syntax highlight types */
 #define HL_NORMAL 0
 #define HL_NONPRINT 1
@@ -65,6 +71,9 @@
 
 #define HL_HIGHLIGHT_STRINGS (1<<0)
 #define HL_HIGHLIGHT_NUMBERS (1<<1)
+
+/* Global lua handle */
+lua_State * lua;
 
 struct editorSyntax {
     char **filematch;
@@ -1251,6 +1260,13 @@ void initEditor(void) {
         exit(1);
     }
     E.screenrows -= 2; /* Get room for status bar. */
+
+    /*
+     * Setup lua.
+     */
+    lua = luaL_newstate();
+    luaopen_base(lua);
+    luaL_openlibs(lua);
 }
 
 int main(int argc, char **argv) {
