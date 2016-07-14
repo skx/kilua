@@ -24,3 +24,24 @@ style CLI.
 
 Kilo was written by Salvatore Sanfilippo aka antirez and is released
 under the BSD 2 clause license.
+
+
+== Lua ==
+
+This fork of `kilo` has been updated to include a lua intepreter.
+
+* On startup `kilo.lua` is loaded from the current directory.
+* Input is processed via the `on_key()` function defined in that file.
+
+The following primitives are exported to lua:
+
+* eol()
+    * Move the cursor to the end of the current line.
+* insert("string")
+    * Inserts the given strin at the current cursor position.
+* page_up()
+    * Scroll the screen up one page, if possible.
+* page_down()
+    * Scroll the screen down one page, if possible.
+* sol()
+    * Move the cursor to the start of the current line.
