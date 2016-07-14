@@ -158,13 +158,13 @@ void editorMoveCursor(int key);
  * matches and keywords. The file name matches are used in order to match
  * a given syntax with a given file name: if a match pattern starts with a
  * dot, it is matched as the last past of the filename, for example ".c".
- * Otherwise the pattern is just searched inside the filenme, like "Makefile").
+ * Otherwise the pattern is just searched inside the filename, like "Makefile").
  *
  * The list of keywords to highlight is just a list of words, however if they
  * a trailing '|' character is added at the end, they are highlighted in
  * a different color, so that you can have two different sets of keywords.
  *
- * Finally add a stanza in the HLDB global variable with two two arrays
+ * Finally add a stanza in the HLDB global variable with two arrays
  * of strings, and a set of flags in order to enable highlighting of
  * comments and numbers.
  *
@@ -232,7 +232,7 @@ int enableRawMode(int fd) {
     raw.c_oflag &= ~(OPOST);
     /* control modes - set 8 bit chars */
     raw.c_cflag |= (CS8);
-    /* local modes - choing off, canonical off, no extended functions,
+    /* local modes - echoing off, canonical off, no extended functions,
      * no signal chars (^Z,^C) */
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     /* control chars - set return condition: min number of bytes and timer. */
@@ -511,7 +511,7 @@ void editorUpdateSyntax(erow *row) {
         p++; i++;
     }
 
-    /* Propagate syntax change to the next row if the open commen
+    /* Propagate syntax change to the next row if the open comment
      * state changed. This may recursively affect all the following rows
      * in the file. */
     int oc = editorRowHasOpenComment(row);
@@ -612,7 +612,7 @@ void editorFreeRow(erow *row) {
     free(row->hl);
 }
 
-/* Remove the row at the specified position, shifting the remainign on the
+/* Remove the row at the specified position, shifting the remaining on the
  * top. */
 void editorDelRow(int at) {
     erow *row;
@@ -628,7 +628,7 @@ void editorDelRow(int at) {
 
 /* Turn the editor rows into a single heap-allocated string.
  * Returns the pointer to the heap-allocated string and populate the
- * integer pointed by 'buflen' with the size of the string, escluding
+ * integer pointed by 'buflen' with the size of the string, excluding
  * the final nulterm. */
 char *editorRowsToString(int *buflen) {
     char *buf = NULL, *p;
@@ -707,7 +707,7 @@ void editorInsertChar(int c) {
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     /* If the row where the cursor is currently located does not exist in our
-     * logical representaion of the file, add enough empty rows as needed. */
+     * logical representation of the file, add enough empty rows as needed. */
     if (!row) {
         while(E.numrows <= filerow)
             editorInsertRow(E.numrows,"",0);
@@ -1031,7 +1031,7 @@ void editorRefreshScreen(void) {
             if (E.numrows == 0 && y == E.screenrows/3) {
                 char welcome[80];
                 int welcomelen = snprintf(welcome,sizeof(welcome),
-                    "Kilo editor -- verison %s\x1b[0K\r\n", KILO_VERSION);
+                    "Kilo editor -- version %s\x1b[0K\r\n", KILO_VERSION);
                 int padding = (E.screencols-welcomelen)/2;
                 if (padding) {
                     abAppend(&ab,"~",1);
