@@ -145,7 +145,11 @@ enum KEY_ACTION{
         PAGE_DOWN
 };
 
+/*
+ * Forward declarations.
+ */
 void editorSetStatusMessage(const char *fmt, ...);
+void editorMoveCursor(int key);
 
 /* =========================== Syntax highlights DB =========================
  *
@@ -1238,7 +1242,7 @@ void editorProcessKeypress(int fd) {
         /* We ignore ctrl-c, it can't be so simple to lose the changes
          * to the edited file. */
         break;
-    case CTRL_Q:        /* Ctrl-q */
+     case CTRL_Q:        /* Ctrl-q */
         /* Quit if the file was already saved. */
         if (E.dirty && quit_times) {
             editorSetStatusMessage("WARNING!!! File has unsaved changes. "
