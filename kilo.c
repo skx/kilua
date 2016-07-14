@@ -79,8 +79,8 @@ struct editorSyntax {
     char **filematch;
     char **keywords;
     char singleline_comment_start[2];
-    char multiline_comment_start[3];
-    char multiline_comment_end[3];
+    char multiline_comment_start[4];
+    char multiline_comment_end[4];
     int flags;
 };
 
@@ -119,17 +119,10 @@ struct editorConfig {
 static struct editorConfig E;
 
 enum KEY_ACTION{
-        KEY_NULL = 0,       /* NULL */
-        CTRL_C = 3,         /* Ctrl-c */
-        CTRL_D = 4,         /* Ctrl-d */
         CTRL_F = 6,         /* Ctrl-f */
         CTRL_H = 8,         /* Ctrl-h */
         TAB = 9,            /* Tab */
-        CTRL_L = 12,        /* Ctrl+l */
         ENTER = 13,         /* Enter */
-        CTRL_Q = 17,        /* Ctrl-q */
-        CTRL_S = 19,        /* Ctrl-s */
-        CTRL_U = 21,        /* Ctrl-u */
         ESC = 27,           /* Escape */
         BACKSPACE =  127,   /* Backspace */
         /* The following are just soft codes, not really reported by the
@@ -175,6 +168,7 @@ void editorMoveCursor(int key);
 
 /* C / C++ */
 char *C_HL_extensions[] = {".c",".cpp",NULL};
+char *LUA_HL_extensions[] = {".lua",NULL};
 char *C_HL_keywords[] = {
         /* A few C / C++ keywords */
         "switch","if","while","for","break","continue","return","else",
@@ -182,6 +176,12 @@ char *C_HL_keywords[] = {
         /* C types */
         "int|","long|","double|","float|","char|","unsigned|","signed|",
         "void|",NULL
+};
+char *LUA_HL_keywords[] = {
+    "and", "break", "do", "else", "elseif", "end", "false",
+    "for", "function", "if", "in", "local", "nil", "not",
+    "or", "repeat", "return", "then", "true", "until",
+    "while", NULL
 };
 
 /* Here we define an array of syntax highlights by extensions, keywords,
@@ -192,6 +192,13 @@ struct editorSyntax HLDB[] = {
         C_HL_extensions,
         C_HL_keywords,
         "//","/*","*/",
+        HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS
+    },
+    {
+        /* Lua */
+        LUA_HL_extensions,
+        LUA_HL_keywords,
+        "--","--[[","--]]",
         HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS
     }
 };
