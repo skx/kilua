@@ -1,4 +1,5 @@
 
+
 --
 -- How many times has Ctrl-q been pressed?
 --
@@ -72,6 +73,7 @@ keymap['^K']        = kill_line
 keymap['^L']        = eval
 keymap['^M']        = function() insert("\n") end
 keymap['^Q']        = quit
+keymap['^O']        = open
 keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
 keymap['^U']        = yank

@@ -62,6 +62,9 @@ The following primitives are exported to lua:
     * Kill the current line, deleting it from display.
 * insert("string")
     * Inserts the given string at the current cursor position.  (Newlines work as expected.)
+* open( [filename] )
+    * Open the named file for reading.
+    * If the filename is not given, prompt for one.
 * page_up()
     * Scroll the screen up one page, if possible.
 * page_down()

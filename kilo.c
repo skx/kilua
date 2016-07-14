@@ -72,6 +72,8 @@
 #define HL_HIGHLIGHT_STRINGS (1<<0)
 #define HL_HIGHLIGHT_NUMBERS (1<<1)
 
+#define KILO_QUERY_LEN 256
+
 /* Global lua handle */
 lua_State * lua;
 
@@ -144,6 +146,7 @@ enum KEY_ACTION{
 void editorInsertNewline();
 void editorSetStatusMessage(const char *fmt, ...);
 void editorMoveCursor(int key);
+void editorRefreshScreen();
 
 /* =========================== Syntax highlights DB =========================
  *
@@ -770,8 +773,7 @@ static int insert_lua(lua_State *L) {
     const char *str = lua_tostring(L,-1);
     if ( str != NULL ) {
         size_t len = strlen(str);
-        for(unsigned int i = 0; i < len; i++ )
-        {
+        for(unsigned int i = 0; i < len; i++ ) {
             editorInsertChar(str[i]);
         }
     }
@@ -940,9 +942,29 @@ int delete_lua(lua_State *L) {
 /* Load the specified program in the editor memory and returns 0 on success
  * or 1 on error. */
 int editorOpen(char *filename) {
-    FILE *fp;
 
+    /*
+     * Opened a file already?  Free the memory.
+     */
+    if ( E.numrows )
+    {
+        for( int i = 0; i < E.numrows; i++ )
+        {
+            erow *row = &E.row[i];
+            free(row->chars);
+            row->chars = NULL;
+            free(row->render);
+            row->render = NULL;
+            free(row->hl);
+            row->hl = NULL;
+        }
+        free(E.row);
+        E.row = NULL;
+    }
+
+    FILE *fp;
     E.dirty = 0;
+    E.numrows = 0;
     free(E.filename);
     E.filename = strdup(filename);
 
@@ -994,6 +1016,50 @@ writeerr:
     editorSetStatusMessage("Can't save! I/O error: %s",strerror(errno));
     return 1;
 }
+
+/* Prompt for a filename and open it. */
+static int open_lua(lua_State *L) {
+    (void)L;
+
+    /*
+     * If we got a string then open it as a filename.
+     */
+    char *path = (char *)lua_tostring(L,-1);
+    if ( path != NULL ) {
+        editorOpen( path );
+        return 0;
+    }
+
+    char query[KILO_QUERY_LEN+1] = {0};
+    int qlen = 0;
+
+    /* Save the cursor position in order to restore it later. */
+    int saved_cx = E.cx, saved_cy = E.cy;
+    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+
+    while(1) {
+        editorSetStatusMessage(
+            "Open: %s", query);
+        editorRefreshScreen();
+
+        int c = editorReadKey(STDIN_FILENO);
+        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
+            if (qlen != 0) query[--qlen] = '\0';
+        } else if (c == ESC || c == ENTER) {
+            E.cx = saved_cx; E.cy = saved_cy;
+            E.coloff = saved_coloff; E.rowoff = saved_rowoff;
+
+            editorOpen( query );
+            return 0;
+        } else if (isprint(c)) {
+            if (qlen < KILO_QUERY_LEN) {
+                query[qlen++] = c;
+                query[qlen] = '\0';
+            }
+        }
+    }
+}
+
 
 /* ============================= Terminal update ============================ */
 
@@ -1153,8 +1219,6 @@ void editorSetStatusMessage(const char *fmt, ...) {
 
 /* =============================== Find mode ================================ */
 
-#define KILO_QUERY_LEN 256
-
 void editorFind(int fd) {
     char query[KILO_QUERY_LEN+1] = {0};
     int qlen = 0;
@@ -1249,7 +1313,7 @@ void editorFind(int fd) {
     }
 }
 
-
+/* prompt for a string, and evaluate that as lua. */
 static int eval_lua(lua_State *L) {
     (void)L;
     char query[KILO_QUERY_LEN+1] = {0};
@@ -1431,6 +1495,7 @@ void initEditor(void) {
     lua_register(lua, "right", right_lua);
     lua_register(lua, "page_down", page_down_lua);
     lua_register(lua, "page_up", page_up_lua);
+    lua_register(lua, "open", open_lua);
     lua_register(lua, "save", save_lua);
     lua_register(lua, "status", status_lua);
     lua_register(lua, "sol", sol_lua);
@@ -1461,7 +1526,7 @@ int main(int argc, char **argv) {
     editorOpen(argv[1]);
     enableRawMode(STDIN_FILENO);
     editorSetStatusMessage(
-        "HELP: Ctrl-s = save | Ctrl-q = quit | Ctrl-f = find | Ctrl-l = eval");
+        "HELP: ^o = open | ^s = save | ^q = quit | ^f = find | ^l = eval");
     while(1) {
         editorRefreshScreen();
         editorProcessKeypress(STDIN_FILENO);
