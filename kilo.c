@@ -708,6 +708,16 @@ void editorInsertChar(int c) {
     E.dirty++;
 }
 
+
+/* insert a character */
+static int insert_lua(lua_State *L) {
+    const char *str = lua_tostring(L,-1);
+    if ( str != NULL )
+        editorInsertChar(str[0]);
+    return 0;
+
+}
+
 /* Inserting a newline is slightly complex as we have to handle inserting a
  * newline in the middle of a line, splitting the line as needed. */
 void editorInsertNewline(void) {
@@ -1267,6 +1277,11 @@ void initEditor(void) {
     lua = luaL_newstate();
     luaopen_base(lua);
     luaL_openlibs(lua);
+
+    /*
+     * Lua bindings.
+     */
+    lua_register(lua, "insert", insert_lua);
 
     /*
      * Load our init-function.
