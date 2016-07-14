@@ -712,8 +712,13 @@ void editorInsertChar(int c) {
 /* insert a character */
 static int insert_lua(lua_State *L) {
     const char *str = lua_tostring(L,-1);
-    if ( str != NULL )
-        editorInsertChar(str[0]);
+    if ( str != NULL ) {
+        size_t len = strlen(str);
+        for(int i = 0; i < len; i++ )
+        {
+            editorInsertChar(str[i]);
+        }
+    }
     return 0;
 
 }
@@ -1242,8 +1247,21 @@ void editorProcessKeypress(int fd) {
         /* Nothing to do for ESC in this mode. */
         break;
     default:
-        editorInsertChar(c);
+    {
+        char tmp[5] = {'\0'};
+        snprintf(tmp, sizeof(tmp)-1, "%c", c );
+        lua_getglobal(lua, "on_key");
+        lua_pushstring(lua, tmp);
+        if (lua_isnil(lua, -1)) {
+            fprintf( stderr, "Failed to find `on_key`\n" );
+            exit(1);
+        }
+        if (lua_pcall(lua, 1, 0, 0) != 0) {
+            fprintf( stderr, "`on_key` failed: %s\n", lua_tostring(lua,-1) );
+            exit(1);
+        }
         break;
+    }
     }
 
     quit_times = KILO_QUIT_TIMES; /* Reset it to the original value. */
