@@ -739,6 +739,14 @@ static int get_line_lua(lua_State *L) {
     }
     return 0;
 }
+
+/* Remove the current line. */
+static int kill_line_lua(lua_State *L) {
+    (void)L;
+    editorDelRow(E.rowoff+E.cy);
+    return 0;
+}
+
 /* exit the editor */
 static int exit_lua(lua_State *L) {
     (void)L;
@@ -1407,6 +1415,7 @@ void initEditor(void) {
     lua_register(lua, "eval", eval_lua);
     lua_register(lua, "exit", exit_lua);
     lua_register(lua, "get_line", get_line_lua);
+    lua_register(lua, "kill", kill_line_lua);
     lua_register(lua, "insert", insert_lua);
     lua_register(lua, "left", left_lua);
     lua_register(lua, "right", right_lua);

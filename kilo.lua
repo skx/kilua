@@ -25,6 +25,27 @@ end
 
 
 --
+-- Kill a line - by copyign it to our kill-buffer, and deleting the line
+--
+kill_buffer = ""
+
+function kill_line()
+   -- move to beginning of line
+   sol()
+   -- get the line, and save it
+   kill_buffer = get_line()
+   -- kill the line
+   kill()
+end
+
+--
+-- Insert the kill-buffer at the point.
+--
+function yank()
+   insert(kill_buffer .. "\n")
+end
+
+
 -- Paste-Buffer
 --
 paste_buffer = ""
@@ -47,11 +68,13 @@ keymap['^A']        = sol
 keymap['^D']        = function() insert( os.date() ) end
 keymap['^E']        = eol
 keymap['^H']        = delete
+keymap['^K']        = kill_line
 keymap['^L']        = eval
 keymap['^M']        = function() insert("\n") end
 keymap['^Q']        = quit
 keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
+keymap['^U']        = yank
 keymap['BACKSPACE'] = delete
 keymap['DEL']       = delete
 keymap['PAGE_UP']   = page_up

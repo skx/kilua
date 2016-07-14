@@ -58,6 +58,8 @@ The following primitives are exported to lua:
     * Terminate the editor.
 * eval()
     * Prompt for lua code, and execute it.
+* kill()
+    * Kill the current line, deleting it from display.
 * insert("string")
     * Inserts the given string at the current cursor position.  (Newlines work as expected.)
 * page_up()
@@ -71,11 +73,11 @@ The following primitives are exported to lua:
 
 In addition to those functions there are also the movement-related primitives: up(), down(), left(), right().
 
-Finally `get_line` returns the text from the cursor to the end of the line, this is used to implement Copy & Paste in Lua - by default bound to `Ctrl-c` and `Ctrl-v`.
+Finally `get_line` returns the text from the cursor to the end of the line, this is used to implement Copy & Paste in Lua - by default bound to `Ctrl-c` and `Ctrl-v`.  There is whole line cut/paste (named `kill` and `yank`) implemented as
+in `Nano` too which you'll find bound to `ctrl-y` and `ctrl-u`.
 
 Future plans?  It might be nice to add accessors/mutators for the current
 cursor-position, and allow Lua to populate the status-buffer.  Otherwise
 I'll probably stop here.  The only outstanding task which is "obviously"
 a good idea is to move the definition of highlighting into Lua to
 allow swift addition of highlighting for #golang, #lua, etc.
-
