@@ -220,9 +220,10 @@ void disableRawMode(int fd) {
     }
 }
 
-/* Called at exit to avoid remaining in raw mode. */
+/* Called at exit to avoid remaining in raw mode, and clear the screen */
 void editorAtExit(void) {
     disableRawMode(STDIN_FILENO);
+    printf("\033[2J\033[1;1H");
 }
 
 /* Raw mode: 1960 magic shit. */
@@ -737,7 +738,6 @@ static int kill_line_lua(lua_State *L) {
 /* exit the editor */
 static int exit_lua(lua_State *L) {
     (void)L;
-    printf("\033[2J\033[1;1H");
     exit(0);
     return 0;
 }
