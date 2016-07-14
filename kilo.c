@@ -49,6 +49,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <time.h>
 #include <fcntl.h>
 
 /* Syntax highlight types */
