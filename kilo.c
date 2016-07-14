@@ -714,7 +714,7 @@ static int insert_lua(lua_State *L) {
     const char *str = lua_tostring(L,-1);
     if ( str != NULL ) {
         size_t len = strlen(str);
-        for(int i = 0; i < len; i++ )
+        for(unsigned int i = 0; i < len; i++ )
         {
             editorInsertChar(str[i]);
         }
