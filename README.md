@@ -43,17 +43,17 @@ The following primitives are exported to lua:
 * eol()
     * Move the cursor to the end of the current line.
 * exit()
-    *Terminate the editor.
+    * Terminate the editor.
 * eval()
     * Prompt for lua code, and execute it.
 * insert("string")
-    * Inserts the given string at the current cursor position.
+    * Inserts the given string at the current cursor position.  (Newlines work as expected.)
 * page_up()
     * Scroll the screen up one page, if possible.
 * page_down()
     * Scroll the screen down one page, if possible.
 * save()
-    * Save the open-file.
+    * Save the file we're operating upon.
 * sol()
     * Move the cursor to the start of the current line.
 
@@ -61,4 +61,5 @@ In addition to those functions there are also the movement-related
 primitives: up(), down(), left(), right().
 
 Finally `get_line` returns the text from the cursor to the end of the line,
-this is used to implement Copy & Paste in Lua :)
+this is used to implement Copy & Paste in Lua - by default bound to
+`Ctrl-c` and `Ctrl-v`.
