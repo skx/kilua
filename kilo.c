@@ -871,7 +871,8 @@ int editorOpen(char *filename) {
 }
 
 /* Save the current file on disk. Return 0 on success, 1 on error. */
-int editorSave(void) {
+static int save_lua(lua_State *L) {
+    (void)L;
     int len;
     char *buf = editorRowsToString(&len);
     int fd = open(E.filename,O_RDWR|O_CREAT,0644);
@@ -1253,9 +1254,6 @@ void editorProcessKeypress(int fd) {
         printf("\033[2J\033[1;1H");
         exit(0);
         break;
-    case CTRL_S:        /* Ctrl-s */
-        editorSave();
-        break;
     case CTRL_F:
         editorFind(fd);
         break;
@@ -1281,7 +1279,9 @@ void editorProcessKeypress(int fd) {
         char tmp[5] = {'\0'};
         snprintf(tmp, sizeof(tmp)-1, "%c", c );
         lua_getglobal(lua, "on_key");
+
         lua_pushstring(lua, tmp);
+
         if (lua_isnil(lua, -1)) {
             fprintf( stderr, "Failed to find `on_key`\n" );
             exit(1);
@@ -1329,11 +1329,12 @@ void initEditor(void) {
     /*
      * Lua bindings.
      */
-    lua_register(lua, "insert", insert_lua);
-    lua_register(lua, "sol", sol_lua);
     lua_register(lua, "eol", eol_lua);
-    lua_register(lua, "page_up", page_up_lua);
+    lua_register(lua, "insert", insert_lua);
     lua_register(lua, "page_down", page_down_lua);
+    lua_register(lua, "page_up", page_up_lua);
+    lua_register(lua, "save", save_lua);
+    lua_register(lua, "sol", sol_lua);
 
     /*
      * Load our init-function.

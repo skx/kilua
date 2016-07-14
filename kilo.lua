@@ -10,6 +10,7 @@ local keymap = {}
 keymap['^A']        = sol
 keymap['^E']        = eol
 keymap['^D']        = function() insert( os.date() ) end
+keymap['^S']        = save
 keymap['PAGE_UP']   = page_up
 keymap['PAGE_DOWN'] = page_down
 
@@ -24,9 +25,18 @@ end
 --
 -- Expand values less than "a" to be Ctrl-X.
 --
--- TODO: Expand PAGE_UP, ARROW_UP, etc.
+-- TODO: BUGFIX - A-Z works.  a-z works.  Numbers and " ( ), etc, fail.
+--       Perhaps I need to learn ascii? ;)
 --
 function expand_key(k)
+   -- Upper-case
+   if ( ( string.byte(k) > string.byte('A') ) and
+        ( string.byte(k) < string.byte('a') ) )
+   then
+      return k
+   end
+
+   -- Ctrl
    if ( string.byte(k) < string.byte('a') ) then
       k = "^" .. ( string.char( string.byte(k) + string.byte('A')-1 ))
       return k
@@ -39,7 +49,10 @@ function expand_key(k)
    if ( b == 239 )  then return "PAGE_UP"   end
    if ( b == 240 )  then return "PAGE_DOWN" end
 
-   return k
+   --
+   -- Unmodified character
+   --
+   return(k)
 end
 
 
