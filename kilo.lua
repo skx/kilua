@@ -15,13 +15,6 @@ keymap['PAGE_UP']   = page_up
 keymap['PAGE_DOWN'] = page_down
 
 
-function page_up()
-   insert( "PAGE UP" )
-end
-function page_down()
-   insert( "PAGE DOWN" )
-end
-
 --
 -- Expand values less than "a" to be Ctrl-X.
 --
