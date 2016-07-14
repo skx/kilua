@@ -1267,6 +1267,19 @@ void initEditor(void) {
     lua = luaL_newstate();
     luaopen_base(lua);
     luaL_openlibs(lua);
+
+    /*
+     * Load our init-function.
+     */
+    int erred = luaL_dofile(lua, "kilo.lua" );
+
+    if (erred)
+    {
+        if (lua_isstring(lua, -1))
+            fprintf(stderr, "%s\n",lua_tostring(lua, -1));
+        fprintf(stderr, "Failed to load kilo.lua - aborting\n" );
+        exit(1);
+    }
 }
 
 int main(int argc, char **argv) {
