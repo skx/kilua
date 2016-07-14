@@ -75,4 +75,7 @@ Finally `get_line` returns the text from the cursor to the end of the line, this
 
 Future plans?  It might be nice to add accessors/mutators for the current
 cursor-position, and allow Lua to populate the status-buffer.  Otherwise
-I'll probably stop here.
+I'll probably stop here.  The only outstanding task which is "obviously"
+a good idea is to move the definition of highlighting into Lua to
+allow swift addition of highlighting for #golang, #lua, etc.
+
