@@ -26,7 +26,8 @@ Kilo was written by Salvatore Sanfilippo aka antirez and is released
 under the BSD 2 clause license.
 
 
-== Lua ==
+Lua
+---
 
 This fork of `kilo` has been updated to include a lua intepreter.
 
@@ -38,10 +39,12 @@ The following primitives are exported to lua:
 * eol()
     * Move the cursor to the end of the current line.
 * insert("string")
-    * Inserts the given strin at the current cursor position.
+    * Inserts the given string at the current cursor position.
 * page_up()
     * Scroll the screen up one page, if possible.
 * page_down()
     * Scroll the screen down one page, if possible.
+* save()
+    * Save the file open.
 * sol()
     * Move the cursor to the start of the current line.
