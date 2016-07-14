@@ -7,11 +7,19 @@ local keymap = {}
 --
 --  Default bindings
 --
-keymap['^A'] = sol
-keymap['^E'] = eol
-keymap['^D'] = function() insert( os.date() ) end
+keymap['^A']        = sol
+keymap['^E']        = eol
+keymap['^D']        = function() insert( os.date() ) end
+keymap['PAGE_UP']   = page_up
+keymap['PAGE_DOWN'] = page_down
 
 
+function page_up()
+   insert( "PAGE UP" )
+end
+function page_down()
+   insert( "PAGE DOWN" )
+end
 
 --
 -- Expand values less than "a" to be Ctrl-X.
@@ -21,7 +29,16 @@ keymap['^D'] = function() insert( os.date() ) end
 function expand_key(k)
    if ( string.byte(k) < string.byte('a') ) then
       k = "^" .. ( string.char( string.byte(k) + string.byte('A')-1 ))
+      return k
    end
+
+   --
+   -- Convert to int and look for special characters
+   --
+   local b = string.byte(k)
+   if ( b == 239 )  then return "PAGE_UP"   end
+   if ( b == 240 )  then return "PAGE_DOWN" end
+
    return k
 end
 

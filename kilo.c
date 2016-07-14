@@ -740,6 +740,28 @@ static int sol_lua(lua_State *L) {
     return 0;
 }
 
+/* page down */
+static int page_down_lua(lua_State *L) {
+    (void)L;
+    if (E.cy != E.screenrows-1)
+        E.cy = E.screenrows-1;
+
+    int times = E.screenrows;
+    while(times--)
+        editorMoveCursor(ARROW_DOWN);
+    return 0;
+}
+
+/* page up */
+static int page_up_lua(lua_State *L) {
+    (void)L;
+    E.cy = 0;
+    int times = E.screenrows;
+    while(times--)
+        editorMoveCursor(ARROW_UP);
+    return 0;
+}
+
 /* Inserting a newline is slightly complex as we have to handle inserting a
  * newline in the middle of a line, splitting the line as needed. */
 void editorInsertNewline(void) {
@@ -1238,20 +1260,6 @@ void editorProcessKeypress(int fd) {
     case DEL_KEY:
         editorDelChar();
         break;
-    case PAGE_UP:
-    case PAGE_DOWN:
-        if (c == PAGE_UP && E.cy != 0)
-            E.cy = 0;
-        else if (c == PAGE_DOWN && E.cy != E.screenrows-1)
-            E.cy = E.screenrows-1;
-        {
-        int times = E.screenrows;
-        while(times--)
-            editorMoveCursor(c == PAGE_UP ? ARROW_UP:
-                                            ARROW_DOWN);
-        }
-        break;
-
     case ARROW_UP:
     case ARROW_DOWN:
     case ARROW_LEFT:
@@ -1319,9 +1327,9 @@ void initEditor(void) {
      */
     lua_register(lua, "insert", insert_lua);
     lua_register(lua, "sol", sol_lua);
-    lua_register(lua, "start-of-line", sol_lua);
     lua_register(lua, "eol", eol_lua);
-    lua_register(lua, "end-of-line", eol_lua);
+    lua_register(lua, "page_up", page_up_lua);
+    lua_register(lua, "page_down", page_down_lua);
 
     /*
      * Load our init-function.
