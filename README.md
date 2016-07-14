@@ -15,6 +15,9 @@ Usage: kilo `<filename>`
 
 Keys:
 
+    Ctrl-d: Insert date/time
+    CTRL-l: Evaluate Lua
+    CTRL-o: Open
     CTRL-s: Save
     CTRL-q: Quit
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
