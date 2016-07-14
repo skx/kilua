@@ -148,6 +148,7 @@ enum KEY_ACTION{
 /*
  * Forward declarations.
  */
+void editorInsertNewline();
 void editorSetStatusMessage(const char *fmt, ...);
 void editorMoveCursor(int key);
 
@@ -248,6 +249,7 @@ fatal:
     return -1;
 }
 
+
 /* Read a key from the terminal put in raw mode, trying to handle
  * escape sequences. */
 int editorReadKey(int fd) {
@@ -300,7 +302,6 @@ int editorReadKey(int fd) {
         }
     }
 }
-
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor is stored at *rows and *cols and 0 is returned. */
@@ -693,6 +694,11 @@ void editorRowDelChar(erow *row, int at) {
 
 /* Insert the specified char at the current prompt position. */
 void editorInsertChar(int c) {
+    if ( c == '\n' ){
+        editorInsertNewline();
+        return;
+    }
+
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
@@ -712,6 +718,34 @@ void editorInsertChar(int c) {
     E.dirty++;
 }
 
+/* is the buffer dirty? */
+static int dirty_lua(lua_State *L) {
+    if ( E.dirty != 0 )
+        lua_pushboolean(L, 1);
+    else
+        lua_pushboolean(L, 0);
+
+    return 1;
+}
+
+/* return the contents of the line from the point-onwards */
+static int get_line_lua(lua_State *L) {
+    int filerow = E.rowoff+E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+
+    if ( row )  {
+        lua_pushstring(L, row->chars + E.cx);
+        return 1;
+    }
+    return 0;
+}
+/* exit the editor */
+static int exit_lua(lua_State *L) {
+    (void)L;
+    printf("\033[2J\033[1;1H");
+    exit(0);
+    return 0;
+}
 
 /* insert a character */
 static int insert_lua(lua_State *L) {
@@ -728,19 +762,44 @@ static int insert_lua(lua_State *L) {
 
 static int eol_lua(lua_State *L) {
     (void)L;
-    int filerow = E.rowoff+E.cy;
-    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
-    if (row )
-        E.cx = row->size;
+
+    /*
+     * Get the current X/Y
+     */
+    int y = E.rowoff+E.cy;
+    int x = E.coloff+E.cx;
+
+    int cont = 1;
+    while( cont ) {
+        editorMoveCursor(ARROW_RIGHT);
+        if ( E.rowoff+E.cy != y ) {
+            cont = 0;
+            editorMoveCursor(ARROW_LEFT);
+        }
+        else {
+            if ( ( E.rowoff+E.cy == y ) && ( E.coloff+E.cx == x ) ) {
+                cont = 0;
+            }
+        }
+    }
     return 0;
 }
 
 static int sol_lua(lua_State *L) {
     (void)L;
-    int filerow = E.rowoff+E.cy;
-    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
-    if (row )
-        E.cx = 0;
+    E.cx = 0;
+    E.coloff = 0;
+    return 0;
+}
+
+static int up_lua(lua_State *L) {
+    (void)L;
+    editorMoveCursor(ARROW_UP);
+    return 0;
+}
+static int down_lua(lua_State *L) {
+    (void)L;
+    editorMoveCursor(ARROW_DOWN);
     return 0;
 }
 
@@ -752,7 +811,7 @@ static int page_down_lua(lua_State *L) {
 
     int times = E.screenrows;
     while(times--)
-        editorMoveCursor(ARROW_DOWN);
+        down_lua(NULL);
     return 0;
 }
 
@@ -762,7 +821,25 @@ static int page_up_lua(lua_State *L) {
     E.cy = 0;
     int times = E.screenrows;
     while(times--)
-        editorMoveCursor(ARROW_UP);
+        up_lua(NULL);
+    return 0;
+}
+
+/* set status-bar */
+static int status_lua(lua_State *L) {
+    const char *str = lua_tostring(L,-1);
+    editorSetStatusMessage(str);
+    return 0;
+}
+
+static int left_lua(lua_State *L) {
+    (void)L;
+    editorMoveCursor(ARROW_LEFT);
+    return 0;
+}
+static int right_lua(lua_State *L) {
+    (void)L;
+    editorMoveCursor(ARROW_RIGHT);
     return 0;
 }
 
@@ -804,12 +881,15 @@ fixcursor:
 }
 
 /* Delete the char at the current prompt position. */
-void editorDelChar() {
+int delete_lua(lua_State *L) {
+    (void)L;
+
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
-    if (!row || (filecol == 0 && filerow == 0)) return;
+    if (!row || (filecol == 0 && filerow == 0))
+        return 0;
     if (filecol == 0) {
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
@@ -836,6 +916,7 @@ void editorDelChar() {
     }
     if (row) editorUpdateRow(row);
     E.dirty++;
+    return 0;
 }
 
 /* Load the specified program in the editor memory and returns 0 on success
@@ -1150,6 +1231,47 @@ void editorFind(int fd) {
     }
 }
 
+
+static int eval_lua(lua_State *L) {
+    (void)L;
+    char query[KILO_QUERY_LEN+1] = {0};
+    int qlen = 0;
+
+    /* Save the cursor position in order to restore it later. */
+    int saved_cx = E.cx, saved_cy = E.cy;
+    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+
+    while(1) {
+        editorSetStatusMessage(
+            "Eval: %s", query);
+        editorRefreshScreen();
+
+        int c = editorReadKey(STDIN_FILENO);
+        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
+            if (qlen != 0) query[--qlen] = '\0';
+        } else if (c == ESC || c == ENTER) {
+            E.cx = saved_cx; E.cy = saved_cy;
+            E.coloff = saved_coloff; E.rowoff = saved_rowoff;
+
+            int res =  luaL_loadstring(lua, query);
+            if ( res == 0 ) {
+                res = lua_pcall(lua, 0, LUA_MULTRET, 0);
+            }
+            else {
+                const char *er = lua_tostring(lua, -1);
+                if ( er )
+                    editorSetStatusMessage(er);
+            }
+            return 0;
+        } else if (isprint(c)) {
+            if (qlen < KILO_QUERY_LEN) {
+                query[qlen++] = c;
+                query[qlen] = '\0';
+            }
+        }
+    }
+}
+
 /* ========================= Editor events handling  ======================== */
 
 /* Handle cursor position change because arrow keys were pressed. */
@@ -1228,77 +1350,26 @@ void editorMoveCursor(int key) {
 
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
-#define KILO_QUIT_TIMES 3
 void editorProcessKeypress(int fd) {
-    /* When the file is modified, requires Ctrl-q to be pressed N times
-     * before actually quitting. */
-    static int quit_times = KILO_QUIT_TIMES;
-
     int c = editorReadKey(fd);
-    switch(c) {
-    case ENTER:         /* Enter */
-        editorInsertNewline();
-        break;
-    case CTRL_C:        /* Ctrl-c */
-        /* We ignore ctrl-c, it can't be so simple to lose the changes
-         * to the edited file. */
-        break;
-     case CTRL_Q:        /* Ctrl-q */
-        /* Quit if the file was already saved. */
-        if (E.dirty && quit_times) {
-            editorSetStatusMessage("WARNING!!! File has unsaved changes. "
-                "Press Ctrl-Q %d more times to quit.", quit_times);
-            quit_times--;
-            return;
-        }
-        printf("\033[2J\033[1;1H");
-        exit(0);
-        break;
-    case CTRL_F:
+    if ( c == CTRL_F ) {
         editorFind(fd);
-        break;
-    case BACKSPACE:     /* Backspace */
-    case CTRL_H:        /* Ctrl-h */
-    case DEL_KEY:
-        editorDelChar();
-        break;
-    case ARROW_UP:
-    case ARROW_DOWN:
-    case ARROW_LEFT:
-    case ARROW_RIGHT:
-        editorMoveCursor(c);
-        break;
-    case CTRL_L: /* ctrl+l, clear screen */
-        /* Just refresht the line as side effect. */
-        break;
-    case ESC:
-        /* Nothing to do for ESC in this mode. */
-        break;
-    default:
-    {
-        char tmp[5] = {'\0'};
-        snprintf(tmp, sizeof(tmp)-1, "%c", c );
-        lua_getglobal(lua, "on_key");
-
-        lua_pushstring(lua, tmp);
-
-        if (lua_isnil(lua, -1)) {
-            fprintf( stderr, "Failed to find `on_key`\n" );
-            exit(1);
-        }
-        if (lua_pcall(lua, 1, 0, 0) != 0) {
-            fprintf( stderr, "`on_key` failed: %s\n", lua_tostring(lua,-1) );
-            exit(1);
-        }
-        break;
-    }
+        return;
     }
 
-    quit_times = KILO_QUIT_TIMES; /* Reset it to the original value. */
-}
+    char tmp[5] = {'\0'};
+    snprintf(tmp, sizeof(tmp)-1, "%c", c );
+    lua_getglobal(lua, "on_key");
+    lua_pushstring(lua, tmp);
 
-int editorFileWasModified(void) {
-    return E.dirty;
+    if (lua_isnil(lua, -1)) {
+        fprintf( stderr, "Failed to find `on_key`\n" );
+        exit(1);
+    }
+    if (lua_pcall(lua, 1, 0, 0) != 0) {
+        fprintf( stderr, "`on_key` failed: %s\n", lua_tostring(lua,-1) );
+        exit(1);
+    }
 }
 
 void initEditor(void) {
@@ -1329,12 +1400,22 @@ void initEditor(void) {
     /*
      * Lua bindings.
      */
+    lua_register(lua, "delete", delete_lua);
+    lua_register(lua, "dirty", dirty_lua);
+    lua_register(lua, "down", down_lua);
     lua_register(lua, "eol", eol_lua);
+    lua_register(lua, "eval", eval_lua);
+    lua_register(lua, "exit", exit_lua);
+    lua_register(lua, "get_line", get_line_lua);
     lua_register(lua, "insert", insert_lua);
+    lua_register(lua, "left", left_lua);
+    lua_register(lua, "right", right_lua);
     lua_register(lua, "page_down", page_down_lua);
     lua_register(lua, "page_up", page_up_lua);
     lua_register(lua, "save", save_lua);
+    lua_register(lua, "status", status_lua);
     lua_register(lua, "sol", sol_lua);
+    lua_register(lua, "up", up_lua);
 
     /*
      * Load our init-function.
@@ -1361,7 +1442,7 @@ int main(int argc, char **argv) {
     editorOpen(argv[1]);
     enableRawMode(STDIN_FILENO);
     editorSetStatusMessage(
-        "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+        "HELP: Ctrl-s = save | Ctrl-q = quit | Ctrl-f = find | Ctrl-l = eval");
     while(1) {
         editorRefreshScreen();
         editorProcessKeypress(STDIN_FILENO);

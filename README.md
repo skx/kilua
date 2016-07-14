@@ -36,8 +36,16 @@ This fork of `kilo` has been updated to include a lua intepreter.
 
 The following primitives are exported to lua:
 
+* delete()
+    * Delete a single character (backwards).
+* dirty()
+    * Returns `true` if the buffer is dirty/modified, `false` otherwise.
 * eol()
     * Move the cursor to the end of the current line.
+* exit()
+    *Terminate the editor.
+* eval()
+    * Prompt for lua code, and execute it.
 * insert("string")
     * Inserts the given string at the current cursor position.
 * page_up()
@@ -45,6 +53,12 @@ The following primitives are exported to lua:
 * page_down()
     * Scroll the screen down one page, if possible.
 * save()
-    * Save the file open.
+    * Save the open-file.
 * sol()
     * Move the cursor to the start of the current line.
+
+In addition to those functions there are also the movement-related
+primitives: up(), down(), left(), right().
+
+Finally `get_line` returns the text from the cursor to the end of the line,
+this is used to implement Copy & Paste in Lua :)
