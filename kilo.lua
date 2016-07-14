@@ -1,10 +1,24 @@
 
 function on_key(k)
-   if ( string.byte(k) == 1 ) then
+
+   --
+   -- Expand values less than "a" to be Ctrl-X.
+   --
+   if ( string.byte(k) < string.byte('a') ) then
+      k = "^" .. ( string.char( string.byte(k) + string.byte('A')-1 ))
+   end
+
+   --
+   -- Handle input
+   --
+   if ( k == "^A" ) then
+      -- Ctrl-A -> Start of line
       sol()
-   elseif ( string.byte(k) == 5 ) then
+   elseif ( k == "^E" ) then
+      -- Ctrl-E -> End of line.
       eol()
    else
+      -- Insert the character.
       insert(k)
    end
 end
