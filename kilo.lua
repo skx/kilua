@@ -1,3 +1,27 @@
+--
+-- This is the configuration file for my fork of Antirez's kilo editor
+--
+-- At the moment this is only read from the current working directory,
+-- which is a potential security risk, but in the future it might
+-- be read from /etc/kilo.lua, or ~/.kilo.lua.
+--
+-- Right now all the logic for keybinding is handled here, with the
+-- exception of `Ctrl-f == find`.
+--
+-- Functions defined here are called on-demand, the rest is just
+-- support.
+--
+--     on_keypress() - Called when input is received.
+--
+--     on_loaded() - Called after a file is loaded.
+--
+--     on_saved() - Called after a file is saved.
+--
+-- Steve
+-- --
+-- https://steve.kemp.fi/
+--
+
 
 
 --
@@ -9,7 +33,8 @@ quit_count = 2
 -- Called on quit.
 --
 --  * If the buffer is clean then exit immediately.
---  *  If the buffer is dirty require N Ctrl-q presses to exit.
+--  * If the buffer is dirty require N Ctrl-q presses to exit.
+--     * Although this is odd to me, this is how kilo worked in pure C.
 --
 function quit()
    if ( dirty() ) then
