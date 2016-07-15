@@ -62,6 +62,8 @@ The following primitives are exported to lua:
     * Terminate the editor.
 * eval()
     * Prompt for lua code, and execute it.
+* find()
+    * Invoke the find-handler.
 * kill()
     * Kill the current line, deleting it from display.
 * insert("string")
@@ -73,6 +75,8 @@ The following primitives are exported to lua:
     * Scroll the screen up one page, if possible.
 * page_down()
     * Scroll the screen down one page, if possible.
+* prompt( "prompt" )
+    * Prompt the user for input, and return it to lua.
 * save()
     * Save the file we're operating upon.
 * set_syntax_comments()
