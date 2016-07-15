@@ -218,7 +218,7 @@ syn['.lua'] = { keywords =
                   "for", "function", "if", "in", "local", "nil", "not",
                   "or", "repeat", "return", "then", "true", "until",
                   "while" },
-                single = "--",
+                single = "-- ",
                 multi_open = "--[[",
                 multi_close = "--]]"
 }

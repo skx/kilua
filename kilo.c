@@ -80,9 +80,9 @@ lua_State * lua;
 struct editorSyntax {
     char **filematch;
     char **keywords;
-    char singleline_comment_start[2];
-    char multiline_comment_start[4];
-    char multiline_comment_end[4];
+    char singleline_comment_start[5];
+    char multiline_comment_start[5];
+    char multiline_comment_end[5];
     int flags;
 };
 
