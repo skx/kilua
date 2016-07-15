@@ -200,10 +200,55 @@ end
 
 
 --
--- This function is called when a file is loaded, and can
--- be used to setup syntax-highlighting in the future.
+-- Syntax highlighting
+--
+local syn = {}
+syn['.c']   = {
+   keywords = {
+      "switch","if","while","for","break","continue","return","else",
+      "struct","union","typedef","static","enum","class",
+      "int|","long|","double|","float|","char|","unsigned|","signed|",
+      "void|" },
+   single = "//",
+   multi_open = "/*",
+   multi_close = "*/"
+}
+syn['.lua'] = { keywords =
+                { "and", "break", "do", "else", "elseif", "end", "false",
+                  "for", "function", "if", "in", "local", "nil", "not",
+                  "or", "repeat", "return", "then", "true", "until",
+                  "while" },
+                single = "--",
+                multi_open = "--[[",
+                multi_close = "--]]"
+}
+
+
+--
+-- This function is called when a file is loaded, and is used
+-- to setup the syntax highlighting.
 --
 function on_loaded( filename )
+
+   -- Get the file extension.
+   local file = filename:match("^.+/(.+)$") or filename
+   local ext  = file:match("^.+(%..+)$") or file
+
+   -- Get the entry based on the suffix, or basename.
+   local syntax = syn[ext] or syn[file]
+
+   -- If that worked, and there are keywords..
+   if (syntax and syntax['keywords'] ) then
+      -- Set them
+      set_syntax_keywords( syntax['keywords'] )
+
+      if ( syntax['single'] and
+           syntax['multi_open'] and
+           syntax['multi_close'] ) then
+         set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
+      end
+
+   end
 end
 
 

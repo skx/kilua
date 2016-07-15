@@ -6,7 +6,8 @@ Kilo is a small text editor with around 1K lines of code (counted with cloc):
      -------------------------------------------------------------------
      Language        files          blank        comment           code
      -------------------------------------------------------------------
-     C                   1            152            210           1089
+     C                   1            152            210           1138
+     Lua                 2             47            119            153
      -------------------------------------------------------------------
 
 A screencast is available here: https://asciinema.org/a/90r2i9bq8po03nazhqtsifksb
@@ -74,6 +75,10 @@ The following primitives are exported to lua:
     * Scroll the screen down one page, if possible.
 * save()
     * Save the file we're operating upon.
+* set_syntax_comments()
+    * Setup comment-handling for syntax-highlighting.
+* set_syntax_keywords()
+    * Setup keyword-handling for syntax-highlighting.
 * sol()
     * Move the cursor to the start of the current line.
 
@@ -106,14 +111,26 @@ in `nano` too which you'll find bound to `ctrl-y` and `ctrl-u`.  These only
 operate upon a single line at a time though.
 
 
+Syntax Highlighting
+-------------------
+
+Syntax highlighting is defined in lua, and configured by calling:
+
+    -- Setup "keywords"
+    set_syntax_keywords({ "void|", "int|", "while", "true" } )
+
+    -- Setup "comments"
+    set_syntax_comments( "//", "/*", "*/" )
+
+The `on_loaded()` function has an example covering both C/C++ and Lua.
+
+
 The Future?
 -----------
 
 Future plans?
 
 * It might be nice to add accessors/mutators for the current cursor-position.
-
-* The only outstanding task which is "obviously" a good idea is to move the definition of highlighting into Lua to allow swift addition of highlighting for #golang, #lua, etc.
 
 
 Steve

@@ -149,66 +149,6 @@ void editorMoveCursor(int key);
 void editorRefreshScreen();
 void call_lua( char *function, char *arg );
 
-/* =========================== Syntax highlights DB =========================
- *
- * In order to add a new syntax, define two arrays with a list of file name
- * matches and keywords. The file name matches are used in order to match
- * a given syntax with a given file name: if a match pattern starts with a
- * dot, it is matched as the last past of the filename, for example ".c".
- * Otherwise the pattern is just searched inside the filename, like "Makefile").
- *
- * The list of keywords to highlight is just a list of words, however if they
- * a trailing '|' character is added at the end, they are highlighted in
- * a different color, so that you can have two different sets of keywords.
- *
- * Finally add a stanza in the HLDB global variable with two arrays
- * of strings, and a set of flags in order to enable highlighting of
- * comments and numbers.
- *
- * The characters for single and multi line comments must be exactly two
- * and must be provided as well (see the C language example).
- *
- * There is no support to highlight patterns currently. */
-
-/* C / C++ */
-char *C_HL_extensions[] = {".c",".cpp",NULL};
-char *LUA_HL_extensions[] = {".lua",NULL};
-char *C_HL_keywords[] = {
-        /* A few C / C++ keywords */
-        "switch","if","while","for","break","continue","return","else",
-        "struct","union","typedef","static","enum","class",
-        /* C types */
-        "int|","long|","double|","float|","char|","unsigned|","signed|",
-        "void|",NULL
-};
-char *LUA_HL_keywords[] = {
-    "and", "break", "do", "else", "elseif", "end", "false",
-    "for", "function", "if", "in", "local", "nil", "not",
-    "or", "repeat", "return", "then", "true", "until",
-    "while", NULL
-};
-
-/* Here we define an array of syntax highlights by extensions, keywords,
- * comments delimiters and flags. */
-struct editorSyntax HLDB[] = {
-    {
-        /* C / C++ */
-        C_HL_extensions,
-        C_HL_keywords,
-        "//","/*","*/",
-        HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS
-    },
-    {
-        /* Lua */
-        LUA_HL_extensions,
-        LUA_HL_keywords,
-        "--","--[[","--]]",
-        HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS
-    }
-};
-
-#define HLDB_ENTRIES (sizeof(HLDB)/sizeof(HLDB[0]))
-
 /* ======================= Low level terminal handling ====================== */
 
 static struct termios orig_termios; /* In order to restore at exit.*/
@@ -520,25 +460,6 @@ int editorSyntaxToColor(int hl) {
     }
 }
 
-/* Select the syntax highlight scheme depending on the filename,
- * setting it in the global state E.syntax. */
-void editorSelectSyntaxHighlight(char *filename) {
-    for (unsigned int j = 0; j < HLDB_ENTRIES; j++) {
-        struct editorSyntax *s = HLDB+j;
-        unsigned int i = 0;
-        while(s->filematch[i]) {
-            char *p;
-            int patlen = strlen(s->filematch[i]);
-            if ((p = strstr(filename,s->filematch[i])) != NULL) {
-                if (s->filematch[i][0] != '.' || p[patlen] == '\0') {
-                    E.syntax = s;
-                    return;
-                }
-            }
-            i++;
-        }
-    }
-}
 
 /* ======================= Editor rows implementation ======================= */
 
@@ -996,6 +917,72 @@ writeerr:
     if (fd != -1) close(fd);
     editorSetStatusMessage("Can't save! I/O error: %s",strerror(errno));
     return 1;
+}
+
+/* set the syntax keywords. */
+static int set_syntax_keywords_lua(lua_State *L){
+    if ( ! lua_istable(L,1 ) )
+        return 0;
+
+    if ( E.syntax == NULL ) {
+        struct editorSyntax *s = (struct editorSyntax*)malloc(sizeof(struct editorSyntax));
+        s->keywords                    = NULL;
+        s->singleline_comment_start[0] = '\0';
+        s->multiline_comment_start[0]  = '\0';
+        s->multiline_comment_end[0]    = '\0';
+        s->flags                       =  HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS;
+        E.syntax = s;
+    }
+
+    size_t len = lua_rawlen(L,1);
+    E.syntax->keywords = malloc( (1 + len) * sizeof(char*));
+
+    int i = 0;
+    lua_pushnil(L);
+    while (lua_next(L, -2) != 0) {
+        const char *str = lua_tostring(L, -1);
+        E.syntax->keywords[i] = strdup( str);
+        lua_pop(L, 1);
+        i+= 1;
+     }
+    E.syntax->keywords[i] = NULL;
+
+    /*
+     * Force re-render.
+     */
+    for (int i = 0; i < E.numrows; i++)
+        editorUpdateRow(E.row+i);
+
+    return 0;
+}
+
+/* Set comment handling. */
+static int set_syntax_comments_lua(lua_State *L){
+    char *single = (char *)lua_tostring(L,-3);
+    char *multi_open = (char *)lua_tostring(L,-2);
+    char *multi_end = (char *)lua_tostring(L,-1);
+
+    if ( ( single == NULL ) ||
+         ( multi_open == NULL ) ||
+         ( multi_end == NULL ) )
+        return 0;
+
+    /*
+     * If we don't have syntax that's a bug.
+     */
+    if ( E.syntax == NULL )
+        return 0;
+
+    strcpy( E.syntax->singleline_comment_start, single );
+    strcpy( E.syntax->multiline_comment_start, multi_open );
+    strcpy( E.syntax->multiline_comment_end, multi_end );
+
+    /*
+     * Force re-render.
+     */
+    for (int i = 0; i < E.numrows; i++)
+        editorUpdateRow(E.row+i);
+    return 0;
 }
 
 /* Prompt for a filename and open it. */
@@ -1479,6 +1466,8 @@ void initEditor(void) {
     lua_register(lua, "page_up", page_up_lua);
     lua_register(lua, "open", open_lua);
     lua_register(lua, "save", save_lua);
+    lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
+    lua_register(lua, "set_syntax_comments", set_syntax_comments_lua);
     lua_register(lua, "status", status_lua);
     lua_register(lua, "sol", sol_lua);
     lua_register(lua, "up", up_lua);
@@ -1504,7 +1493,6 @@ int main(int argc, char **argv) {
     }
 
     initEditor();
-    editorSelectSyntaxHighlight(argv[1]);
     editorOpen(argv[1]);
     enableRawMode(STDIN_FILENO);
     editorSetStatusMessage(
