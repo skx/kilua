@@ -23,7 +23,7 @@ Keys:
     CTRL-q: Quit
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
 
-Kilo does not depend on any library exclude for Lua5.2.
+Kilo does not depend on any library except for Lua5.2.
 
 For graphics neither `ncurses` nor `curses` is used, instead it uses fairly
 standard VT100 (and similar terminals) escape sequences. The project is in
@@ -123,6 +123,11 @@ Syntax highlighting is defined in lua, and configured by calling:
     set_syntax_comments( "//", "/*", "*/" )
 
 The `on_loaded()` function has an example covering both C/C++ and Lua.
+
+NOTE: The current status of syntax highlighting is a little broken, because
+of assumptions made on the length of prefixes.
+
+* See the [bug I reported](https://github.com/antirez/kilo/issues/26) for details.
 
 
 The Future?
