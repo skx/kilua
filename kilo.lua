@@ -26,7 +26,7 @@ end
 
 
 --
--- Kill a line - by copyign it to our kill-buffer, and deleting the line
+-- Kill a line - by copying it to our kill-buffer, and deleting the line
 --
 kill_buffer = ""
 
@@ -144,8 +144,6 @@ end
 -- the editor, literally.
 --
 function on_key(k)
-   -- Convert to decimal
-   local b = string.byte(k)
 
    --
    -- Expand the character we've received to deal with
