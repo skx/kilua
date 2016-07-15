@@ -147,6 +147,7 @@ void editorInsertNewline();
 void editorSetStatusMessage(const char *fmt, ...);
 void editorMoveCursor(int key);
 void editorRefreshScreen();
+void call_lua( char *function, char *arg );
 
 /* =========================== Syntax highlights DB =========================
  *
@@ -962,6 +963,9 @@ int editorOpen(char *filename) {
     free(line);
     fclose(fp);
     E.dirty = 0;
+
+    /* invoke our lua callback function */
+    call_lua( "on_loaded", E.filename);
     return 0;
 }
 
@@ -982,6 +986,9 @@ static int save_lua(lua_State *L) {
     free(buf);
     E.dirty = 0;
     editorSetStatusMessage("%d bytes written on disk", len);
+
+    /* invoke our lua callback function */
+    call_lua( "on_saved", E.filename);
     return 0;
 
 writeerr:
@@ -1404,27 +1411,33 @@ void editorMoveCursor(int key) {
     }
 }
 
+/* Call a lua function which accepts a single string argument
+ * and returns no result. */
+void call_lua( char *function, char *arg ) {
+    lua_getglobal(lua, function);
+
+    if (lua_isnil(lua, -1)) {
+        editorSetStatusMessage( "Failed to find function %s", function );
+        return;
+    }
+
+    lua_pushstring(lua, arg);
+    if (lua_pcall(lua, 1, 0, 0) != 0) {
+        editorSetStatusMessage( "%s failed %s", function, lua_tostring(lua,-1) );
+    }
+}
+
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
 void editorProcessKeypress(int fd) {
     int c = editorReadKey(fd);
     if ( c == CTRL_F ) {
         editorFind(fd);
-        return;
-    }
+    } else {
+        char tmp[5] = {'\0'};
+        snprintf(tmp, sizeof(tmp)-1, "%c", c );
 
-    char tmp[5] = {'\0'};
-    snprintf(tmp, sizeof(tmp)-1, "%c", c );
-    lua_getglobal(lua, "on_key");
-    lua_pushstring(lua, tmp);
-
-    if (lua_isnil(lua, -1)) {
-        fprintf( stderr, "Failed to find `on_key`\n" );
-        exit(1);
-    }
-    if (lua_pcall(lua, 1, 0, 0) != 0) {
-        fprintf( stderr, "`on_key` failed: %s\n", lua_tostring(lua,-1) );
-        exit(1);
+        call_lua( "on_key", tmp );
     }
 }
 

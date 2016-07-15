@@ -80,6 +80,21 @@ The following primitives are exported to lua:
 In addition to those functions there are also the movement-related primitives: up(), down(), left(), right().
 
 
+Callbacks
+---------
+
+There is room for lots of functionality to be delegated to callbacks,
+implemented in lua, but right now there are just three:
+
+* `on_key()`
+    * Called to process a single key input.
+* `on_loaded(filename)`
+    * Called when a file is loaded.
+    * In the future this would be used to setup syntax highlighting.
+* `on_saved(filename)`
+    * Called __after__ a file is saved.
+    * Can be used to make files executable, etc.
+
 
 Copy & Paste
 ------------

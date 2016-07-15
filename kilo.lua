@@ -174,3 +174,38 @@ function on_key(k)
    --
    quit_count = 2
 end
+
+
+--
+-- This function is called when a file is loaded, and can
+-- be used to setup syntax-highlighting in the future.
+--
+function on_loaded( filename )
+end
+
+
+--
+-- This function is called AFTER a file is saved.
+--
+-- You might re-open the file and call `chmod 755 $file` if
+-- the file has a shebang-line, or perform similar magic
+-- here.
+--
+function on_saved( filename )
+
+   --
+   -- Process only the first line.
+   --
+   local n=0
+   for l in io.lines(filename) do
+      n=n+1
+      if n==1 then
+         if ( string.match(l, "^#!/" ) ) then
+            -- shebang found
+            status( "Shebang found in " .. filename .. " " .. l )
+            os.execute( "chmod 755 " .. filename )
+         end
+         break
+      end
+   end
+end
