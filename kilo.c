@@ -454,6 +454,42 @@ int editorSyntaxToColor(int hl) {
     }
 }
 
+/* ======================= Input functions           ======================= */
+char *get_input( char *prompt )
+{
+    char query[KILO_QUERY_LEN+1] = {0};
+    int qlen = 0;
+
+    /* Save the cursor position in order to restore it later. */
+    int saved_cx = E.cx, saved_cy = E.cy;
+    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+
+    while(1) {
+        editorSetStatusMessage("%s%s", prompt, query);
+        editorRefreshScreen();
+
+        int c = editorReadKey(STDIN_FILENO);
+        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
+            if (qlen != 0) query[--qlen] = '\0';
+        } else if (c == ESC  ) {
+            E.cx = saved_cx; E.cy = saved_cy;
+            E.coloff = saved_coloff; E.rowoff = saved_rowoff;
+            editorSetStatusMessage("");
+            return NULL;
+        }
+        else if (c == ENTER) {
+            E.cx = saved_cx; E.cy = saved_cy;
+            E.coloff = saved_coloff; E.rowoff = saved_rowoff;
+            return( strdup( query ) );
+        } else if (isprint(c)) {
+            if (qlen < KILO_QUERY_LEN) {
+                query[qlen++] = c;
+                query[qlen] = '\0';
+            }
+        }
+    }
+}
+
 
 /* ======================= Editor rows implementation ======================= */
 
@@ -884,6 +920,18 @@ int editorOpen(char *filename) {
     return 0;
 }
 
+/* prompt for input */
+static int prompt_lua(lua_State *L) {
+    char *prompt = (char *)lua_tostring(L,-1);
+    char *buf = get_input(prompt);
+    if ( buf ) {
+        lua_pushstring(lua, buf);
+        free(buf);
+        return 1;
+    }
+    return 0;
+}
+
 /* Save the current file on disk. Return 0 on success, 1 on error. */
 static int save_lua(lua_State *L) {
     (void)L;
@@ -982,7 +1030,6 @@ static int set_syntax_comments_lua(lua_State *L){
 /* Prompt for a filename and open it. */
 static int open_lua(lua_State *L) {
     (void)L;
-
     /*
      * If we got a string then open it as a filename.
      */
@@ -992,34 +1039,16 @@ static int open_lua(lua_State *L) {
         return 0;
     }
 
-    char query[KILO_QUERY_LEN+1] = {0};
-    int qlen = 0;
-
-    /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.cx, saved_cy = E.cy;
-    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
-
-    while(1) {
-        editorSetStatusMessage(
-            "Open: %s", query);
-        editorRefreshScreen();
-
-        int c = editorReadKey(STDIN_FILENO);
-        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
-            if (qlen != 0) query[--qlen] = '\0';
-        } else if (c == ESC || c == ENTER) {
-            E.cx = saved_cx; E.cy = saved_cy;
-            E.coloff = saved_coloff; E.rowoff = saved_rowoff;
-
-            editorOpen( query );
-            return 0;
-        } else if (isprint(c)) {
-            if (qlen < KILO_QUERY_LEN) {
-                query[qlen++] = c;
-                query[qlen] = '\0';
-            }
-        }
+    /*
+     * Prompt for a path.
+     */
+    path = get_input( "Open: " );
+    if ( path )
+    {
+        editorOpen( path );
+        free( path );
     }
+    return 0;
 }
 
 
@@ -1279,42 +1308,21 @@ static int find_lua(lua_State *L) {
 /* prompt for a string, and evaluate that as lua. */
 static int eval_lua(lua_State *L) {
     (void)L;
-    char query[KILO_QUERY_LEN+1] = {0};
-    int qlen = 0;
 
-    /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.cx, saved_cy = E.cy;
-    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
-
-    while(1) {
-        editorSetStatusMessage(
-            "Eval: %s", query);
-        editorRefreshScreen();
-
-        int c = editorReadKey(STDIN_FILENO);
-        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
-            if (qlen != 0) query[--qlen] = '\0';
-        } else if (c == ESC || c == ENTER) {
-            E.cx = saved_cx; E.cy = saved_cy;
-            E.coloff = saved_coloff; E.rowoff = saved_rowoff;
-
-            int res =  luaL_loadstring(lua, query);
-            if ( res == 0 ) {
-                res = lua_pcall(lua, 0, LUA_MULTRET, 0);
-            }
-            else {
-                const char *er = lua_tostring(lua, -1);
-                if ( er )
-                    editorSetStatusMessage(er);
-            }
-            return 0;
-        } else if (isprint(c)) {
-            if (qlen < KILO_QUERY_LEN) {
-                query[qlen++] = c;
-                query[qlen] = '\0';
-            }
+    char *txt = get_input( "Eval: " );
+    if ( txt ) {
+        int res =  luaL_loadstring(lua, txt);
+        if ( res == 0 ) {
+            res = lua_pcall(lua, 0, LUA_MULTRET, 0);
         }
+        else {
+            const char *er = lua_tostring(lua, -1);
+            if ( er )
+                editorSetStatusMessage(er);
+        }
+        free(txt );
     }
+    return 0;
 }
 
 /* ========================= Editor events handling  ======================== */
@@ -1455,6 +1463,7 @@ void initEditor(void) {
     lua_register(lua, "page_down", page_down_lua);
     lua_register(lua, "page_up", page_up_lua);
     lua_register(lua, "open", open_lua);
+    lua_register(lua, "prompt", prompt_lua);
     lua_register(lua, "save", save_lua);
     lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
     lua_register(lua, "set_syntax_comments", set_syntax_comments_lua);

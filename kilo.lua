@@ -97,6 +97,7 @@ keymap['^L']        = eval
 keymap['^M']        = function() insert("\n") end
 keymap['^Q']        = quit
 keymap['^O']        = open
+keymap['^R']        = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
 keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
 keymap['^U']        = yank
@@ -274,4 +275,15 @@ function on_saved( filename )
          break
       end
    end
+end
+
+
+--
+-- Run a command and return the output, if any.
+--
+function cmd_output(cmd)
+   local handle = io.popen(cmd)
+   local out = handle:read("*a")
+   handle:close()
+   return(out)
 end
