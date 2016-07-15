@@ -78,7 +78,6 @@
 lua_State * lua;
 
 struct editorSyntax {
-    char **filematch;
     char **keywords;
     char singleline_comment_start[5];
     char multiline_comment_start[5];
@@ -97,10 +96,6 @@ typedef struct erow {
     int hl_oc;          /* Row had open comment at end in last syntax highlight
                            check. */
 } erow;
-
-typedef struct hlcolor {
-    int r,g,b;
-} hlcolor;
 
 struct editorConfig {
     int cx,cy;  /* Cursor x and y position in characters */
