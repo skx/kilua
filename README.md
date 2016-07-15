@@ -141,6 +141,17 @@ Future plans?
 
 * It might be nice to add accessors/mutators for the current cursor-position.
 
+* It might be nice to have `goto mark` and `set mark`, like vi.
+
+* The save() primitive should allow:  save( "new/file/name" )
+
+* If we could implement a "selection" then we could have useful copy/paste.
+   -> Just need "selection start" + "selection end"
+   -> Along with a new highlighter.
+   -> Along with a primitive "selection()". 
+  How hard can that be?
+
+
 
 Steve
 --
