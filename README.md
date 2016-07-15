@@ -95,7 +95,7 @@ implemented in lua, but right now there are just three:
     * Called to process a single key input.
 * `on_loaded(filename)`
     * Called when a file is loaded.
-    * In the future this would be used to setup syntax highlighting.
+    * This sets up syntax highlighting in our default implementation for C and Lua files.
 * `on_saved(filename)`
     * Called __after__ a file is saved.
     * Can be used to make files executable, etc.
