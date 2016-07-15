@@ -5,9 +5,6 @@
 -- which is a potential security risk, but in the future it might
 -- be read from /etc/kilo.lua, or ~/.kilo.lua.
 --
--- Right now all the logic for keybinding is handled here, with the
--- exception of `Ctrl-f == find`.
---
 -- Functions defined here are called on-demand, the rest is just
 -- support.
 --
@@ -93,6 +90,7 @@ local keymap = {}
 keymap['^A']        = sol
 keymap['^D']        = function() insert( os.date() ) end
 keymap['^E']        = eol
+keymap['^F']        = find
 keymap['^H']        = delete
 keymap['^K']        = kill_line
 keymap['^L']        = eval

@@ -116,7 +116,6 @@ struct editorConfig {
 static struct editorConfig E;
 
 enum KEY_ACTION{
-        CTRL_F = 6,         /* Ctrl-f */
         CTRL_H = 8,         /* Ctrl-h */
         TAB = 9,            /* Tab */
         ENTER = 13,         /* Enter */
@@ -1182,7 +1181,8 @@ void editorSetStatusMessage(const char *fmt, ...) {
 
 /* =============================== Find mode ================================ */
 
-void editorFind(int fd) {
+static int find_lua(lua_State *L) {
+    (void)L;
     char query[KILO_QUERY_LEN+1] = {0};
     int qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
@@ -1206,7 +1206,7 @@ void editorFind(int fd) {
             "Search: %s (Use ESC/Arrows/Enter)", query);
         editorRefreshScreen();
 
-        int c = editorReadKey(fd);
+        int c = editorReadKey(STDIN_FILENO);
         if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
             if (qlen != 0) query[--qlen] = '\0';
             last_match = -1;
@@ -1217,7 +1217,7 @@ void editorFind(int fd) {
             }
             FIND_RESTORE_HL;
             editorSetStatusMessage("");
-            return;
+            return 0;
         } else if (c == ARROW_RIGHT || c == ARROW_DOWN) {
             find_next = 1;
         } else if (c == ARROW_LEFT || c == ARROW_UP) {
@@ -1412,15 +1412,9 @@ void call_lua( char *function, char *arg ) {
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
 void editorProcessKeypress(int fd) {
-    int c = editorReadKey(fd);
-    if ( c == CTRL_F ) {
-        editorFind(fd);
-    } else {
-        char tmp[5] = {'\0'};
-        snprintf(tmp, sizeof(tmp)-1, "%c", c );
-
-        call_lua( "on_key", tmp );
-    }
+    char tmp[2] = {'\0','\0'};
+    tmp[0] = editorReadKey(fd);
+    call_lua( "on_key", tmp );
 }
 
 void initEditor(void) {
@@ -1452,6 +1446,7 @@ void initEditor(void) {
     lua_register(lua, "eol", eol_lua);
     lua_register(lua, "eval", eval_lua);
     lua_register(lua, "exit", exit_lua);
+    lua_register(lua, "find", find_lua);
     lua_register(lua, "get_line", get_line_lua);
     lua_register(lua, "kill", kill_line_lua);
     lua_register(lua, "insert", insert_lua);
