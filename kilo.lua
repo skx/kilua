@@ -22,85 +22,43 @@
 
 
 --
--- How many times has Ctrl-q been pressed?
---
-quit_count = 2
-
---
--- Called on quit.
---
---  * If the buffer is clean then exit immediately.
---  * If the buffer is dirty require N Ctrl-q presses to exit.
---     * Although this is odd to me, this is how kilo worked in pure C.
---
-function quit()
-   if ( dirty() ) then
-      if ( quit_count > 0 ) then
-         status( "Buffer is dirty press Ctrl-q " .. quit_count .. " more times to exit")
-         quit_count = quit_count - 1
-      else
-         exit()
-      end
-   else
-      exit()
-   end
-end
-
-
---
--- Kill a line - by copying it to our kill-buffer, and deleting the line
---
-kill_buffer = ""
-
-function kill_line()
-   -- move to beginning of line
-   sol()
-   -- get the line, and save it
-   kill_buffer = get_line()
-   -- kill the line
-   kill()
-end
-
---
--- Insert the kill-buffer at the point.
---
-function yank()
-   insert(kill_buffer .. "\n")
-end
-
-
--- Paste-Buffer
---
-paste_buffer = ""
-function copy()
-   paste_buffer = get_line()
-end
-function paste()
-   insert( paste_buffer )
-end
-
---
 -- Keymap of bound keys
 --
 local keymap = {}
 
 --
---  Default bindings
+--  Key bindings.
 --
+--  You'll see some bindings use "function() ... end" this is to cope
+-- with the fact that the function they invoke is not yet defined, because
+-- it comes later in this file.
+--
+--  For example this would fail:
+--
+--     keymap['^Q'] = quit
+--
+--  But by the time this function is _completely_ loaded the function is
+-- indeed defined which allows this to work:
+--
+--     keymap['^Q'] = function() quit() end
+--
+--
+keymap['^ ']        = function() set_mark() end
 keymap['^A']        = sol
 keymap['^D']        = function() insert( os.date() ) end
 keymap['^E']        = eol
 keymap['^F']        = find
 keymap['^H']        = delete
-keymap['^K']        = kill_line
+keymap['^K']        = function() kill_line() end
 keymap['^L']        = eval
 keymap['^M']        = function() insert("\n") end
-keymap['^Q']        = quit
+keymap['^Q']        = function() quit() end
 keymap['^O']        = open
 keymap['^R']        = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
 keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
-keymap['^U']        = yank
+keymap['^U']        = function() yank() end
+keymap['^W']        = function() kill_between_point_and_mark() end
 keymap['BACKSPACE'] = delete
 keymap['DEL']       = delete
 keymap['PAGE_UP']   = page_up
@@ -111,21 +69,66 @@ keymap['UP']        = up
 keymap['DOWN']      = down
 
 
-keymap['^C'] = copy
-keymap['^V'] = paste
 
+--
+-- Syntax highlighting
+--
+local syn = {}
+syn['c']   = {
+   keywords = {
+      "switch","if","while","for","break","continue","return","else",
+      "struct","union","typedef","static","enum","class",
+      "int|","long|","short|", "double|","float|","char|","unsigned|","signed|",
+      "void|", "#include|","#define|","#ifdef|","#endif|" },
+   single      = "//",
+   multi_open  = "/*",
+   multi_close = "*/"
+}
+syn['c++'] = syn['c']
+syn['cc']  = syn['c']
+
+syn['lua'] = { keywords =
+               { "and", "break", "do", "else", "elseif", "end", "false",
+                 "for", "function", "if", "in", "local", "nil", "not",
+                 "or", "repeat", "return", "then", "true", "until",
+                 "while" },
+               single      = "-- ",
+               multi_open  = "--[[",
+               multi_close = "--]]"
+}
+syn['pl'] = { keywords =
+              { "continue", "foreach", "require", "package", "scalar", "format", "unless", "local", "until", "while", "elsif", "next", "last", "goto", "else", "redo", "our", "sub", "for", "use", "no", "if",  "my" },
+              single      = "# ",
+              multi_open  = "",
+              multi_close = ""
+}
+
+syn['sh'] = { keywords =
+              {
+                 "case", "do", "done", "else", "env", "esac", "exit","export","fi","for","function","getopts","hash","if","import","in","let","local","read","select","set","shift","source","then","trap","true","type", "until", "while",
+              },
+                            single      = "# ",
+                            multi_open  = "",
+                            multi_close = ""
+}
+
+
+
+
+--
+--  Callbacks and utilities they use.
+-----------------------------------------------------------------------------
 
 --
 -- Expand the given keyboard character.
---
---  e.g. "ctrl-a" -> "^A".
+--    e.g. "ctrl-a" -> "^A".
 --
 function expand_key(k)
 
    -- Convert to decimal
    local b = string.byte(k)
 
-   if ( b == nil ) then return "Ctrl-SPACE" end
+   if ( b == nil ) then return "^ " end
 
    -- Control-code
    if ( b < 32 ) then
@@ -199,49 +202,6 @@ end
 
 
 --
--- Syntax highlighting
---
-local syn = {}
-syn['c']   = {
-   keywords = {
-      "switch","if","while","for","break","continue","return","else",
-      "struct","union","typedef","static","enum","class",
-      "int|","long|","short|", "double|","float|","char|","unsigned|","signed|",
-      "void|", "#include|","#define|","#ifdef|","#endif|" },
-   single      = "//",
-   multi_open  = "/*",
-   multi_close = "*/"
-}
-syn['c++'] = syn['c']
-syn['cc']  = syn['c']
-
-syn['lua'] = { keywords =
-                { "and", "break", "do", "else", "elseif", "end", "false",
-                  "for", "function", "if", "in", "local", "nil", "not",
-                  "or", "repeat", "return", "then", "true", "until",
-                  "while" },
-                single      = "-- ",
-                multi_open  = "--[[",
-                multi_close = "--]]"
-}
-syn['pl'] = { keywords =
-               { "continue", "foreach", "require", "package", "scalar", "format", "unless", "local", "until", "while", "elsif", "next", "last", "goto", "else", "redo", "our", "sub", "for", "use", "no", "if",  "my" },
-                single      = "# ",
-                multi_open  = "",
-                multi_close = ""
-}
-
-syn['sh'] = { keywords =
-              {
-                 "case", "do", "done", "else", "env", "esac", "exit","export","fi","for","function","getopts","hash","if","import","in","let","local","read","select","set","shift","source","then","trap","true","type", "until", "while",
-              },
-                single      = "# ",
-                multi_open  = "",
-                multi_close = ""
-}
-
-
---
 -- This function is called when a file is loaded, and is used
 -- to setup the syntax highlighting.
 --
@@ -272,27 +232,6 @@ function on_loaded( filename )
 end
 
 
-function set_syntax( name )
-   -- Lookup the entry
-   local syntax = syn[name]
-   if ( syntax == nil ) then return end
-
-   -- If that worked, and there are keywords..
-   if (syntax and syntax['keywords'] ) then
-
-      -- Set the keywords
-      set_syntax_keywords( syntax['keywords'] )
-
-      -- If there are defined values for the comments, set them too.
-      if ( syntax['single'] and
-           syntax['multi_open'] and
-           syntax['multi_close'] ) then
-         set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
-      end
-
-   end
-
-end
 --
 -- This function is called AFTER a file is saved.
 --
@@ -321,6 +260,33 @@ end
 
 
 --
+--  Utility functions.
+-----------------------------------------------------------------------------
+
+
+function set_syntax( name )
+   -- Lookup the entry
+   local syntax = syn[name]
+   if ( syntax == nil ) then return end
+
+   -- If that worked, and there are keywords..
+   if (syntax and syntax['keywords'] ) then
+
+      -- Set the keywords
+      set_syntax_keywords( syntax['keywords'] )
+
+      -- If there are defined values for the comments, set them too.
+      if ( syntax['single'] and
+           syntax['multi_open'] and
+           syntax['multi_close'] ) then
+         set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
+      end
+
+   end
+
+end
+
+--
 -- Run a command and return the output, if any.
 --
 function cmd_output(cmd)
@@ -328,4 +294,218 @@ function cmd_output(cmd)
    local out = handle:read("*a")
    handle:close()
    return(out)
+end
+
+
+
+
+
+--
+--  Copy & Paste functionality.
+-----------------------------------------------------------------------------
+
+
+--
+-- The position of the mark.
+--
+m_x = -1
+m_y = -1
+
+--
+-- Set the mark.  The region between the point & mark can be
+-- cut easily.
+--
+function set_mark()
+   m_x, m_y = point()
+   status( "Mark set to " .. m_x .. "," .. m_y  )
+end
+
+--
+-- This is the buffer which holds text which has been removed via:
+--
+--   Ctrl-y to delete the current line.
+--
+-- or
+--
+--   Ctrl-w to delete the region between the cursor and the mark.
+--   (The mark being set by ctrl-space).
+--
+cut_buffer = ""
+
+
+--
+-- Kill a line - by copying it to our kill-buffer, and deleting the line
+--
+function kill_line()
+   -- move to beginning of line
+   sol()
+   -- get the line, and save it
+   cut_buffer = get_line() .. "\n"
+   -- kill the line
+   kill()
+end
+
+--
+-- Insert the contents of the cut-buffer.
+--
+function yank()
+   insert(cut_buffer)
+end
+
+
+--
+-- Kill the region between the point and the mark.
+--
+-- Append the text between the point&mark to the cut-buffer.
+--
+function kill_between_point_and_mark()
+   --
+   -- If there is no mark, abort.
+   --
+   if ( m_x < 0 ) and ( m_y < 0 ) then
+      status("Mark is not set!" )
+      return
+   end
+
+   --
+   -- Get the position of the cursor.
+   --
+   c_x, c_y = point()
+
+   --
+   -- Same position?  Nothing to do.
+   if ( c_x == m_x ) and ( c_y == m_y ) then
+      status( "Cursor and point at the same position!" )
+      cut_buffer = ""
+      return
+   end
+
+   --
+   -- The cursor is "below" the point.
+   --
+   if ( ( c_x < m_x ) and ( c_y < m_y ) ) or
+      ( c_y < m_y ) or
+   ( c_y == m_y and c_x < m_x ) then
+
+      cut_buffer = ""
+
+      -- Count how many times we move - this will be the
+      -- number of deletes we need to apply.
+      local count = 0
+
+      --
+      -- Loop
+      --
+      repeat
+         -- Get the position.
+         c_x, c_y = point()
+
+         -- Append the character under the point to the buffer.
+         cut_buffer = cut_buffer .. at()
+
+         -- Move right and count that
+         right()
+         count = count + 1
+
+         -- Until we're no longer "before" the mark
+      until not(  ( ( c_x < m_x ) and ( c_y < m_y ) ) or ( c_y < m_y ) or  ( c_y == m_y and c_x < m_x )  )
+
+      -- Now we've oved the cursor until we've hit the mark, delete
+      -- the number of characters we should to get us back where we were.
+      while( count >= 1 ) do
+         delete()
+         count = count - 1
+      end
+
+      return
+   end
+
+   --
+   -- OK at this point we know the cursor is "above" the mark.
+   if ( ( c_x > m_x ) and ( c_y > m_y ) ) or
+      ( c_y > m_y ) or
+   ( c_y == m_y and c_x > m_x ) then
+
+      -- Count how many times we move - this will be the
+      -- number of deletes we need to apply.
+      local count = 0
+
+      cut_buffer = ""
+
+      --
+      -- Loop
+      --
+      repeat
+         -- Get the position.
+         c_x, c_y = point()
+
+         -- Prepend the character under the point to the buffer.
+         cut_buffer = at() .. cut_buffer
+
+         left()
+
+         -- Move left and count that
+         count = count + 1
+
+         -- Until we're no longer "before" the mark
+      until not( ( ( c_x > m_x ) and ( c_y > m_y ) ) or
+                 ( c_y > m_y ) or
+                 ( c_y == m_y and c_x > m_x ) )
+
+      count = count - 1
+      -- Now we've oved the cursor until we've hit the mark, delete
+      -- the number of characters we should to get us back where we were.
+      while( count >= 1 ) do
+         right()
+         delete()
+         count = count - 1
+      end
+
+      -- Start of off by one.
+      right()
+      cut_buffer = cut_buffer:sub( 0, #cut_buffer - 1 )
+      -- End of off by one.
+
+      return
+   end
+
+end
+
+
+
+
+
+
+--
+--  Quit handling.
+-----------------------------------------------------------------------------
+
+
+
+
+
+
+--
+-- How many times has Ctrl-q been pressed?
+--
+quit_count = 2
+
+--
+-- Called on quit.
+--
+--  * If the buffer is clean then exit immediately.
+--  * If the buffer is dirty require N Ctrl-q presses to exit.
+--     * Although this is odd to me, this is how kilo worked in pure C.
+--
+function quit()
+   if ( dirty() ) then
+      if ( quit_count > 0 ) then
+         status( "Buffer is dirty press Ctrl-q " .. quit_count .. " more times to exit")
+         quit_count = quit_count - 1
+      else
+         exit()
+      end
+   else
+      exit()
+   end
 end

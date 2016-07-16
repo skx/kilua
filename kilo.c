@@ -896,6 +896,20 @@ fixcursor:
     E.coloff = 0;
 }
 
+/* get the character that the current position */
+int at_lua(lua_State *L){
+    int filerow = E.rowoff+E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+
+    char tmp[2] = {'\n', '\0'};
+    if ( row )  {
+        if ( E.cx < row->size )
+            tmp[0] = row->render[E.cx];
+    }
+    lua_pushstring(L, tmp);
+    return 1;
+
+}
 /* Delete the char at the current position. */
 int delete_lua(lua_State *L) {
     (void)L;
@@ -1518,6 +1532,7 @@ void initEditor(void) {
     /*
      * Lua bindings.
      */
+    lua_register(lua, "at", at_lua);
     lua_register(lua, "delete", delete_lua);
     lua_register(lua, "dirty", dirty_lua);
     lua_register(lua, "down", down_lua);

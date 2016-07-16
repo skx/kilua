@@ -52,6 +52,8 @@ to that lua instance.
 
 The following primitives are exported to lua:
 
+* at()
+    * Return the character under the cursor.
 * delete()
     * Delete a single character (backwards).
 * dirty()
@@ -112,11 +114,13 @@ implemented in lua, but right now there are just three:
 Copy & Paste
 ------------
 
-`get_line` returns the text from the cursor to the end of the line, this is used to implement Copy & Paste in Lua - by default bound to `Ctrl-c` and `Ctrl-v`.
+We've added a notion of a `mark`.  A mark is set by pressing `Ctrl+space`,
+and at any time you can cut the region between the cursor and the mark by
+pressing `Ctrl-w`.
 
-There is _also_ whole line copy&paste (named `kill` and `yank`) implemented as
-in `nano` too which you'll find bound to `ctrl-y` and `ctrl-u`.  These only
-operate upon a single line at a time though.
+You can also cut the current line via `Ctrl-y`.
+
+In both cases you can yank the selection back with `Ctrl-u`.
 
 
 Syntax Highlighting
@@ -146,18 +150,9 @@ The Future?
 
 Future plans?
 
-* It might be nice to add accessors/mutators for the current cursor-position.
-
 * It might be nice to have `goto mark` and `set mark`, like vi.
 
 * The save() primitive should allow:  save( "new/file/name" )
-
-* If we could implement a "selection" then we could have useful copy/paste.
-   -> Just need "selection start" + "selection end"
-   -> Along with a new highlighter.
-   -> Along with a primitive "selection()".
-  How hard can that be?
-
 
 
 Steve
