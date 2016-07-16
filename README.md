@@ -49,6 +49,8 @@ to that lua instance.
 * Input is processed via the `on_key()` function defined in that file.
 * We use a global keymap to link function-keys and lua functions.
 * I've implemented trivial copy/paste support, but without the ability to select and mark "regions" this is ropy at best, and terrible at worst.
+* There is a notion of a MARK.  A mark can be made by pressing `Ctrl-space`,
+at that point the area between the cursor and the mark will be highlighted, and can be killed or copied.
 
 The following primitives are exported to lua:
 
