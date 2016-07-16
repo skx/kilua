@@ -1,8 +1,5 @@
 = Bugs =
 
-* highlighting is broken for multi-line comments, unless
-  they open and close with exactly two characters.
-
 * Highlighting should have a case-insensitive flag, for SQL.
 
 * We are missing syntax-highlighting for Perl, Python, Ruby, Puppet,

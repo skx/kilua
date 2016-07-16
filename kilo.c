@@ -137,6 +137,7 @@ enum KEY_ACTION{
 /*
  * Forward declarations.
  */
+void editorUpdateRow(erow *row);
 void editorInsertNewline();
 void editorSetStatusMessage(const char *fmt, ...);
 void editorMoveCursor(int key);
@@ -292,10 +293,36 @@ int is_separator(int c) {
  * that starts at this row or at one before, and does not end at the end
  * of the row but spawns to the next row. */
 int editorRowHasOpenComment(erow *row) {
-    if (row->hl && row->rsize && row->hl[row->rsize-1] == HL_MLCOMMENT &&
-        (row->rsize < 2 || (row->render[row->rsize-2] != '*' ||
-                            row->render[row->rsize-1] != '/'))) return 1;
-    return 0;
+    /*
+     * If the line is empty - then we have to check on the line before
+     * that.
+     */
+    if ( row->size == 0  && ( row->idx > 0 ) )
+        return( editorRowHasOpenComment(&E.row[row->idx-1]));
+
+    if ( row->size == 0 )
+        return 0;
+
+    /*
+     * OK we have some text.  Is the line ending in a MLCOMMENT
+     * character-string?
+     */
+    if (row->hl && row->rsize && row->hl[row->rsize-1] != HL_MLCOMMENT )
+        return 0;
+
+    /*
+     * OK the line ends in a comment.  Are the closing characters
+     * our closing tokens though?
+     */
+    int len = (int)strlen(E.syntax->multiline_comment_end);
+    char *end = E.syntax->multiline_comment_end;
+
+    if ( strncmp( row->render + row->rsize - len, end, len ) == 0 )
+        return 0;
+    else
+        return 1;
+
+
 }
 
 /* Set every byte of row->hl (that corresponds to every character in the line)
@@ -309,9 +336,6 @@ void editorUpdateSyntax(erow *row) {
     int i, prev_sep, in_string, in_comment;
     char *p;
     char **keywords = E.syntax->keywords;
-    char *scs = E.syntax->singleline_comment_start;
-    char *mcs = E.syntax->multiline_comment_start;
-    char *mce = E.syntax->multiline_comment_end;
 
     /* Point to the first non-space char. */
     p = row->render;
@@ -330,8 +354,8 @@ void editorUpdateSyntax(erow *row) {
         in_comment = 1;
 
     while(*p) {
-        /* Handle // comments. */
-        if (prev_sep && *p == scs[0] && *(p+1) == scs[1]) {
+        /* Handle // comments - colour the rest of the line and return. */
+        if (prev_sep &&  ( strncmp( p,E.syntax->singleline_comment_start, strlen(E.syntax->singleline_comment_start)) == 0 ) ) {
             /* From here to end is a comment */
             memset(row->hl+i,HL_COMMENT,row->rsize-i);
             return;
@@ -340,9 +364,15 @@ void editorUpdateSyntax(erow *row) {
         /* Handle multi line comments. */
         if (in_comment) {
             row->hl[i] = HL_MLCOMMENT;
-            if (*p == mce[0] && *(p+1) == mce[1]) {
-                row->hl[i+1] = HL_MLCOMMENT;
-                p += 2; i += 2;
+            if (strncmp(p, E.syntax->multiline_comment_end,
+                        strlen(E.syntax->multiline_comment_end)) == 0 ) {
+
+                for( int x = 0; x < (int)strlen(E.syntax->multiline_comment_end); x++ )
+                {
+                    row->hl[i+x] = HL_MLCOMMENT;
+                }
+                p += strlen(E.syntax->multiline_comment_end) ;
+                i += strlen(E.syntax->multiline_comment_end) ;
                 in_comment = 0;
                 prev_sep = 1;
                 continue;
@@ -351,10 +381,15 @@ void editorUpdateSyntax(erow *row) {
                 p++; i++;
                 continue;
             }
-        } else if (*p == mcs[0] && *(p+1) == mcs[1]) {
-            row->hl[i] = HL_MLCOMMENT;
-            row->hl[i+1] = HL_MLCOMMENT;
-            p += 2; i += 2;
+        } else if (strncmp(p, E.syntax->multiline_comment_start,
+                           strlen(E.syntax->multiline_comment_start) ) == 0 ) {
+
+            for (int  x = 0; x < (int)strlen(E.syntax->multiline_comment_start) ; x++ )
+            {
+                row->hl[i + x] = HL_MLCOMMENT;
+            }
+            p += (int)strlen(E.syntax->multiline_comment_start) ;
+            i += (int)strlen(E.syntax->multiline_comment_start) ;
             in_comment = 1;
             prev_sep = 0;
             continue;
@@ -369,7 +404,8 @@ void editorUpdateSyntax(erow *row) {
                 prev_sep = 0;
                 continue;
             }
-            if (*p == in_string) in_string = 0;
+            if (*p == in_string)
+                in_string = 0;
             p++; i++;
             continue;
         } else {
@@ -558,7 +594,8 @@ void editorDelRow(int at) {
     row = E.row+at;
     editorFreeRow(row);
     memmove(E.row+at,E.row+at+1,sizeof(E.row[0])*(E.numrows-at-1));
-    for (int j = at; j < E.numrows-1; j++) E.row[j].idx++;
+    for (int j = at; j < E.numrows-1; j++)
+        E.row[j].idx--;
     E.numrows--;
     E.dirty++;
 }
@@ -826,7 +863,7 @@ fixcursor:
     E.coloff = 0;
 }
 
-/* Delete the char at the current prompt position. */
+/* Delete the char at the current position. */
 int delete_lua(lua_State *L) {
     (void)L;
 
