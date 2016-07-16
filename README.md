@@ -1,5 +1,8 @@
+[![Build Status](https://travis-ci.org/skx/kilo.png)](https://travis-ci.org/skx/kilo)
+
 Kilo
 ===
+
 
 Kilo is a small text editor with around 1K lines of code (counted with cloc):
 
