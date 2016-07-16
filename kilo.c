@@ -883,15 +883,13 @@ char *get_selection()
             /*
              * Get the character at the point.
              */
+            editorMoveCursor(ARROW_LEFT);
             txt[l] = at();
             l++;
-            editorMoveCursor(ARROW_LEFT);
 
             if ( ( E.coloff+E.cx == E.markx ) && ( E.rowoff+E.cy == E.marky ) )
                 break;
         }
-        txt[l] = at();
-        l++;
         t = strdup(txt);
         strrev(t);
 
@@ -996,6 +994,12 @@ static int cut_selection_lua(lua_State *L) {
         }
     }
     free(sel);
+
+    /*
+     * Remove the mark.
+     */
+    E.markx = -1;
+    E.marky = -1;
     return 0;
 }
 
@@ -1406,27 +1410,12 @@ void editorRefreshScreen(void) {
                 if (( E.markx != -1 ) && ( E.marky != -1 ) ) {
                     int mx = E.markx;
                     int my = E.marky;
-                    int px = E.cx + E.coloff;
-                    int py = E.cy + E.rowoff;
 
-                    (void)mx;
-                    (void)my;
-                    (void)px;
-                    (void)py;
-
-                    if ( my > py )  {
-                        if ( filerow >= py && filerow < my )
-                        {
-                            color = HL_SELECTION;
-                        }
-                    }
-                    else
-                    {
-                        if ( filerow >= my && filerow < py )
-                        {
-                            color = HL_SELECTION;
-                        }
-                    }
+                    /*
+                     * Show the mark
+                     */
+                    if ( ( filerow == my ) && ( j == mx ) )
+                        color = HL_SELECTION;
                 }
 
 
@@ -1446,14 +1435,29 @@ void editorRefreshScreen(void) {
                     }
                     abAppend(&ab,c+j,1);
                 } else {
-                    color = editorSyntaxToColor(color);
-                    if (color != current_color) {
-                        char buf[16];
-                        int clen = snprintf(buf,sizeof(buf),"\x1b[%dm",color);
-                        current_color = color;
-                        abAppend(&ab,buf,clen);
+                    if ( color == HL_SELECTION ) {
+                        /*
+                         * Show the mark in inverse white.
+                         */
+                            char buf[16];
+                            int clen = snprintf(buf,sizeof(buf),"\x1b[47m" );
+                            abAppend(&ab,buf,clen);
+                            abAppend(&ab,c+j,1);
+                            clen = snprintf(buf,sizeof(buf),"\x1b[49m" );
+                            abAppend(&ab,buf,clen);
                     }
-                    abAppend(&ab,c+j,1);
+                    else
+                    {
+                        color = editorSyntaxToColor(color);
+                        if (color != current_color) {
+                            char buf[16];
+                            int clen = snprintf(buf,sizeof(buf),"\x1b[%dm",color);
+                            current_color = color;
+                            abAppend(&ab,buf,clen);
+                        }
+                        abAppend(&ab,c+j,1);
+                    }
+
                 }
             }
         }

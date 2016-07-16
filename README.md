@@ -49,8 +49,10 @@ to that lua instance.
 * Input is processed via the `on_key()` function defined in that file.
 * We use a global keymap to link function-keys and lua functions.
 * I've implemented trivial copy/paste support, but without the ability to select and mark "regions" this is ropy at best, and terrible at worst.
-* There is a notion of a MARK.  A mark can be made by pressing `Ctrl-space`,
-at that point the area between the cursor and the mark will be highlighted, and can be killed or copied.
+* There is a notion of a MARK.  A mark can be made by pressing `Ctrl-space`.
+    * The mark will be shown with a white-background.
+    * The region between the cursor and the mark may be cut via `Ctrl-w`,
+      just like in Emacs.
 
 The following primitives are exported to lua:
 
@@ -76,6 +78,7 @@ The following primitives are exported to lua:
     * Inserts the given string at the current cursor position.  (Newlines work as expected.)
 * mark()
    * get the position of the mark.
+   * A return value of (-1,-1) means there is no mark set.
 * mark(x,y)
    * set the position of the mark.
 * open( [filename] )
