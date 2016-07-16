@@ -221,6 +221,12 @@ syn['.lua'] = { keywords =
                 multi_open = "--[[",
                 multi_close = "--]]"
 }
+syn['.pl'] = { keywords =
+               { "continue", "foreach", "require", "package", "scalar", "format", "unless", "local", "until", "while", "elsif", "next", "last", "goto", "else", "redo", "our", "sub", "for", "use", "no", "if",  "my" },
+                single = "# ",
+                multi_open = "",
+                multi_close = ""
+}
 
 
 --
