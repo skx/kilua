@@ -74,6 +74,9 @@ The following primitives are exported to lua:
     * Invoke the find-handler.
 * kill()
     * Kill the current line, deleting it from display.
+* key()
+    * Read a single key from the keyboard (blocking).
+    * Used to implement setting of marks.
 * insert("string")
     * Inserts the given string at the current cursor position.  (Newlines work as expected.)
 * mark()
@@ -92,6 +95,7 @@ The following primitives are exported to lua:
     * Return the current position of the cursor.
 * point(x,y)
     * Move the cursor to the given position.
+    * Used to implement marks.
 * prompt( "prompt" )
     * Prompt the user for input, and return it to lua.
 * save()
@@ -167,8 +171,6 @@ The Future?
 -----------
 
 Future plans?
-
-* It might be nice to have `goto mark` and `set mark`, like vi.
 
 * The save() primitive should allow:  save( "new/file/name" )
 

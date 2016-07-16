@@ -825,10 +825,10 @@ static int point_lua(lua_State *L) {
          */
         E.cx = E.coloff = E.cy = E.rowoff = 0;
 
-        while( x-- )
-            editorMoveCursor(ARROW_RIGHT);
-        while( y-- )
+        for( int i = 0; i <= y ; i++ )
             editorMoveCursor(ARROW_DOWN);
+        for( int i = 0; i <= x ; i++ )
+            editorMoveCursor(ARROW_RIGHT);
     }
 
     lua_pushnumber(L, E.cx+ E.coloff);
@@ -1209,6 +1209,14 @@ static int prompt_lua(lua_State *L) {
         return 1;
     }
     return 0;
+}
+
+/* read a single key */
+static int key_lua(lua_State *L) {
+    char buf[2] = { '\0', '\0' };
+    buf[0] = editorReadKey(STDIN_FILENO);
+    lua_pushstring(L, buf);
+    return 1;
 }
 
 /* Save the current file on disk. Return 0 on success, 1 on error. */
@@ -1812,6 +1820,7 @@ void initEditor(void) {
     lua_register(lua, "exit", exit_lua);
     lua_register(lua, "find", find_lua);
     lua_register(lua, "get_line", get_line_lua);
+    lua_register(lua, "key", key_lua);
     lua_register(lua, "kill", kill_line_lua);
     lua_register(lua, "insert", insert_lua);
     lua_register(lua, "left", left_lua);

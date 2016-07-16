@@ -49,9 +49,10 @@ keymap['^D']        = function() insert( os.date() ) end
 keymap['^E']        = eol
 keymap['^F']        = find
 keymap['^H']        = delete
+keymap['^J']        = function() goto_mark() end
 keymap['^K']        = function() kill_line() end
 keymap['^L']        = eval
-keymap['^M']        = function() insert("\n") end
+keymap['^M']        = function() set_mark() end
 keymap['^Q']        = function() quit() end
 keymap['^O']        = open
 keymap['^R']        = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
@@ -403,5 +404,39 @@ function quit()
       end
    else
       exit()
+   end
+end
+
+
+
+--
+--  Implementation of setting/jumping to (named) marks.
+-----------------------------------------------------------------------------
+
+
+
+--
+-- Table of marks.
+--
+marks = {}
+
+function set_mark()
+   k = key()
+   x,y = point()
+   marks[k] = {}
+   marks[k]['x'] = x
+   marks[k]['y'] = y
+   status( "Mark saved '" .. k .. "' =" .. x .. "," .. y )
+end
+
+function goto_mark()
+   k = key()
+   if ( marks[k] ) then
+      x = marks[k]['x']
+      y = marks[k]['y']
+      status( "Jumping to " .. x .. "," .. y )
+      point(x,y)
+   else
+      status( "Mark not set '" .. k .. "'" )
    end
 end
