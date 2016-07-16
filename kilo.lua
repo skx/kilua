@@ -88,6 +88,7 @@ syn['c']   = {
 }
 syn['c++'] = syn['c']
 syn['cc']  = syn['c']
+syn['h']  = syn['c']
 
 syn['lua'] = { keywords =
                { "and", "break", "do", "else", "elseif", "end", "false",
