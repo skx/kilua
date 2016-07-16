@@ -202,29 +202,41 @@ end
 -- Syntax highlighting
 --
 local syn = {}
-syn['.c']   = {
+syn['c']   = {
    keywords = {
       "switch","if","while","for","break","continue","return","else",
       "struct","union","typedef","static","enum","class",
       "int|","long|","short|", "double|","float|","char|","unsigned|","signed|",
-      "void|" },
-   single = "//",
-   multi_open = "/*",
+      "void|", "#include|","#define|","#ifdef|","#endif|" },
+   single      = "//",
+   multi_open  = "/*",
    multi_close = "*/"
 }
-syn['.lua'] = { keywords =
+syn['c++'] = syn['c']
+syn['cc']  = syn['c']
+
+syn['lua'] = { keywords =
                 { "and", "break", "do", "else", "elseif", "end", "false",
                   "for", "function", "if", "in", "local", "nil", "not",
                   "or", "repeat", "return", "then", "true", "until",
                   "while" },
-                single = "-- ",
-                multi_open = "--[[",
+                single      = "-- ",
+                multi_open  = "--[[",
                 multi_close = "--]]"
 }
-syn['.pl'] = { keywords =
+syn['pl'] = { keywords =
                { "continue", "foreach", "require", "package", "scalar", "format", "unless", "local", "until", "while", "elsif", "next", "last", "goto", "else", "redo", "our", "sub", "for", "use", "no", "if",  "my" },
-                single = "# ",
-                multi_open = "",
+                single      = "# ",
+                multi_open  = "",
+                multi_close = ""
+}
+
+syn['sh'] = { keywords =
+              {
+                 "case", "do", "done", "else", "env", "esac", "exit","export","fi","for","function","getopts","hash","if","import","in","let","local","read","select","set","shift","source","then","trap","true","type", "until", "while",
+              },
+                single      = "# ",
+                multi_open  = "",
                 multi_close = ""
 }
 
@@ -235,18 +247,20 @@ syn['.pl'] = { keywords =
 --
 function on_loaded( filename )
 
-   -- Get the file extension.
+   -- Get the file-name + suffix.
    local file = filename:match("^.+/(.+)$") or filename
-   local ext  = file:match("^.+(%..+)$") or file
+   local ext = file:match("^.+%.(.+)$") or file
 
-   -- Get the entry based on the suffix, or basename.
+   -- Lookup the entry
    local syntax = syn[ext] or syn[file]
 
    -- If that worked, and there are keywords..
    if (syntax and syntax['keywords'] ) then
-      -- Set them
+
+      -- Set the keywords
       set_syntax_keywords( syntax['keywords'] )
 
+      -- If there are defined values for the comments, set them too.
       if ( syntax['single'] and
            syntax['multi_open'] and
            syntax['multi_close'] ) then
@@ -254,9 +268,31 @@ function on_loaded( filename )
       end
 
    end
+
 end
 
 
+function set_syntax( name )
+   -- Lookup the entry
+   local syntax = syn[name]
+   if ( syntax == nil ) then return end
+
+   -- If that worked, and there are keywords..
+   if (syntax and syntax['keywords'] ) then
+
+      -- Set the keywords
+      set_syntax_keywords( syntax['keywords'] )
+
+      -- If there are defined values for the comments, set them too.
+      if ( syntax['single'] and
+           syntax['multi_open'] and
+           syntax['multi_close'] ) then
+         set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
+      end
+
+   end
+
+end
 --
 -- This function is called AFTER a file is saved.
 --

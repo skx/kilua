@@ -128,10 +128,13 @@ Syntax highlighting is defined in lua, and configured by calling:
 
 The `on_loaded()` function has an example covering both C/C++ and Lua.
 
-NOTE: The current status of syntax highlighting is a little broken, because
-of assumptions made on the length of prefixes.
+If you wish to change the syntax-highlighting, once a file is loaded,
+you can do that by entering `Ctrl-l` to open the Lua-prompt then
+typing (for example):
 
-* See the [bug I reported](https://github.com/antirez/kilo/issues/26) for details.
+    set_syntax( "pl" )
+
+Currently we include syntax for Perl, Lua, C, C++, and shell.
 
 
 The Future?
@@ -148,7 +151,7 @@ Future plans?
 * If we could implement a "selection" then we could have useful copy/paste.
    -> Just need "selection start" + "selection end"
    -> Along with a new highlighter.
-   -> Along with a primitive "selection()". 
+   -> Along with a primitive "selection()".
   How hard can that be?
 
 
