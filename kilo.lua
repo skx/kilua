@@ -206,7 +206,7 @@ syn['.c']   = {
    keywords = {
       "switch","if","while","for","break","continue","return","else",
       "struct","union","typedef","static","enum","class",
-      "int|","long|","double|","float|","char|","unsigned|","signed|",
+      "int|","long|","short|", "double|","float|","char|","unsigned|","signed|",
       "void|" },
    single = "//",
    multi_open = "/*",
