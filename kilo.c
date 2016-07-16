@@ -397,9 +397,11 @@ void editorUpdateSyntax(erow *row) {
 
         /* Handle "" and '' */
         if (in_string) {
-            row->hl[i] = HL_STRING;
+            if ( E.syntax->flags & HL_HIGHLIGHT_STRINGS)
+                row->hl[i] = HL_STRING;
             if (*p == '\\') {
-                row->hl[i+1] = HL_STRING;
+                if ( E.syntax->flags & HL_HIGHLIGHT_STRINGS)
+                    row->hl[i+1] = HL_STRING;
                 p += 2; i += 2;
                 prev_sep = 0;
                 continue;
@@ -411,7 +413,8 @@ void editorUpdateSyntax(erow *row) {
         } else {
             if (*p == '"' || *p == '\'') {
                 in_string = *p;
-                row->hl[i] = HL_STRING;
+                if ( E.syntax->flags & HL_HIGHLIGHT_STRINGS)
+                    row->hl[i] = HL_STRING;
                 p++; i++;
                 prev_sep = 0;
                 continue;
@@ -429,7 +432,8 @@ void editorUpdateSyntax(erow *row) {
         /* Handle numbers */
         if ((isdigit(*p) && (prev_sep || row->hl[i-1] == HL_NUMBER)) ||
             (*p == '.' && i >0 && row->hl[i-1] == HL_NUMBER)) {
-            row->hl[i] = HL_NUMBER;
+            if ( E.syntax->flags & HL_HIGHLIGHT_NUMBERS)
+                row->hl[i] = HL_NUMBER;
             p++; i++;
             prev_sep = 0;
             continue;
