@@ -147,6 +147,11 @@ Syntax highlighting is defined in lua, and configured by calling:
     -- Setup "comments"
     set_syntax_comments( "//", "/*", "*/" )
 
+    -- Enable highlighting of numbers/strings
+    syntax_highlight_numbers( 0 | 1 )
+    syntax_highlight_strings( 0 | 1 )
+
+
 The `on_loaded()` function has an example covering both C/C++ and Lua.
 
 If you wish to change the syntax-highlighting, once a file is loaded,

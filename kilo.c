@@ -69,8 +69,8 @@
 #define HL_NUMBER 7
 #define HL_MATCH 8      /* Search match. */
 #define HL_SELECTION 9   /* area between point & mark */
-#define HL_HIGHLIGHT_STRINGS (1<<0)
-#define HL_HIGHLIGHT_NUMBERS (1<<1)
+#define HL_HIGHLIGHT_STRINGS (1<<1)
+#define HL_HIGHLIGHT_NUMBERS (1<<2)
 
 #define KILO_QUERY_LEN 256
 
@@ -1277,6 +1277,44 @@ static int set_syntax_keywords_lua(lua_State *L){
     return 0;
 }
 
+/* Enable highlighting of numbers. */
+static int syntax_highlight_numbers_lua(lua_State *L){
+    int cond = lua_tonumber(L,-1);
+    if ( E.syntax )
+    {
+        if ( cond == 1 )
+            E.syntax->flags |= HL_HIGHLIGHT_NUMBERS;
+        else
+            E.syntax->flags &= ~HL_HIGHLIGHT_NUMBERS;
+
+        /*
+         * Force re-render.
+         */
+        for (int i = 0; i < E.numrows; i++)
+            editorUpdateRow(E.row+i);
+    }
+    return 0;
+}
+
+/* Enable highlighting of strings. */
+static int syntax_highlight_strings_lua(lua_State *L){
+    int cond = lua_tonumber(L,-1);
+    if ( E.syntax )
+    {
+        if ( cond == 1 )
+            E.syntax->flags |= HL_HIGHLIGHT_STRINGS;
+        else
+            E.syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
+
+        /*
+         * Force re-render.
+         */
+        for (int i = 0; i < E.numrows; i++)
+            editorUpdateRow(E.row+i);
+    }
+    return 0;
+}
+
 /* Set comment handling. */
 static int set_syntax_comments_lua(lua_State *L){
     char *single = (char *)lua_tostring(L,-3);
@@ -1789,6 +1827,8 @@ void initEditor(void) {
     lua_register(lua, "cut_selection",cut_selection_lua);
     lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
     lua_register(lua, "set_syntax_comments", set_syntax_comments_lua);
+    lua_register(lua, "syntax_highlight_numbers", syntax_highlight_numbers_lua);
+    lua_register(lua, "syntax_highlight_strings", syntax_highlight_strings_lua);
     lua_register(lua, "status", status_lua);
     lua_register(lua, "sol", sol_lua);
     lua_register(lua, "up", up_lua);
