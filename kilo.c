@@ -317,7 +317,7 @@ int editorRowHasOpenComment(erow *row) {
     int len = (int)strlen(E.syntax->multiline_comment_end);
     char *end = E.syntax->multiline_comment_end;
 
-    if ( strncmp( row->render + row->rsize - len, end, len ) == 0 )
+    if ( len && strncmp( row->render + row->rsize - len, end, len ) == 0 )
         return 0;
     else
         return 1;
@@ -381,7 +381,7 @@ void editorUpdateSyntax(erow *row) {
                 p++; i++;
                 continue;
             }
-        } else if (strncmp(p, E.syntax->multiline_comment_start,
+        } else if (strlen(E.syntax->multiline_comment_start) && strncmp(p, E.syntax->multiline_comment_start,
                            strlen(E.syntax->multiline_comment_start) ) == 0 ) {
 
             for (int  x = 0; x < (int)strlen(E.syntax->multiline_comment_start) ; x++ )
