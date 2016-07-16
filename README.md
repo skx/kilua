@@ -54,6 +54,8 @@ The following primitives are exported to lua:
 
 * at()
     * Return the character under the cursor.
+* cut_selection()
+    * Return the text between point and mark.
 * delete()
     * Delete a single character (backwards).
 * dirty()
@@ -70,6 +72,10 @@ The following primitives are exported to lua:
     * Kill the current line, deleting it from display.
 * insert("string")
     * Inserts the given string at the current cursor position.  (Newlines work as expected.)
+* mark()
+   * get the position of the mark.
+* mark(x,y)
+   * set the position of the mark.
 * open( [filename] )
     * Open the named file for reading.
     * If the filename is not given, prompt for one.
@@ -85,6 +91,8 @@ The following primitives are exported to lua:
     * Prompt the user for input, and return it to lua.
 * save()
     * Save the file we're operating upon.
+* selection()
+    * Return the text between point and mark.
 * set_syntax_comments()
     * Setup comment-handling for syntax-highlighting.
 * set_syntax_keywords()

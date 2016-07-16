@@ -55,6 +55,7 @@ keymap['^M']        = function() insert("\n") end
 keymap['^Q']        = function() quit() end
 keymap['^O']        = open
 keymap['^R']        = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
+keymap['^P']        = function() selection() end
 keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
 keymap['^U']        = function() yank() end
@@ -318,6 +319,8 @@ function set_mark()
    status( "Mark set to " .. m_x .. "," .. m_y  )
 end
 
+
+
 --
 -- This is the buffer which holds text which has been removed via:
 --
@@ -357,116 +360,11 @@ end
 -- Append the text between the point&mark to the cut-buffer.
 --
 function kill_between_point_and_mark()
-   --
-   -- If there is no mark, abort.
-   --
-   if ( m_x < 0 ) and ( m_y < 0 ) then
-      status("Mark is not set!" )
-      return
-   end
+   -- Save the selection
+   cut_buffer = selection()
 
-   --
-   -- Get the position of the cursor.
-   --
-   c_x, c_y = point()
-
-   --
-   -- Same position?  Nothing to do.
-   if ( c_x == m_x ) and ( c_y == m_y ) then
-      status( "Cursor and point at the same position!" )
-      cut_buffer = ""
-      return
-   end
-
-   --
-   -- The cursor is "below" the point.
-   --
-   if ( ( c_x < m_x ) and ( c_y < m_y ) ) or
-      ( c_y < m_y ) or
-   ( c_y == m_y and c_x < m_x ) then
-
-      cut_buffer = ""
-
-      -- Count how many times we move - this will be the
-      -- number of deletes we need to apply.
-      local count = 0
-
-      --
-      -- Loop
-      --
-      repeat
-         -- Get the position.
-         c_x, c_y = point()
-
-         -- Append the character under the point to the buffer.
-         cut_buffer = cut_buffer .. at()
-
-         -- Move right and count that
-         right()
-         count = count + 1
-
-         -- Until we're no longer "before" the mark
-      until not(  ( ( c_x < m_x ) and ( c_y < m_y ) ) or ( c_y < m_y ) or  ( c_y == m_y and c_x < m_x )  )
-
-      -- Now we've oved the cursor until we've hit the mark, delete
-      -- the number of characters we should to get us back where we were.
-      while( count >= 1 ) do
-         delete()
-         count = count - 1
-      end
-
-      return
-   end
-
-   --
-   -- OK at this point we know the cursor is "above" the mark.
-   if ( ( c_x > m_x ) and ( c_y > m_y ) ) or
-      ( c_y > m_y ) or
-   ( c_y == m_y and c_x > m_x ) then
-
-      -- Count how many times we move - this will be the
-      -- number of deletes we need to apply.
-      local count = 0
-
-      cut_buffer = ""
-
-      --
-      -- Loop
-      --
-      repeat
-         -- Get the position.
-         c_x, c_y = point()
-
-         -- Prepend the character under the point to the buffer.
-         cut_buffer = at() .. cut_buffer
-
-         left()
-
-         -- Move left and count that
-         count = count + 1
-
-         -- Until we're no longer "before" the mark
-      until not( ( ( c_x > m_x ) and ( c_y > m_y ) ) or
-                 ( c_y > m_y ) or
-                 ( c_y == m_y and c_x > m_x ) )
-
-      count = count - 1
-      -- Now we've oved the cursor until we've hit the mark, delete
-      -- the number of characters we should to get us back where we were.
-      while( count >= 1 ) do
-         right()
-         delete()
-         count = count - 1
-      end
-
-      -- Start of off by one.
-      right()
-      cut_buffer = cut_buffer:sub( 0, #cut_buffer - 1 )
-      -- End of off by one.
-
-      return
-   end
-
+   -- Nuke it
+   cut_selection()
 end
 
 

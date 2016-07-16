@@ -138,6 +138,8 @@ enum KEY_ACTION{
 /*
  * Forward declarations.
  */
+char at();
+int delete_lua(lua_State *L) ;
 void editorUpdateRow(erow *row);
 void editorInsertNewline();
 void editorSetStatusMessage(const char *fmt, ...);
@@ -157,6 +159,17 @@ void disableRawMode(int fd) {
     }
 }
 
+
+
+void strrev(char *p)
+{
+  char *q = p;
+  while(q && *q) ++q;
+  for(--q; p < q; ++p, --q)
+    *p = *p ^ *q,
+    *q = *p ^ *q,
+    *p = *p ^ *q;
+}
 /* Called at exit to avoid remaining in raw mode, and clear the screen */
 void editorAtExit(void) {
     disableRawMode(STDIN_FILENO);
@@ -832,14 +845,158 @@ static int mark_lua(lua_State *L) {
         int y = lua_tonumber(L,-1);
         int x = lua_tonumber(L,-2);
 
-        E.markx = x;
-        E.marky = y;
+        E.markx = x ;
+        E.marky = y ;
 
     }
 
     lua_pushnumber(L, E.markx);
     lua_pushnumber(L, E.marky);
     return 2;
+}
+
+char *get_selection()
+{
+    int saved_cx = E.cx, saved_cy = E.cy;
+    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+
+
+    /*
+     * Get the current X/Y
+     */
+    int x = E.coloff+E.cx;
+    int y = E.rowoff+E.cy;
+
+
+    char txt[16384] = { '\0' };
+    char *t;
+
+    if ( ( y > E.marky ) || ( x > E.markx && y == E.marky ) )
+    {
+        int l = 0;
+
+        /*
+         * Move left until we get there.
+         */
+        while( 1 )
+        {
+            /*
+             * Get the character at the point.
+             */
+            txt[l] = at();
+            l++;
+            editorMoveCursor(ARROW_LEFT);
+
+            if ( ( E.coloff+E.cx == E.markx ) && ( E.rowoff+E.cy == E.marky ) )
+                break;
+        }
+        txt[l] = at();
+        l++;
+        t = strdup(txt);
+        strrev(t);
+
+    }
+    else {
+        int l = 0;
+
+        /*
+         * Move right until we get there.
+         */
+        while( 1 )
+        {
+            /*
+             * Get the character at the point.
+             */
+            txt[l] = at();
+            l++;
+            editorMoveCursor(ARROW_RIGHT);
+
+            if ( ( E.coloff+E.cx == E.markx ) && ( E.rowoff+E.cy == E.marky ) )
+                break;
+        }
+        txt[l] = at();
+        l++;
+        t= strdup(txt);
+
+    }
+
+    E.cx= saved_cx;
+    E.cy= saved_cy;
+    E.coloff=saved_coloff;
+    E.rowoff= saved_rowoff;
+
+    return(t);
+}
+
+
+/* Get the text between the point and the mark */
+static int selection_lua(lua_State *L) {
+    int x = E.coloff+E.cx;
+    int y = E.rowoff+E.cy;
+
+    /*
+     * No selection - either because the mark is not set, and
+     * the cursor is in the mark.
+     */
+    if ( ( E.markx == -1 ) && ( E.marky == -1 ) ) {
+        lua_pushnil(L);
+        return 1;
+    }
+    if ( ( E.markx == x ) && ( E.marky == y ) ) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    char *t = get_selection();
+    lua_pushstring(L, t );
+    free(t);
+    return 1;
+
+}
+
+
+
+/* Delete the text between the point and the mark */
+static int cut_selection_lua(lua_State *L) {
+    int x = E.coloff+E.cx;
+    int y = E.rowoff+E.cy;
+
+    /*
+     * No selection - either because the mark is not set, and
+     * the cursor is in the mark.
+     */
+    if ( ( E.markx == -1 ) && ( E.marky == -1 ) ) {
+        return 0;
+    }
+    if ( ( E.markx == x ) && ( E.marky == y ) ) {
+        return 0;
+    }
+
+    int left = 0;
+    if ( ( y > E.marky ) || ( x > E.markx && y == E.marky ) )
+    {
+        left = 1;
+    }
+
+    char *sel = get_selection();
+    if ( left )
+    {
+        int max = (int)strlen(sel);
+        for( int i = 0; i < max; i++ )
+        {
+            delete_lua(L);
+        }
+    }
+    else {
+        int max = (int)strlen(sel);
+        for( int i = 0; i < max; i++ )
+        {
+            editorMoveCursor(ARROW_RIGHT);
+            delete_lua(L);
+        }
+    }
+    free(sel);
+    return 0;
 }
 
 /* page down */
@@ -919,8 +1076,8 @@ fixcursor:
     E.coloff = 0;
 }
 
-/* get the character that the current position */
-int at_lua(lua_State *L){
+char at()
+{
     int filerow = E.rowoff+E.cy;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
@@ -929,6 +1086,15 @@ int at_lua(lua_State *L){
         if ( E.cx < row->size )
             tmp[0] = row->render[E.cx];
     }
+    return( tmp[0] );
+}
+
+/* get the character that the current position */
+int at_lua(lua_State *L){
+
+
+    char tmp[2] = {'\n', '\0'};
+    tmp[0] = at();
     lua_pushstring(L, tmp);
     return 1;
 
@@ -1579,6 +1745,8 @@ void initEditor(void) {
     lua_register(lua, "open", open_lua);
     lua_register(lua, "prompt", prompt_lua);
     lua_register(lua, "save", save_lua);
+    lua_register(lua, "selection",selection_lua);
+    lua_register(lua, "cut_selection",cut_selection_lua);
     lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
     lua_register(lua, "set_syntax_comments", set_syntax_comments_lua);
     lua_register(lua, "status", status_lua);
