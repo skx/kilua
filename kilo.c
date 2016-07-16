@@ -1394,7 +1394,43 @@ void editorRefreshScreen(void) {
             unsigned char *hl = r->hl+E.coloff;
             int j;
             for (j = 0; j < len; j++) {
-                if (hl[j] == HL_NONPRINT) {
+
+                int color = hl[j];
+
+                /*
+                 * HACK - draw the selection over
+                 *
+                 * filerow = y;
+                 *  j      = x;
+                 */
+                if (( E.markx != -1 ) && ( E.marky != -1 ) ) {
+                    int mx = E.markx;
+                    int my = E.marky;
+                    int px = E.cx + E.coloff;
+                    int py = E.cy + E.rowoff;
+
+                    (void)mx;
+                    (void)my;
+                    (void)px;
+                    (void)py;
+
+                    if ( my > py )  {
+                        if ( filerow >= py && filerow < my )
+                        {
+                            color = HL_SELECTION;
+                        }
+                    }
+                    else
+                    {
+                        if ( filerow >= my && filerow < py )
+                        {
+                            color = HL_SELECTION;
+                        }
+                    }
+                }
+
+
+                if (color == HL_NONPRINT) {
                     char sym;
                     abAppend(&ab,"\x1b[7m",4);
                     if (c[j] <= 26)
@@ -1403,14 +1439,14 @@ void editorRefreshScreen(void) {
                         sym = '?';
                     abAppend(&ab,&sym,1);
                     abAppend(&ab,"\x1b[0m",4);
-                } else if (hl[j] == HL_NORMAL) {
+                } else if (color == HL_NORMAL) {
                     if (current_color != -1) {
                         abAppend(&ab,"\x1b[39m",5);
                         current_color = -1;
                     }
                     abAppend(&ab,c+j,1);
                 } else {
-                    int color = editorSyntaxToColor(hl[j]);
+                    color = editorSyntaxToColor(color);
                     if (color != current_color) {
                         char buf[16];
                         int clen = snprintf(buf,sizeof(buf),"\x1b[%dm",color);
