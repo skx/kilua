@@ -489,7 +489,7 @@ int editorSyntaxToColor(int hl) {
     case HL_KEYWORD2: return 32;    /* green */
     case HL_STRING: return 35;      /* magenta */
     case HL_NUMBER: return 31;      /* red */
-    case HL_MATCH: return 34;      /* blu */
+    case HL_MATCH: return 34;      /* blue */
     default: return 37;             /* white */
     }
 }
@@ -788,6 +788,35 @@ static int down_lua(lua_State *L) {
     (void)L;
     editorMoveCursor(ARROW_DOWN);
     return 0;
+}
+
+/* Get/Set X,Y position of the cursor. */
+static int point_lua(lua_State *L) {
+    if ( lua_isnumber(L,-2 ) &&
+         lua_isnumber(L,-1 ) )
+    {
+        int y = lua_tonumber(L,-1) -1;
+        int x = lua_tonumber(L,-2) -1;
+
+        if ( y < 0 )
+            y = 0;
+        if ( x < 0 )
+            x = 0;
+
+        /*
+         * Move to top-left
+         */
+        E.cx = E.coloff = E.cy = E.rowoff = 0;
+
+        while( x-- )
+            editorMoveCursor(ARROW_RIGHT);
+        while( y-- )
+            editorMoveCursor(ARROW_DOWN);
+    }
+
+    lua_pushnumber(L, E.cx+ E.coloff);
+    lua_pushnumber(L, E.cy + E.rowoff);
+    return 2;
 }
 
 /* page down */
@@ -1501,6 +1530,7 @@ void initEditor(void) {
     lua_register(lua, "insert", insert_lua);
     lua_register(lua, "left", left_lua);
     lua_register(lua, "right", right_lua);
+    lua_register(lua, "point", point_lua);
     lua_register(lua, "page_down", page_down_lua);
     lua_register(lua, "page_up", page_up_lua);
     lua_register(lua, "open", open_lua);

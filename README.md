@@ -75,6 +75,10 @@ The following primitives are exported to lua:
     * Scroll the screen up one page, if possible.
 * page_down()
     * Scroll the screen down one page, if possible.
+* point()
+    * Return the current position of the cursor.
+* point(x,y)
+    * Move the cursor to the given position.
 * prompt( "prompt" )
     * Prompt the user for input, and return it to lua.
 * save()
