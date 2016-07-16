@@ -68,7 +68,7 @@
 #define HL_STRING 6
 #define HL_NUMBER 7
 #define HL_MATCH 8      /* Search match. */
-
+#define HL_SELECTION 9   /* area between point & mark */
 #define HL_HIGHLIGHT_STRINGS (1<<0)
 #define HL_HIGHLIGHT_NUMBERS (1<<1)
 
@@ -99,6 +99,7 @@ typedef struct erow {
 
 struct editorConfig {
     int cx,cy;  /* Cursor x and y position in characters */
+    int markx,marky;  /*  x and y position of mark in characters */
     int rowoff;     /* Offset of row displayed. */
     int coloff;     /* Offset of column displayed. */
     int screenrows; /* Number of rows that we can show */
@@ -297,11 +298,13 @@ int editorRowHasOpenComment(erow *row) {
      * If the line is empty - then we have to check on the line before
      * that.
      */
-    if ( row->size == 0  && ( row->idx > 0 ) )
-        return( editorRowHasOpenComment(&E.row[row->idx-1]));
-
-    if ( row->size == 0 )
-        return 0;
+    if ( row->rsize == 0 )
+    {
+        if ( row->idx > 0 )
+            return( editorRowHasOpenComment(&E.row[row->idx-1]));
+        else
+            return 0;
+    }
 
     /*
      * OK we have some text.  Is the line ending in a MLCOMMENT
@@ -354,12 +357,6 @@ void editorUpdateSyntax(erow *row) {
         in_comment = 1;
 
     while(*p) {
-        /* Handle // comments - colour the rest of the line and return. */
-        if (prev_sep &&  ( strncmp( p,E.syntax->singleline_comment_start, strlen(E.syntax->singleline_comment_start)) == 0 ) ) {
-            /* From here to end is a comment */
-            memset(row->hl+i,HL_COMMENT,row->rsize-i);
-            return;
-        }
 
         /* Handle multi line comments. */
         if (in_comment) {
@@ -395,6 +392,12 @@ void editorUpdateSyntax(erow *row) {
             continue;
         }
 
+        /* Handle // comments - colour the rest of the line and return. */
+        if (prev_sep &&  ( strncmp( p,E.syntax->singleline_comment_start, strlen(E.syntax->singleline_comment_start)) == 0 ) ) {
+            /* From here to end is a comment */
+            memset(row->hl+i,HL_COMMENT,row->rsize-i);
+            return;
+        }
         /* Handle "" and '' */
         if (in_string) {
             if ( E.syntax->flags & HL_HIGHLIGHT_STRINGS)
@@ -490,6 +493,7 @@ int editorSyntaxToColor(int hl) {
     case HL_STRING: return 35;      /* magenta */
     case HL_NUMBER: return 31;      /* red */
     case HL_MATCH: return 34;      /* blue */
+    case HL_SELECTION: return 30;
     default: return 37;             /* white */
     }
 }
@@ -819,6 +823,25 @@ static int point_lua(lua_State *L) {
     return 2;
 }
 
+
+/* Get/Set X,Y position of the mark. */
+static int mark_lua(lua_State *L) {
+    if ( lua_isnumber(L,-2 ) &&
+         lua_isnumber(L,-1 ) )
+    {
+        int y = lua_tonumber(L,-1);
+        int x = lua_tonumber(L,-2);
+
+        E.markx = x;
+        E.marky = y;
+
+    }
+
+    lua_pushnumber(L, E.markx);
+    lua_pushnumber(L, E.marky);
+    return 2;
+}
+
 /* page down */
 static int page_down_lua(lua_State *L) {
     (void)L;
@@ -974,6 +997,8 @@ int editorOpen(char *filename) {
 
     FILE *fp;
     E.dirty = 0;
+    E.markx = -1;
+    E.marky = -1;
     E.numrows = 0;
     free(E.filename);
     E.filename = strdup(filename);
@@ -1510,6 +1535,8 @@ void editorProcessKeypress(int fd) {
 }
 
 void initEditor(void) {
+    E.markx = -1;
+    E.marky = -1;
     E.cx = 0;
     E.cy = 0;
     E.rowoff = 0;
@@ -1545,6 +1572,7 @@ void initEditor(void) {
     lua_register(lua, "insert", insert_lua);
     lua_register(lua, "left", left_lua);
     lua_register(lua, "right", right_lua);
+    lua_register(lua, "mark", mark_lua);
     lua_register(lua, "point", point_lua);
     lua_register(lua, "page_down", page_down_lua);
     lua_register(lua, "page_up", page_up_lua);

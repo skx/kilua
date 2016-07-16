@@ -305,18 +305,16 @@ end
 -----------------------------------------------------------------------------
 
 
---
--- The position of the mark.
---
-m_x = -1
-m_y = -1
 
 --
 -- Set the mark.  The region between the point & mark can be
 -- cut easily.
 --
 function set_mark()
-   m_x, m_y = point()
+   x,y = point();
+   mark( x,y)
+
+   m_x, m_y = mark()
    status( "Mark set to " .. m_x .. "," .. m_y  )
 end
 
