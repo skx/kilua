@@ -465,6 +465,9 @@ int editorOpen(char *filename)
             exit(1);
         }
 
+        /* invoke our lua callback function, even if opening failed.*/
+        call_lua("on_loaded", E.filename);
+
         return 1;
     }
 
