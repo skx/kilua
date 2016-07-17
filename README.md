@@ -1,43 +1,32 @@
 [![Build Status](https://travis-ci.org/skx/kilo.png)](https://travis-ci.org/skx/kilo)
 
-Kilo
-===
+# Kilo
 
+Kilo is a minimal text editor written in around 2K lines of code, as
+counted with `cloc`:
 
-Kilo is a small text editor with around 1K lines of code (counted with cloc):
+     ----------------------------------------------------------------------
+     Language            files          blank        comment           code
+     ----------------------------------------------------------------------
+     C                       1            419            309           1668
+     Lua                     1             88            163            193
+     ----------------------------------------------------------------------
 
-     -------------------------------------------------------------------
-     Language        files          blank        comment           code
-     -------------------------------------------------------------------
-     C                   1            152            210           1138
-     Lua                 2             47            119            153
-     -------------------------------------------------------------------
+You can launch the editor via :
 
-A screencast is available here: https://asciinema.org/a/90r2i9bq8po03nazhqtsifksb
+    $ kilo /path/to/file
 
-Usage: kilo `<filename>`
-
-Keys:
+Once launched the arrow keys will move you around, and the main keybindings
+to learn are:
 
     Ctrl-d: Insert date/time
-    CTRL-l: Evaluate Lua
-    CTRL-o: Open
-    CTRL-s: Save
+    CTRL-l: Read lua from the user, and evaluate it.
+    CTRL-o: Open a new file.
+    CTRL-s: Save the current file.
     CTRL-q: Quit
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
 
-Kilo does not depend on any library except for Lua5.2.
-
-For graphics neither `ncurses` nor `curses` is used, instead it uses fairly
-standard VT100 (and similar terminals) escape sequences. The project is in
-alpha stage and was written in just a few hours taking code from my other two
-projects, load81 and linenoise.
-
-People are encouraged to use it as a starting point to write other editors
-or command line interfaces that are more advanced than the usual REPL
-style CLI.
-
-Kilo was written by Salvatore Sanfilippo aka antirez and is released
+Kilo was written by Salvatore Sanfilippo, aka antirez, and is released
 under the BSD 2 clause license.
 
 
@@ -50,19 +39,16 @@ to that lua instance.
 
 * On startup `kilo.lua` is loaded from the current directory.
 * Input is processed via the `on_key()` function defined in that file.
-* We use a global keymap to link function-keys and lua functions.
-* I've implemented trivial copy/paste support, but without the ability to select and mark "regions" this is ropy at best, and terrible at worst.
+     * We use a global keymap to bind control-keys to lua functions.
 * There is a notion of a MARK.  A mark can be made by pressing `Ctrl-space`.
-    * The mark will be shown with a white-background.
-    * The region between the cursor and the mark may be cut via `Ctrl-w`,
-      just like in Emacs.
+    * The region between mark and cursor is known as the "selection", and will be shown with a white-background.
 
 The following primitives are exported to lua:
 
 * at()
-    * Return the character under the cursor.
+    * Return the single character under the cursor.
 * cut_selection()
-    * Return the text between point and mark.
+    * Remove the text between curser and mark.
 * delete()
     * Delete a single character (backwards).
 * dirty()
@@ -81,12 +67,13 @@ The following primitives are exported to lua:
     * Read a single key from the keyboard (blocking).
     * Used to implement setting of marks.
 * insert("string")
-    * Inserts the given string at the current cursor position.  (Newlines work as expected.)
+    * Inserts the given string at the current cursor position.
+    * (Newlines work as expected.)
 * mark()
    * get the position of the mark.
    * A return value of (-1,-1) means there is no mark set.
 * mark(x,y)
-   * set the position of the mark.
+   * Set the position of the mark - set `-1,-1` to remove the mark.
 * open( [filename] )
     * Open the named file for reading.
     * If the filename is not given, prompt for one.
@@ -98,13 +85,14 @@ The following primitives are exported to lua:
     * Return the current position of the cursor.
 * point(x,y)
     * Move the cursor to the given position.
-    * Used to implement marks.
+    * This is used to return to named marks.
 * prompt( "prompt" )
     * Prompt the user for input, and return it to lua.
-* save()
+* save([filename])
     * Save the file we're operating upon.
+    * If you give a new name that will be used thereafter.
 * selection()
-    * Return the text between point and mark.
+    * Return the text between cursor and mark.
 * set_syntax_comments()
     * Setup comment-handling for syntax-highlighting.
 * set_syntax_keywords()
@@ -112,14 +100,14 @@ The following primitives are exported to lua:
 * sol()
     * Move the cursor to the start of the current line.
 
-In addition to those functions there are also the movement-related primitives: up(), down(), left(), right().
+In addition to those functions there are also the obvious movement-related primitives: `up()`, `down()`, `left()`, and `right()`.
 
 
 Callbacks
 ---------
 
-There is room for lots of functionality to be delegated to callbacks,
-implemented in lua, but right now there are just three:
+There is room for lots more functionality to be delegated to callbacks,
+but right now there are just three:
 
 * `on_key()`
     * Called to process a single key input.
