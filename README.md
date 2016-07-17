@@ -172,13 +172,11 @@ The basic actions of inserting characters, deleting characters, and
 moving the cursor can be undo via the lua `undo` function.  (Which is
 bound to `Ctrl-z` by default).
 
-**NOTE**: Any use of a function which "warps" the cursor, moving it to
-an absolute position, will break this undo stack.  Ideally this would
-be fixed, but I've not yet looked at it properly.
+**NOTE**: Due to the implementation some actions might corrupt the
+undo-stack.  Specifically difficult functions are:
 
-(I suspect we can add a `WARP`-type to our undo-primitives which will
-allow warping to be undone.  Tracked in [#14](https://github.com/skx/kilo/issues/14).)
-
+* `kill`.
+* `cut_selection`.
 
 ## The Future
 

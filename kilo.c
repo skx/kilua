@@ -1007,9 +1007,12 @@ void editorRowDelChar(erow *row, int at)
     if (row->size <= at) return;
 
     /*
-     * Record the character we're deleting.
+     * Record the character we're deleting - and where we were
+     * before we deleted it.
      */
-    add_undo(E.undo, INSERT, row->render[at], 0);
+    int x = E.coloff + E.cx;
+    int y = E.rowoff + E.cy;
+    add_undo(E.undo, INSERT, row->render[at], x, y);
 
     memmove(row->chars + at, row->chars + at + 1, row->size - at);
     editorUpdateRow(row);
@@ -1183,7 +1186,9 @@ int insert_lua(lua_State *L)
             /*
              * Add the undo-record.
              */
-            add_undo(E.undo, DELETE, ' ', 0);
+            int x = E.coloff + E.cx;
+            int y = E.rowoff + E.cy;
+            add_undo(E.undo, DELETE, ' ', x, y);
         }
     }
 
@@ -1245,14 +1250,13 @@ int undo_lua(lua_State *L)
 
     if (action->type == DELETE)
     {
+        warp( action->x, action->y);
         delete_lua(L);
-    }
-    else if (action->type == MOVE)
-    {
-        editorMoveCursor(action->direction);
     }
     else if (action->type == INSERT)
     {
+        warp( action->x, action->y);
+
         char str[2] = { '\0', '\0' };
         editorSetStatusMessage("Inserting '%c'", str[0]);
         str[0] = action->data;
@@ -1287,15 +1291,8 @@ int down_lua(lua_State *L)
     return 0;
 }
 
-/* Get/Set X,Y position of the cursor. */
-int point_lua(lua_State *L)
+void warp( int x, int y )
 {
-    if (lua_isnumber(L, -2) &&
-            lua_isnumber(L, -1))
-    {
-        int y = lua_tonumber(L, -1) - 1;
-        int x = lua_tonumber(L, -2) - 1;
-
         if (y < 0)
             y = 0;
 
@@ -1319,6 +1316,18 @@ int point_lua(lua_State *L)
         while (x--)
             editorMoveCursor(ARROW_RIGHT);
 
+}
+
+/* Get/Set X,Y position of the cursor. */
+int point_lua(lua_State *L)
+{
+    if (lua_isnumber(L, -2) &&
+            lua_isnumber(L, -1))
+    {
+        int y = lua_tonumber(L, -1) - 1;
+        int x = lua_tonumber(L, -2) - 1;
+
+        warp( x, y );
     }
 
     lua_pushnumber(L, E.cx + E.coloff);
@@ -1506,7 +1515,9 @@ int delete_lua(lua_State *L)
 
     if (filecol == 0)
     {
-        add_undo(E.undo, INSERT, '\n', 0);
+        int x = E.coloff + E.cx;
+        int y = E.rowoff + E.cy;
+        add_undo(E.undo, INSERT, '\n', x, y);
 
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
@@ -2276,7 +2287,6 @@ void editorMoveCursor(int key)
             E.cx -= 1;
         }
 
-        add_undo(E.undo, MOVE, ' ', ARROW_RIGHT);
         break;
 
     case ARROW_RIGHT:
@@ -2306,7 +2316,6 @@ void editorMoveCursor(int key)
             }
         }
 
-        add_undo(E.undo, MOVE, ' ', ARROW_LEFT);
         break;
 
     case ARROW_UP:
@@ -2318,8 +2327,6 @@ void editorMoveCursor(int key)
         {
             E.cy -= 1;
         }
-
-        add_undo(E.undo, MOVE, ' ', ARROW_DOWN);
 
         break;
 
@@ -2336,7 +2343,6 @@ void editorMoveCursor(int key)
             }
         }
 
-        add_undo(E.undo, MOVE, ' ', ARROW_UP);
         break;
     }
 

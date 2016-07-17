@@ -47,7 +47,7 @@
  * Inserting a character - undo for `delete`.
  * Deleting a character - undor for inserting a character.
  */
-typedef enum {MOVE, INSERT, DELETE} undo_type;
+typedef enum {INSERT, DELETE} undo_type;
 
 
 
@@ -67,13 +67,7 @@ typedef struct UndoAction
     char data;
 
     /*
-     * For the case of moving the cursor, this is the direction
-     * in which to move it.
-     */
-    int direction;
-
-    /*
-     * For a warp - the x,y we should jump to.
+     * The position of the insert/delete.
      */
     int x, y;
 
@@ -165,11 +159,13 @@ void us_clear(UndoStack *S)
 /*
  * Add an undo-operation, taking care of the allocation.
  */
-void add_undo(UndoStack *S, undo_type type, char data, int direction)
+void add_undo(UndoStack *S, undo_type type, char data, int x, int y)
 {
     UndoAction *u = (UndoAction *)malloc(sizeof(UndoAction));
     u->type = type;
     u->data = data;
-    u->direction = direction;
+    u->x    = x;
+    u->y    = y;
+
     us_push(S, u);
 }

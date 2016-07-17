@@ -174,6 +174,7 @@ int eol_lua(lua_State *L);
 int sol_lua(lua_State *L);
 int up_lua(lua_State *L);
 int down_lua(lua_State *L);
+void warp(int x, int y);
 int point_lua(lua_State *L);
 int mark_lua(lua_State *L);
 int selection_lua(lua_State *L);
