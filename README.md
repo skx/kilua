@@ -29,9 +29,13 @@ to learn are:
 Kilo was written by Salvatore Sanfilippo, aka antirez, and is released
 under the BSD 2 clause license.
 
+There's a screencast showing the differences between this fork and
+the original `kilo` available here:
 
-Lua-Fork
---------
+* https://asciinema.org/a/2tkjh1gog1y3e5jmpdk9a663k
+
+
+## Lua Support
 
 This fork of `kilo` was hacked together by [Steve Kemp](https://steve.kemp.fi/)
 to include a lua intepreter, and delegate as much as possible of the operation
@@ -103,8 +107,7 @@ The following primitives are exported to lua:
 In addition to those functions there are also the obvious movement-related primitives: `up()`, `down()`, `left()`, and `right()`.
 
 
-Callbacks
----------
+## Callbacks
 
 There is room for lots more functionality to be delegated to callbacks,
 but right now there are just three:
@@ -119,8 +122,7 @@ but right now there are just three:
     * Can be used to make files executable, etc.
 
 
-Copy & Paste
-------------
+## Copy & Paste
 
 We've added a notion of a `mark`.  A mark is set by pressing `Ctrl+space`,
 and at any time you can cut the region between the cursor and the mark by
@@ -131,8 +133,7 @@ You can also cut the current line via `Ctrl-y`.
 In both cases you can yank the selection back with `Ctrl-u`.
 
 
-Syntax Highlighting
--------------------
+## Syntax Highlighting
 
 Syntax highlighting is defined in lua, and configured by calling:
 
@@ -158,10 +159,9 @@ typing (for example):
 Currently we include syntax for Perl, Lua, C, C++, and shell.
 
 
-The Future?
------------
+## The Future
 
-Future plans?
+There are no obvious future plans, but [bug reports](https://github.com/skx/kilo/issues) may be made if you have a feature to suggest (or bug to report)!
 
 
 Steve
