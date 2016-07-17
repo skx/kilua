@@ -37,6 +37,9 @@
 
 #pragma once
 
+#include "undo_stack.h"
+
+
 /* Syntax highlight types */
 #define HL_NORMAL 0
 #define HL_NONPRINT 1
@@ -94,6 +97,8 @@ struct editorConfig
     char statusmsg[80];
     time_t statusmsg_time;
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
+    UndoStack *undo;
+
 };
 
 static struct editorConfig E;
