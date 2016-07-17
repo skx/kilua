@@ -417,6 +417,10 @@ int editorOpen(char *filename)
 
     FILE *fp;
     E.dirty = 0;
+    E.cx = 0;
+    E.cy = 0;
+    E.rowoff = 0;
+    E.coloff = 0;
     E.markx = -1;
     E.marky = -1;
     E.numrows = 0;
