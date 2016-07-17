@@ -26,13 +26,17 @@ to learn are:
     CTRL-q: Quit
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
 
-Kilo was written by Salvatore Sanfilippo, aka antirez, and is released
-under the BSD 2 clause license.
 
 There's a screencast showing the differences between this fork and
 the original `kilo` available here:
 
 * https://asciinema.org/a/2tkjh1gog1y3e5jmpdk9a663k
+
+
+## License
+
+Kilo was written by Salvatore Sanfilippo, aka antirez, and is released
+under the BSD 2 clause license.
 
 
 ## Lua Support
