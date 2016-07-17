@@ -869,7 +869,8 @@ void editorUpdateRow(erow *row)
     }
 
     row->rsize = idx;
-    row->render[idx] = '\0';
+    if ( row->rsize < idx )
+        row->render[idx] = '\0';
 
     /* Update the syntax highlighting attributes of the row. */
     editorUpdateSyntax(row);
@@ -1004,7 +1005,10 @@ void editorRowAppendString(erow *row, char *s, size_t len)
 /* Delete the character at offset 'at' from the specified row. */
 void editorRowDelChar(erow *row, int at)
 {
-    if (row->size <= at) return;
+    if (row->size <= at)
+        return;
+    if ( at < 0 )
+        return;
 
     /*
      * Record the character we're deleting - and where we were
@@ -1012,7 +1016,10 @@ void editorRowDelChar(erow *row, int at)
      */
     int x = E.coloff + E.cx;
     int y = E.rowoff + E.cy;
-    add_undo(E.undo, INSERT, row->render[at], x, y);
+
+
+    if ( row->rsize >= at )
+        add_undo(E.undo, INSERT, row->render[at], x, y);
 
     memmove(row->chars + at, row->chars + at + 1, row->size - at);
     editorUpdateRow(row);
@@ -1345,8 +1352,12 @@ int mark_lua(lua_State *L)
         int y = lua_tonumber(L, -1);
         int x = lua_tonumber(L, -2);
 
-        E.markx = x ;
-        E.marky = y ;
+        if ( ( x >= 0 || x == -1 ) &&
+             ( y >= 0 || y == -1 ) )
+        {
+            E.markx = x ;
+            E.marky = y ;
+        }
 
     }
 
