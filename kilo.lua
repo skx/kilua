@@ -69,7 +69,8 @@ keymap['LEFT']      = left
 keymap['RIGHT']     = right
 keymap['UP']        = up
 keymap['DOWN']      = down
-
+keymap['HOME']      = function() point(0,0) end
+keymap['END']       = function() end_of_file() end
 
 
 --
@@ -284,9 +285,7 @@ function set_syntax( name )
            syntax['multi_close'] ) then
          set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
       end
-
    end
-
 end
 
 --
@@ -300,7 +299,19 @@ function cmd_output(cmd)
 end
 
 
+--
+-- Move to end of file
+--
+function end_of_file()
+   point(0,0)
 
+   repeat
+      local x,y = point()
+      down()
+      local a,b  = point()
+   until ( a==x ) and ( b == y )
+   up()
+end
 
 
 --
