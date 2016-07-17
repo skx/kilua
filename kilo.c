@@ -460,6 +460,9 @@ int editorOpen(char *filename)
     free(E.filename);
     E.filename = strdup(filename);
 
+    /* kill our undo stack */
+    us_clear(E.undo);
+
     fp = fopen(filename, "r");
 
     if (!fp)
@@ -1004,6 +1007,11 @@ void editorRowDelChar(erow *row, int at)
 {
     if (row->size <= at) return;
 
+    /*
+     * Record the character we're deleting.
+     */
+    add_undo(E.undo, INSERT, row->render[at], 0);
+
     memmove(row->chars + at, row->chars + at + 1, row->size - at);
     editorUpdateRow(row);
     row->size--;
@@ -1153,6 +1161,11 @@ int insert_lua(lua_State *L)
         for (unsigned int i = 0; i < len; i++)
         {
             editorInsertChar(str[i]);
+
+            /*
+             * Add the undo-record.
+             */
+            add_undo(E.undo, DELETE, ' ', 0);
         }
     }
 
@@ -1164,32 +1177,22 @@ int eol_lua(lua_State *L)
 {
     (void)L;
 
-    /*
-     * Get the current X/Y
-     */
-    int y = E.rowoff + E.cy;
-    int x = E.coloff + E.cx;
+    int filerow = E.rowoff + E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
-    int cont = 1;
-
-    while (cont)
+    if (row)
     {
-        editorMoveCursor(ARROW_RIGHT);
+        /*
+         * Row width.
+         */
+        int size = row->rsize;
+        int x = E.coloff + E.cx;
 
-        if (E.rowoff + E.cy != y)
-        {
-            cont = 0;
-            editorMoveCursor(ARROW_LEFT);
-        }
-        else
-        {
-            if ((E.rowoff + E.cy == y) && (E.coloff + E.cx == x))
-            {
-                cont = 0;
-            }
+        while( x < size ) {
+            editorMoveCursor(ARROW_RIGHT);
+            x += 1;
         }
     }
-
     return 0;
 }
 
@@ -1197,8 +1200,50 @@ int eol_lua(lua_State *L)
 int sol_lua(lua_State *L)
 {
     (void)L;
-    E.cx = 0;
-    E.coloff = 0;
+
+    int x = E.coloff + E.cx;
+    while( x ) {
+        editorMoveCursor(ARROW_LEFT);
+        x -= 1;
+    }
+    return 0;
+}
+
+int undo_lua(lua_State *L)
+{
+    (void)L;
+    UndoAction *action = us_pop(E.undo);
+
+    if (action == NULL){
+        editorSetStatusMessage("Undo stack is empty!");
+        return 0;
+    }
+
+    if (action->type == DELETE)
+    {
+        delete_lua(L);
+    }
+    else if (action->type == MOVE)
+    {
+        editorMoveCursor(action->direction);
+    }
+    else if (action->type == INSERT)
+    {
+        char str[2] = { '\0', '\0' };
+        editorSetStatusMessage("Inserting '%c'", str[0]);
+        str[0] = action->data;
+        lua_pushstring(L, str);
+        insert_lua(L);
+    }
+
+    /*
+     * Performing the action to undo the user's previous
+     * thing will add a new action to the undo-stack.
+     *
+     * So we need to explicitly remove that faux addition here.
+     */
+    us_pop(E.undo);
+
     return 0;
 }
 
@@ -1238,11 +1283,18 @@ int point_lua(lua_State *L)
          */
         E.cx = E.coloff = E.cy = E.rowoff = 0;
 
+        /*
+         * Move down first - that should always work.
+         */
+        while (y--)
+            editorMoveCursor(ARROW_DOWN);
+
+        /*
+         * Now move right.
+         */
         while (x--)
             editorMoveCursor(ARROW_RIGHT);
 
-        while (y--)
-            editorMoveCursor(ARROW_DOWN);
     }
 
     lua_pushnumber(L, E.cx + E.coloff);
@@ -1421,13 +1473,17 @@ int delete_lua(lua_State *L)
 
     int filerow = E.rowoff + E.cy;
     int filecol = E.coloff + E.cx;
+
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     if (!row || (filecol == 0 && filerow == 0))
         return 0;
 
+
     if (filecol == 0)
     {
+        add_undo(E.undo, INSERT, '\n', 0);
+
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
         filecol = E.row[filerow - 1].size;
@@ -1512,10 +1568,15 @@ int save_lua(lua_State *L)
     close(fd);
     free(buf);
     E.dirty = 0;
+    // TODO - show filename
     editorSetStatusMessage("%d bytes written on disk", len);
 
     /* invoke our lua callback function */
     call_lua("on_saved", E.filename);
+
+    /* since we've saved - kill our undo stack */
+    us_clear(E.undo);
+
     return 0;
 
 writeerr:
@@ -1755,6 +1816,10 @@ int find_lua(lua_State *L)
                     memset(row->hl + match_offset, HL_MATCH, qlen);
                 }
 
+                /*
+                 * NOTE: This breaks our undo, by warping to a new
+                 * position that isn't tracked by our stack.
+                 */
                 E.cy = 0;
                 E.cx = match_offset;
                 E.rowoff = current;
@@ -2187,6 +2252,7 @@ void editorMoveCursor(int key)
             E.cx -= 1;
         }
 
+        add_undo(E.undo, MOVE, ' ', ARROW_RIGHT);
         break;
 
     case ARROW_RIGHT:
@@ -2216,6 +2282,7 @@ void editorMoveCursor(int key)
             }
         }
 
+        add_undo(E.undo, MOVE, ' ', ARROW_LEFT);
         break;
 
     case ARROW_UP:
@@ -2227,6 +2294,8 @@ void editorMoveCursor(int key)
         {
             E.cy -= 1;
         }
+
+        add_undo(E.undo, MOVE, ' ', ARROW_DOWN);
 
         break;
 
@@ -2243,6 +2312,7 @@ void editorMoveCursor(int key)
             }
         }
 
+        add_undo(E.undo, MOVE, ' ', ARROW_UP);
         break;
     }
 
@@ -2310,7 +2380,7 @@ void initEditor(void)
     E.syntax = NULL;
     getWindowSize(STDIN_FILENO, STDOUT_FILENO, &E.screenrows, &E.screencols);
     E.screenrows -= 2; /* Get room for status bar. */
-
+    E.undo = us_create();
     /*
      * Setup lua.
      */
@@ -2349,6 +2419,7 @@ void initEditor(void)
     lua_register(lua, "syntax_highlight_strings", syntax_highlight_strings_lua);
     lua_register(lua, "status", status_lua);
     lua_register(lua, "sol", sol_lua);
+    lua_register(lua, "undo", undo_lua);
     lua_register(lua, "up", up_lua);
 }
 

@@ -72,6 +72,11 @@ typedef struct UndoAction
      */
     int direction;
 
+    /*
+     * For a warp - the x,y we should jump to.
+     */
+    int x, y;
+
 } UndoAction;
 
 

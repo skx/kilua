@@ -61,6 +61,7 @@ keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
 keymap['^U']        = function() yank() end
 keymap['^W']        = function() kill_between_point_and_mark() end
+keymap['^Z']        = undo
 keymap['BACKSPACE'] = delete
 keymap['DEL']       = delete
 keymap['PAGE_UP']   = page_up
