@@ -1154,7 +1154,7 @@ fixcursor:
 
 
 /* is the buffer dirty? */
-static int dirty_lua(lua_State *L)
+int dirty_lua(lua_State *L)
 {
     if (E.dirty != 0)
         lua_pushboolean(L, 1);
@@ -1165,7 +1165,7 @@ static int dirty_lua(lua_State *L)
 }
 
 /* return the contents of the line from the point-onwards */
-static int get_line_lua(lua_State *L)
+int get_line_lua(lua_State *L)
 {
     int filerow = E.rowoff + E.cy;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
@@ -1180,7 +1180,7 @@ static int get_line_lua(lua_State *L)
 }
 
 /* Remove the current line. */
-static int kill_line_lua(lua_State *L)
+int kill_line_lua(lua_State *L)
 {
     (void)L;
     editorDelRow(E.rowoff + E.cy);
@@ -1188,7 +1188,7 @@ static int kill_line_lua(lua_State *L)
 }
 
 /* exit the editor */
-static int exit_lua(lua_State *L)
+int exit_lua(lua_State *L)
 {
     (void)L;
     exit(0);
@@ -1196,7 +1196,7 @@ static int exit_lua(lua_State *L)
 }
 
 /* insert a character */
-static int insert_lua(lua_State *L)
+int insert_lua(lua_State *L)
 {
     const char *str = lua_tostring(L, -1);
 
@@ -1214,7 +1214,7 @@ static int insert_lua(lua_State *L)
 }
 
 /* move to end of line */
-static int eol_lua(lua_State *L)
+int eol_lua(lua_State *L)
 {
     (void)L;
 
@@ -1248,7 +1248,7 @@ static int eol_lua(lua_State *L)
 }
 
 /* Move to start of line */
-static int sol_lua(lua_State *L)
+int sol_lua(lua_State *L)
 {
     (void)L;
     E.cx = 0;
@@ -1257,7 +1257,7 @@ static int sol_lua(lua_State *L)
 }
 
 /* move cursor one character up */
-static int up_lua(lua_State *L)
+int up_lua(lua_State *L)
 {
     (void)L;
     editorMoveCursor(ARROW_UP);
@@ -1265,7 +1265,7 @@ static int up_lua(lua_State *L)
 }
 
 /* move cursor one character down */
-static int down_lua(lua_State *L)
+int down_lua(lua_State *L)
 {
     (void)L;
     editorMoveCursor(ARROW_DOWN);
@@ -1273,7 +1273,7 @@ static int down_lua(lua_State *L)
 }
 
 /* Get/Set X,Y position of the cursor. */
-static int point_lua(lua_State *L)
+int point_lua(lua_State *L)
 {
     if (lua_isnumber(L, -2) &&
             lua_isnumber(L, -1))
@@ -1306,7 +1306,7 @@ static int point_lua(lua_State *L)
 
 
 /* Get/Set X,Y position of the mark. */
-static int mark_lua(lua_State *L)
+int mark_lua(lua_State *L)
 {
     if (lua_isnumber(L, -2) &&
             lua_isnumber(L, -1))
@@ -1326,7 +1326,7 @@ static int mark_lua(lua_State *L)
 
 
 /* Get the text between the point and the mark */
-static int selection_lua(lua_State *L)
+int selection_lua(lua_State *L)
 {
     int x = E.coloff + E.cx;
     int y = E.rowoff + E.cy;
@@ -1356,7 +1356,7 @@ static int selection_lua(lua_State *L)
 
 
 /* Delete the text between the point and the mark */
-static int cut_selection_lua(lua_State *L)
+int cut_selection_lua(lua_State *L)
 {
     int x = E.coloff + E.cx;
     int y = E.rowoff + E.cy;
@@ -1415,7 +1415,7 @@ static int cut_selection_lua(lua_State *L)
 }
 
 /* page down */
-static int page_down_lua(lua_State *L)
+int page_down_lua(lua_State *L)
 {
     (void)L;
 
@@ -1431,7 +1431,7 @@ static int page_down_lua(lua_State *L)
 }
 
 /* page up */
-static int page_up_lua(lua_State *L)
+int page_up_lua(lua_State *L)
 {
     (void)L;
     E.cy = 0;
@@ -1444,7 +1444,7 @@ static int page_up_lua(lua_State *L)
 }
 
 /* set the status-bar text */
-static int status_lua(lua_State *L)
+int status_lua(lua_State *L)
 {
     const char *str = lua_tostring(L, -1);
     editorSetStatusMessage(str);
@@ -1452,7 +1452,7 @@ static int status_lua(lua_State *L)
 }
 
 /* move the cursor one character left */
-static int left_lua(lua_State *L)
+int left_lua(lua_State *L)
 {
     (void)L;
     editorMoveCursor(ARROW_LEFT);
@@ -1460,7 +1460,7 @@ static int left_lua(lua_State *L)
 }
 
 /* move the cursor one character right */
-static int right_lua(lua_State *L)
+int right_lua(lua_State *L)
 {
     (void)L;
     editorMoveCursor(ARROW_RIGHT);
@@ -1530,7 +1530,7 @@ int delete_lua(lua_State *L)
 
 
 /* prompt for input */
-static int prompt_lua(lua_State *L)
+int prompt_lua(lua_State *L)
 {
     char *prompt = (char *)lua_tostring(L, -1);
     char *buf = get_input(prompt);
@@ -1546,7 +1546,7 @@ static int prompt_lua(lua_State *L)
 }
 
 /* Save the current file on disk. Return 0 on success, 1 on error. */
-static int save_lua(lua_State *L)
+int save_lua(lua_State *L)
 {
 
     /*
@@ -1591,7 +1591,7 @@ writeerr:
 }
 
 /* set the syntax keywords. */
-static int set_syntax_keywords_lua(lua_State *L)
+int set_syntax_keywords_lua(lua_State *L)
 {
     if (! lua_istable(L, 1))
         return 0;
@@ -1633,7 +1633,7 @@ static int set_syntax_keywords_lua(lua_State *L)
 }
 
 /* Enable highlighting of numbers. */
-static int syntax_highlight_numbers_lua(lua_State *L)
+int syntax_highlight_numbers_lua(lua_State *L)
 {
     int cond = lua_tonumber(L, -1);
 
@@ -1655,7 +1655,7 @@ static int syntax_highlight_numbers_lua(lua_State *L)
 }
 
 /* Enable highlighting of strings. */
-static int syntax_highlight_strings_lua(lua_State *L)
+int syntax_highlight_strings_lua(lua_State *L)
 {
     int cond = lua_tonumber(L, -1);
 
@@ -1677,7 +1677,7 @@ static int syntax_highlight_strings_lua(lua_State *L)
 }
 
 /* Set comment handling. */
-static int set_syntax_comments_lua(lua_State *L)
+int set_syntax_comments_lua(lua_State *L)
 {
     char *single = (char *)lua_tostring(L, -3);
     char *multi_open = (char *)lua_tostring(L, -2);
@@ -1708,7 +1708,7 @@ static int set_syntax_comments_lua(lua_State *L)
 }
 
 /* Switch to find-mode */
-static int find_lua(lua_State *L)
+int find_lua(lua_State *L)
 {
     (void)L;
     char query[KILO_QUERY_LEN + 1] = {0};
@@ -1836,7 +1836,7 @@ static int find_lua(lua_State *L)
 }
 
 /* prompt for a string, and evaluate that as lua. */
-static int eval_lua(lua_State *L)
+int eval_lua(lua_State *L)
 {
     (void)L;
 
@@ -1865,7 +1865,7 @@ static int eval_lua(lua_State *L)
 }
 
 /* Prompt for a filename and open it. */
-static int open_lua(lua_State *L)
+int open_lua(lua_State *L)
 {
     (void)L;
     /*
