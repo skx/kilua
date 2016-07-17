@@ -41,7 +41,10 @@ This fork of `kilo` was hacked together by [Steve Kemp](https://steve.kemp.fi/)
 to include a lua intepreter, and delegate as much as possible of the operation
 to that lua instance.
 
-* On startup `kilo.lua` is loaded from the current directory.
+* On startup our initialization files are read:
+    * `~/.kilo.lua`.
+    * `./kilo.lua`.
+    * If zero startup files are loaded this is a fatal error.
 * Input is processed via the `on_key()` function defined in that file.
      * We use a global keymap to bind control-keys to lua functions.
 * There is a notion of a MARK.  A mark can be made by pressing `Ctrl-space`.

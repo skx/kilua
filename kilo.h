@@ -157,6 +157,7 @@ void abFree(struct abuf *ab);
 void editorRefreshScreen(void);
 void editorSetStatusMessage(const char *fmt, ...);
 void editorMoveCursor(int key);
+int load_lua(char *filename);
 void editorProcessKeypress(int fd);
 void initEditor(void);
 int main(int argc, char **argv);

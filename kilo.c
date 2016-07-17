@@ -2244,6 +2244,28 @@ void editorProcessKeypress(int fd)
     call_lua("on_key", tmp);
 }
 
+/* Load and evaluate a Lua file - if it exists */
+int load_lua(char *filename)
+{
+    if (access(filename, 0) == 0)
+    {
+        int erred = luaL_dofile(lua, filename);
+
+        if (erred)
+        {
+            if (lua_isstring(lua, -1))
+                fprintf(stderr, "%s\n", lua_tostring(lua, -1));
+
+            fprintf(stderr, "Failed to load %s - aborting\n", filename);
+            exit(1);
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
 void initEditor(void)
 {
     E.markx = -1;
@@ -2300,17 +2322,24 @@ void initEditor(void)
     lua_register(lua, "sol", sol_lua);
     lua_register(lua, "up", up_lua);
 
+    int loaded = 0;
+
     /*
-     * Load our init-function.
+     * Load an init-file from ~/.kilo.lua
      */
-    int erred = luaL_dofile(lua, "kilo.lua");
+    char init_buf[1024] = {'\0'};
+    snprintf(init_buf, sizeof(init_buf) - 1, "%s%s",
+             getenv("HOME"), "/.kilo.lua");
+    loaded += load_lua(init_buf);
 
-    if (erred)
+    /*
+     * Load an init-file from the PWD.
+     */
+    loaded += load_lua("kilo.lua");
+
+    if (loaded == 0)
     {
-        if (lua_isstring(lua, -1))
-            fprintf(stderr, "%s\n", lua_tostring(lua, -1));
-
-        fprintf(stderr, "Failed to load kilo.lua - aborting\n");
+        fprintf(stderr, "Neither ./kilo.lua nor ~/.kilo.lua could be loaded\n");
         exit(1);
     }
 }
