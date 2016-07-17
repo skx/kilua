@@ -361,7 +361,7 @@ void getWindowSize(int ifd, int ofd, int *rows, int *cols)
 
 int is_separator(int c)
 {
-    return c == '\0' || isspace(c) || strchr("{},.()+-/*=~%[];<>|&", c) != NULL;
+    return c == '\0' || isspace(c) || strchr(":{},.()+-/*=~%[];<>|&", c) != NULL;
 }
 
 /* Return true if the specified row last char is part of a multi line comment
@@ -483,7 +483,7 @@ void editorUpdateSyntax(erow *row)
         }
 
         /* Handle // comments - colour the rest of the line and return. */
-        if (prev_sep && (strncmp(p, E.syntax->singleline_comment_start, strlen(E.syntax->singleline_comment_start)) == 0))
+        if (prev_sep && strlen(E.syntax->singleline_comment_start) > 0 && (strncmp(p, E.syntax->singleline_comment_start, strlen(E.syntax->singleline_comment_start)) == 0))
         {
             /* From here to end is a comment */
             memset(row->hl + i, HL_COMMENT, row->rsize - i);
