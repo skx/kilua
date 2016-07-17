@@ -811,6 +811,7 @@ char *get_input(char *prompt)
             E.cy = saved_cy;
             E.coloff = saved_coloff;
             E.rowoff = saved_rowoff;
+            editorSetStatusMessage("");
             return (strdup(query));
         }
         else if (isprint(c))
