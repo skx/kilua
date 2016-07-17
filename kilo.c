@@ -292,12 +292,11 @@ void strrev(char *p)
 {
     char *q = p;
 
-    while (q && *q) ++q;
+    while (q && *q)
+        ++q;
 
     for (--q; p < q; ++p, --q)
-        *p = *p ^ *q,
-         *q = *p ^ *q,
-          *p = *p ^ *q;
+        *p = *p ^ *q, *q = *p ^ *q, *p = *p ^ *q;
 }
 
 
@@ -1188,11 +1187,13 @@ int eol_lua(lua_State *L)
         int size = row->rsize;
         int x = E.coloff + E.cx;
 
-        while( x < size ) {
+        while (x < size)
+        {
             editorMoveCursor(ARROW_RIGHT);
             x += 1;
         }
     }
+
     return 0;
 }
 
@@ -1202,10 +1203,13 @@ int sol_lua(lua_State *L)
     (void)L;
 
     int x = E.coloff + E.cx;
-    while( x ) {
+
+    while (x)
+    {
         editorMoveCursor(ARROW_LEFT);
         x -= 1;
     }
+
     return 0;
 }
 
@@ -1214,7 +1218,8 @@ int undo_lua(lua_State *L)
     (void)L;
     UndoAction *action = us_pop(E.undo);
 
-    if (action == NULL){
+    if (action == NULL)
+    {
         editorSetStatusMessage("Undo stack is empty!");
         return 0;
     }
@@ -1568,8 +1573,8 @@ int save_lua(lua_State *L)
     close(fd);
     free(buf);
     E.dirty = 0;
-    // TODO - show filename
-    editorSetStatusMessage("%d bytes written on disk", len);
+
+    editorSetStatusMessage("%d bytes written to %s", len, E.filename);
 
     /* invoke our lua callback function */
     call_lua("on_saved", E.filename);
