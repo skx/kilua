@@ -331,14 +331,21 @@ char *get_selection()
     int x = E.coloff + E.cx;
     int y = E.rowoff + E.cy;
 
+    /*
+     * Append-buffer
+     */
+    struct abuf ab = ABUF_INIT;
 
-    char txt[16384] = { '\0' };
-    char *t;
+    /* We'll create a string containing each byte-at-point and terminating
+     * null character */
+    char tmp[2] = { '\0', '\0' };
+
+    /* Return value */
+    char *result = NULL;
+
 
     if ((y > E.marky) || (x > E.markx && y == E.marky))
     {
-        int l = 0;
-
         /*
          * Move left until we get there.
          */
@@ -348,21 +355,28 @@ char *get_selection()
              * Get the character at the point.
              */
             editorMoveCursor(ARROW_LEFT);
-            txt[l] = at();
-            l++;
+
+            tmp[0] = at();
+            abAppend(&ab, tmp, 1);
 
             if ((E.coloff + E.cx == E.markx) && (E.rowoff + E.cy == E.marky))
                 break;
         }
 
-        t = strdup(txt);
-        strrev(t);
+        /*
+         * The append-buffer does not contain a trailing NULL.
+         *
+         * Allocate a buffer that is one byte bigger, ensure it gets
+         * a null-terminated copy of the append-buffer's contents.
+         */
+        result = malloc(ab.len + 1);
+        memset(result, '\0', ab.len);
+        memcpy(result, ab.b, ab.len);
 
+        strrev(result);
     }
     else
     {
-        int l = 0;
-
         /*
          * Move right until we get there.
          */
@@ -371,17 +385,27 @@ char *get_selection()
             /*
              * Get the character at the point.
              */
-            txt[l] = at();
-            l++;
+            tmp[0] = at();
+            abAppend(&ab, tmp, 1);
+
             editorMoveCursor(ARROW_RIGHT);
 
             if ((E.coloff + E.cx == E.markx) && (E.rowoff + E.cy == E.marky))
                 break;
         }
 
-        txt[l] = at();
-        l++;
-        t = strdup(txt);
+        tmp[0] = at();
+        abAppend(&ab, tmp, 1);
+
+        /*
+         * The append-buffer does not contain a trailing NULL.
+         *
+         * Allocate a buffer that is one byte bigger, ensure it gets
+         * a null-terminated copy of the append-buffer's contents.
+         */
+        result = malloc(ab.len + 1);
+        memset(result, '\0', ab.len);
+        memcpy(result, ab.b, ab.len);
 
     }
 
@@ -390,7 +414,8 @@ char *get_selection()
     E.coloff = saved_coloff;
     E.rowoff = saved_rowoff;
 
-    return (t);
+    abFree(&ab);
+    return (result);
 }
 
 /* Load the specified program in the editor memory and returns 0 on success
