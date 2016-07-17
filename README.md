@@ -166,6 +166,20 @@ typing (for example):
 Currently we include syntax for Perl, Lua, C, C++, and shell.
 
 
+## Undo Support
+
+The basic actions of inserting characters, deleting characters, and
+moving the cursor can be undo via the lua `undo` function.  (Which is
+bound to `Ctrl-z` by default).
+
+**NOTE**: Any use of a function which "warps" the cursor, moving it to
+an absolute position, will break this undo stack.  Ideally this would
+be fixed, but I've not yet looked at it properly.
+
+(I suspect we can add a `WARP`-type to our undo-primitives which will
+allow warping to be undone.  Tracked in [#14](https://github.com/skx/kilo/issues/14).)
+
+
 ## The Future
 
 There are no obvious future plans, but [bug reports](https://github.com/skx/kilo/issues) may be made if you have a feature to suggest (or bug to report)!
