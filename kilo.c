@@ -1446,14 +1446,57 @@ void editorRefreshScreen(void) {
                  *  j      = x;
                  */
                 if (( E.markx != -1 ) && ( E.marky != -1 ) ) {
+                    // mark
                     int mx = E.markx;
                     int my = E.marky;
 
-                    /*
-                     * Show the mark
-                     */
-                    if ( ( filerow == my ) && ( j == mx ) )
-                        color = HL_SELECTION;
+                    // cursor
+                    int cx = E.coloff+E.cx;
+                    int cy = E.rowoff+E.cy;
+
+                    if ( ( cy > my ) || ( cx > mx && cy == my ) )
+                    {
+                        if ( cy == my )
+                        {
+                            /*
+                             * Point and mark on same line
+                             */
+                            if ( ( cy == filerow ) && ( j >= mx && j < cx ) )
+                                color = HL_SELECTION;
+                        }
+                        else
+                        {
+                            /*
+                             * Point + mark on different lines.
+                             *
+                             * mark is before point
+                             */
+
+                            /*
+                             * Cover the line containing the mark.
+                             */
+                            if( ( filerow == my ) && ( j >= mx ) )
+                                color = HL_SELECTION;
+
+                            /*
+                             * Cover the line containing the cursor.
+                             */
+                            if ( ( filerow == cy ) && ( j < cx ) )
+                                color = HL_SELECTION;
+
+                            /*
+                             * Cover the lines in between.
+                             */
+                            if ( filerow > my && filerow < cy )
+                                color = HL_SELECTION;
+                        }
+                    }
+                    else
+                    {
+                        /*
+                         * cursor is below the mark.
+                         */
+                    }
                 }
 
 
