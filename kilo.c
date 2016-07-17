@@ -1326,12 +1326,22 @@ int cut_selection_lua(lua_State *L)
     /* Delete the number of characters that the selection includes. */
     int max = (int)strlen(sel);
 
-    for (int i = 0; i <= max; i++)
+    if (left == 0)
     {
-        if (left == 0)
-            editorMoveCursor(ARROW_RIGHT);
+        for(int i = 0; i < max ; i++ )
+        {
+             editorMoveCursor(ARROW_RIGHT);
+             delete_lua(L);
+        }
+    }
+    else
+    {
+        /* we want to delete the character under the cursor too - so
+           we move one place right before we remove the characters. */
+        editorMoveCursor(ARROW_RIGHT);
 
-        delete_lua(L);
+        for(int i = 0; i < max ; i++ )
+            delete_lua(L);
     }
 
     /* Cleanup & remove the mark. */
