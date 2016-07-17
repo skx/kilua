@@ -52,7 +52,7 @@ keymap['^H']        = delete
 keymap['^J']        = function() goto_mark() end
 keymap['^K']        = function() kill_line() end
 keymap['^L']        = eval
-keymap['^M']        = function() set_mark() end
+keymap['^M']        = function() record_mark() end
 keymap['^Q']        = function() quit() end
 keymap['^O']        = open
 keymap['^R']        = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
@@ -421,7 +421,7 @@ end
 --
 marks = {}
 
-function set_mark()
+function record_mark()
    k = key()
    x,y = point()
    marks[k] = {}
