@@ -143,6 +143,7 @@ enum KEY_ACTION
  * Forward declarations.
  */
 char at();
+void editorInsertRow(int at, char *s, size_t len);
 int delete_lua(lua_State *L) ;
 void editorUpdateRow(erow *row);
 void editorInsertNewline();
@@ -151,10 +152,16 @@ void editorMoveCursor(int key);
 void editorRefreshScreen();
 void call_lua(char *function, char *arg);
 
+
+
+
+
+
 /* ======================= Low level terminal handling ====================== */
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 
+/* Disable RAW mode - called at exit */
 void disableRawMode(int fd)
 {
     /* Don't even check the return value as it's too late. */
@@ -165,25 +172,13 @@ void disableRawMode(int fd)
     }
 }
 
-
-
-void strrev(char *p)
-{
-    char *q = p;
-
-    while (q && *q) ++q;
-
-    for (--q; p < q; ++p, --q)
-        *p = *p ^ *q,
-         *q = *p ^ *q,
-          *p = *p ^ *q;
-}
 /* Called at exit to avoid remaining in raw mode, and clear the screen */
 void editorAtExit(void)
 {
     disableRawMode(STDIN_FILENO);
     printf("\033[2J\033[1;1H");
 }
+
 
 /* Raw mode: 1960 magic shit. */
 int enableRawMode(int fd)
@@ -225,8 +220,7 @@ fatal:
 }
 
 
-/* Read a key from the terminal put in raw mode, trying to handle
- * escape sequences. */
+/* Read a key from raw-mode terminal, try to expand escape sequences. */
 int editorReadKey(int fd)
 {
     int nread;
@@ -315,6 +309,8 @@ int editorReadKey(int fd)
         }
     }
 }
+
+
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor is stored at *rows and *cols and 0 is returned. */
@@ -356,6 +352,208 @@ void getWindowSize(int ifd, int ofd, int *rows, int *cols)
     *cols = ws.ws_col;
     *rows = ws.ws_row;
 }
+
+
+
+
+/* ======================= Utility Functions ====================== */
+
+
+/* Call a lua function which accepts a single string argument
+ * and returns no result. */
+void call_lua(char *function, char *arg)
+{
+    lua_getglobal(lua, function);
+
+    if (lua_isnil(lua, -1))
+    {
+        editorSetStatusMessage("Failed to find function %s", function);
+        return;
+    }
+
+    lua_pushstring(lua, arg);
+
+    if (lua_pcall(lua, 1, 0, 0) != 0)
+    {
+        editorSetStatusMessage("%s failed %s", function, lua_tostring(lua, -1));
+    }
+}
+
+/* Reverse a C-string, in-place */
+void strrev(char *p)
+{
+    char *q = p;
+
+    while (q && *q) ++q;
+
+    for (--q; p < q; ++p, --q)
+        *p = *p ^ *q,
+         *q = *p ^ *q,
+          *p = *p ^ *q;
+}
+
+
+
+/* Retrieve the single character at the current position. */
+char at()
+{
+    int filerow = E.rowoff + E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+
+    char tmp[2] = {'\n', '\0'};
+
+    if (row)
+    {
+        if (E.cx < row->size)
+            tmp[0] = row->render[E.cx];
+    }
+
+    return (tmp[0]);
+}
+
+/* Get the text which is currently selected - i.e. between mark & cursor */
+char *get_selection()
+{
+    int saved_cx = E.cx, saved_cy = E.cy;
+    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+
+
+    /*
+     * Get the current X/Y
+     */
+    int x = E.coloff + E.cx;
+    int y = E.rowoff + E.cy;
+
+
+    char txt[16384] = { '\0' };
+    char *t;
+
+    if ((y > E.marky) || (x > E.markx && y == E.marky))
+    {
+        int l = 0;
+
+        /*
+         * Move left until we get there.
+         */
+        while (1)
+        {
+            /*
+             * Get the character at the point.
+             */
+            editorMoveCursor(ARROW_LEFT);
+            txt[l] = at();
+            l++;
+
+            if ((E.coloff + E.cx == E.markx) && (E.rowoff + E.cy == E.marky))
+                break;
+        }
+
+        t = strdup(txt);
+        strrev(t);
+
+    }
+    else
+    {
+        int l = 0;
+
+        /*
+         * Move right until we get there.
+         */
+        while (1)
+        {
+            /*
+             * Get the character at the point.
+             */
+            txt[l] = at();
+            l++;
+            editorMoveCursor(ARROW_RIGHT);
+
+            if ((E.coloff + E.cx == E.markx) && (E.rowoff + E.cy == E.marky))
+                break;
+        }
+
+        txt[l] = at();
+        l++;
+        t = strdup(txt);
+
+    }
+
+    E.cx = saved_cx;
+    E.cy = saved_cy;
+    E.coloff = saved_coloff;
+    E.rowoff = saved_rowoff;
+
+    return (t);
+}
+
+/* Load the specified program in the editor memory and returns 0 on success
+ * or 1 on error. */
+int editorOpen(char *filename)
+{
+    /*
+     * Opened a file already?  Free the memory.
+     */
+    if (E.numrows)
+    {
+        for (int i = 0; i < E.numrows; i++)
+        {
+            erow *row = &E.row[i];
+            free(row->chars);
+            row->chars = NULL;
+            free(row->render);
+            row->render = NULL;
+            free(row->hl);
+            row->hl = NULL;
+        }
+
+        free(E.row);
+        E.row = NULL;
+    }
+
+    FILE *fp;
+    E.dirty = 0;
+    E.markx = -1;
+    E.marky = -1;
+    E.numrows = 0;
+    free(E.filename);
+    E.filename = strdup(filename);
+
+    fp = fopen(filename, "r");
+
+    if (!fp)
+    {
+        if (errno != ENOENT)
+        {
+            perror("Opening file");
+            exit(1);
+        }
+
+        return 1;
+    }
+
+    char *line = NULL;
+    size_t linecap = 0;
+    ssize_t linelen;
+
+    while ((linelen = getline(&line, &linecap, fp)) != -1)
+    {
+        if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
+            line[--linelen] = '\0';
+
+        editorInsertRow(E.numrows, line, linelen);
+    }
+
+    free(line);
+    fclose(fp);
+    E.dirty = 0;
+
+    /* invoke our lua callback function */
+    call_lua("on_loaded", E.filename);
+    return 0;
+}
+
+
+
 
 /* ====================== Syntax highlight color scheme  ==================== */
 
@@ -635,7 +833,13 @@ int editorSyntaxToColor(int hl)
     }
 }
 
+
+
+
+
 /* ======================= Input functions           ======================= */
+
+/* Show a prompt.  Read input until either `Esc` or `Return`. */
 char *get_input(char *prompt)
 {
     char query[KILO_QUERY_LEN + 1] = {0};
@@ -892,6 +1096,63 @@ void editorInsertChar(int c)
     E.dirty++;
 }
 
+/* Inserting a newline is slightly complex as we have to handle inserting a
+ * newline in the middle of a line, splitting the line as needed. */
+void editorInsertNewline(void)
+{
+    int filerow = E.rowoff + E.cy;
+    int filecol = E.coloff + E.cx;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+
+    if (!row)
+    {
+        if (filerow == E.numrows)
+        {
+            editorInsertRow(filerow, "", 0);
+            goto fixcursor;
+        }
+
+        return;
+    }
+
+    /* If the cursor is over the current line size, we want to conceptually
+     * think it's just over the last character. */
+    if (filecol >= row->size) filecol = row->size;
+
+    if (filecol == 0)
+    {
+        editorInsertRow(filerow, "", 0);
+    }
+    else
+    {
+        /* We are in the middle of a line. Split it between two rows. */
+        editorInsertRow(filerow + 1, row->chars + filecol, row->size - filecol);
+        row = &E.row[filerow];
+        row->chars[filecol] = '\0';
+        row->size = filecol;
+        editorUpdateRow(row);
+    }
+
+fixcursor:
+
+    if (E.cy == E.screenrows - 1)
+    {
+        E.rowoff++;
+    }
+    else
+    {
+        E.cy++;
+    }
+
+    E.cx = 0;
+    E.coloff = 0;
+}
+
+
+
+/* ======================= Lua Functions ======================= */
+
+
 /* is the buffer dirty? */
 static int dirty_lua(lua_State *L)
 {
@@ -952,6 +1213,7 @@ static int insert_lua(lua_State *L)
     return 0;
 }
 
+/* move to end of line */
 static int eol_lua(lua_State *L)
 {
     (void)L;
@@ -985,6 +1247,7 @@ static int eol_lua(lua_State *L)
     return 0;
 }
 
+/* Move to start of line */
 static int sol_lua(lua_State *L)
 {
     (void)L;
@@ -993,12 +1256,15 @@ static int sol_lua(lua_State *L)
     return 0;
 }
 
+/* move cursor one character up */
 static int up_lua(lua_State *L)
 {
     (void)L;
     editorMoveCursor(ARROW_UP);
     return 0;
 }
+
+/* move cursor one character down */
 static int down_lua(lua_State *L)
 {
     (void)L;
@@ -1058,80 +1324,6 @@ static int mark_lua(lua_State *L)
     return 2;
 }
 
-char *get_selection()
-{
-    int saved_cx = E.cx, saved_cy = E.cy;
-    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
-
-
-    /*
-     * Get the current X/Y
-     */
-    int x = E.coloff + E.cx;
-    int y = E.rowoff + E.cy;
-
-
-    char txt[16384] = { '\0' };
-    char *t;
-
-    if ((y > E.marky) || (x > E.markx && y == E.marky))
-    {
-        int l = 0;
-
-        /*
-         * Move left until we get there.
-         */
-        while (1)
-        {
-            /*
-             * Get the character at the point.
-             */
-            editorMoveCursor(ARROW_LEFT);
-            txt[l] = at();
-            l++;
-
-            if ((E.coloff + E.cx == E.markx) && (E.rowoff + E.cy == E.marky))
-                break;
-        }
-
-        t = strdup(txt);
-        strrev(t);
-
-    }
-    else
-    {
-        int l = 0;
-
-        /*
-         * Move right until we get there.
-         */
-        while (1)
-        {
-            /*
-             * Get the character at the point.
-             */
-            txt[l] = at();
-            l++;
-            editorMoveCursor(ARROW_RIGHT);
-
-            if ((E.coloff + E.cx == E.markx) && (E.rowoff + E.cy == E.marky))
-                break;
-        }
-
-        txt[l] = at();
-        l++;
-        t = strdup(txt);
-
-    }
-
-    E.cx = saved_cx;
-    E.cy = saved_cy;
-    E.coloff = saved_coloff;
-    E.rowoff = saved_rowoff;
-
-    return (t);
-}
-
 
 /* Get the text between the point and the mark */
 static int selection_lua(lua_State *L)
@@ -1161,7 +1353,6 @@ static int selection_lua(lua_State *L)
     return 1;
 
 }
-
 
 
 /* Delete the text between the point and the mark */
@@ -1252,7 +1443,7 @@ static int page_up_lua(lua_State *L)
     return 0;
 }
 
-/* set status-bar */
+/* set the status-bar text */
 static int status_lua(lua_State *L)
 {
     const char *str = lua_tostring(L, -1);
@@ -1260,12 +1451,15 @@ static int status_lua(lua_State *L)
     return 0;
 }
 
+/* move the cursor one character left */
 static int left_lua(lua_State *L)
 {
     (void)L;
     editorMoveCursor(ARROW_LEFT);
     return 0;
 }
+
+/* move the cursor one character right */
 static int right_lua(lua_State *L)
 {
     (void)L;
@@ -1273,85 +1467,16 @@ static int right_lua(lua_State *L)
     return 0;
 }
 
-/* Inserting a newline is slightly complex as we have to handle inserting a
- * newline in the middle of a line, splitting the line as needed. */
-void editorInsertNewline(void)
-{
-    int filerow = E.rowoff + E.cy;
-    int filecol = E.coloff + E.cx;
-    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
-
-    if (!row)
-    {
-        if (filerow == E.numrows)
-        {
-            editorInsertRow(filerow, "", 0);
-            goto fixcursor;
-        }
-
-        return;
-    }
-
-    /* If the cursor is over the current line size, we want to conceptually
-     * think it's just over the last character. */
-    if (filecol >= row->size) filecol = row->size;
-
-    if (filecol == 0)
-    {
-        editorInsertRow(filerow, "", 0);
-    }
-    else
-    {
-        /* We are in the middle of a line. Split it between two rows. */
-        editorInsertRow(filerow + 1, row->chars + filecol, row->size - filecol);
-        row = &E.row[filerow];
-        row->chars[filecol] = '\0';
-        row->size = filecol;
-        editorUpdateRow(row);
-    }
-
-fixcursor:
-
-    if (E.cy == E.screenrows - 1)
-    {
-        E.rowoff++;
-    }
-    else
-    {
-        E.cy++;
-    }
-
-    E.cx = 0;
-    E.coloff = 0;
-}
-
-char at()
-{
-    int filerow = E.rowoff + E.cy;
-    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
-
-    char tmp[2] = {'\n', '\0'};
-
-    if (row)
-    {
-        if (E.cx < row->size)
-            tmp[0] = row->render[E.cx];
-    }
-
-    return (tmp[0]);
-}
-
 /* get the character that the current position */
 int at_lua(lua_State *L)
 {
-
-
     char tmp[2] = {'\n', '\0'};
     tmp[0] = at();
     lua_pushstring(L, tmp);
     return 1;
 
 }
+
 /* Delete the char at the current position. */
 int delete_lua(lua_State *L)
 {
@@ -1403,72 +1528,6 @@ int delete_lua(lua_State *L)
     return 0;
 }
 
-/* Load the specified program in the editor memory and returns 0 on success
- * or 1 on error. */
-int editorOpen(char *filename)
-{
-
-    /*
-     * Opened a file already?  Free the memory.
-     */
-    if (E.numrows)
-    {
-        for (int i = 0; i < E.numrows; i++)
-        {
-            erow *row = &E.row[i];
-            free(row->chars);
-            row->chars = NULL;
-            free(row->render);
-            row->render = NULL;
-            free(row->hl);
-            row->hl = NULL;
-        }
-
-        free(E.row);
-        E.row = NULL;
-    }
-
-    FILE *fp;
-    E.dirty = 0;
-    E.markx = -1;
-    E.marky = -1;
-    E.numrows = 0;
-    free(E.filename);
-    E.filename = strdup(filename);
-
-    fp = fopen(filename, "r");
-
-    if (!fp)
-    {
-        if (errno != ENOENT)
-        {
-            perror("Opening file");
-            exit(1);
-        }
-
-        return 1;
-    }
-
-    char *line = NULL;
-    size_t linecap = 0;
-    ssize_t linelen;
-
-    while ((linelen = getline(&line, &linecap, fp)) != -1)
-    {
-        if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
-            line[--linelen] = '\0';
-
-        editorInsertRow(E.numrows, line, linelen);
-    }
-
-    free(line);
-    fclose(fp);
-    E.dirty = 0;
-
-    /* invoke our lua callback function */
-    call_lua("on_loaded", E.filename);
-    return 0;
-}
 
 /* prompt for input */
 static int prompt_lua(lua_State *L)
@@ -1648,6 +1707,163 @@ static int set_syntax_comments_lua(lua_State *L)
     return 0;
 }
 
+/* Switch to find-mode */
+static int find_lua(lua_State *L)
+{
+    (void)L;
+    char query[KILO_QUERY_LEN + 1] = {0};
+    int qlen = 0;
+    int last_match = -1; /* Last line where a match was found. -1 for none. */
+    int find_next = 0; /* if 1 search next, if -1 search prev. */
+    int saved_hl_line = -1;  /* No saved HL */
+    char *saved_hl = NULL;
+
+#define FIND_RESTORE_HL do { \
+    if (saved_hl) { \
+        memcpy(E.row[saved_hl_line].hl,saved_hl, E.row[saved_hl_line].rsize); \
+        saved_hl = NULL; \
+    } \
+} while (0)
+
+    /* Save the cursor position in order to restore it later. */
+    int saved_cx = E.cx, saved_cy = E.cy;
+    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+
+    while (1)
+    {
+        editorSetStatusMessage(
+            "Search: %s (Use ESC/Arrows/Enter)", query);
+        editorRefreshScreen();
+
+        int c = editorReadKey(STDIN_FILENO);
+
+        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE)
+        {
+            if (qlen != 0) query[--qlen] = '\0';
+
+            last_match = -1;
+        }
+        else if (c == ESC || c == ENTER)
+        {
+            if (c == ESC)
+            {
+                E.cx = saved_cx;
+                E.cy = saved_cy;
+                E.coloff = saved_coloff;
+                E.rowoff = saved_rowoff;
+            }
+
+            FIND_RESTORE_HL;
+            editorSetStatusMessage("");
+            return 0;
+        }
+        else if (c == ARROW_RIGHT || c == ARROW_DOWN)
+        {
+            find_next = 1;
+        }
+        else if (c == ARROW_LEFT || c == ARROW_UP)
+        {
+            find_next = -1;
+        }
+        else if (isprint(c))
+        {
+            if (qlen < KILO_QUERY_LEN)
+            {
+                query[qlen++] = c;
+                query[qlen] = '\0';
+                last_match = -1;
+            }
+        }
+
+        /* Search occurrence. */
+        if (last_match == -1) find_next = 1;
+
+        if (find_next)
+        {
+            char *match = NULL;
+            int match_offset = 0;
+            int i, current = last_match;
+
+            for (i = 0; i < E.numrows; i++)
+            {
+                current += find_next;
+
+                if (current == -1) current = E.numrows - 1;
+                else if (current == E.numrows) current = 0;
+
+                match = strstr(E.row[current].render, query);
+
+                if (match)
+                {
+                    match_offset = match - E.row[current].render;
+                    break;
+                }
+            }
+
+            find_next = 0;
+
+            /* Highlight */
+            FIND_RESTORE_HL;
+
+            if (match)
+            {
+                erow *row = &E.row[current];
+                last_match = current;
+
+                if (row->hl)
+                {
+                    saved_hl_line = current;
+                    saved_hl = malloc(row->rsize);
+                    memcpy(saved_hl, row->hl, row->rsize);
+                    memset(row->hl + match_offset, HL_MATCH, qlen);
+                }
+
+                E.cy = 0;
+                E.cx = match_offset;
+                E.rowoff = current;
+                E.coloff = 0;
+
+                /* Scroll horizontally as needed. */
+                if (E.cx > E.screencols)
+                {
+                    int diff = E.cx - E.screencols;
+                    E.cx -= diff;
+                    E.coloff += diff;
+                }
+            }
+        }
+    }
+}
+
+/* prompt for a string, and evaluate that as lua. */
+static int eval_lua(lua_State *L)
+{
+    (void)L;
+
+    char *txt = get_input("Eval: ");
+
+    if (txt)
+    {
+        int res =  luaL_loadstring(lua, txt);
+
+        if (res == 0)
+        {
+            res = lua_pcall(lua, 0, LUA_MULTRET, 0);
+        }
+        else
+        {
+            const char *er = lua_tostring(lua, -1);
+
+            if (er)
+                editorSetStatusMessage(er);
+        }
+
+        free(txt);
+    }
+
+    return 0;
+}
+
 /* Prompt for a filename and open it. */
 static int open_lua(lua_State *L)
 {
@@ -1678,7 +1894,10 @@ static int open_lua(lua_State *L)
 }
 
 
-/* ============================= Terminal update ============================ */
+
+
+
+/* ============================= Append Buffer ============================ */
 
 /* We define a very simple "append buffer" structure, that is an heap
  * allocated string where we can append to. This is useful in order to
@@ -1707,6 +1926,10 @@ void abFree(struct abuf *ab)
 {
     free(ab->b);
 }
+
+
+
+/* ============================= Terminal update ============================ */
 
 /* This function writes the whole screen using VT100 escape characters
  * starting from the logical state of the editor in the global state 'E'. */
@@ -1998,163 +2221,6 @@ void editorSetStatusMessage(const char *fmt, ...)
     E.statusmsg_time = time(NULL);
 }
 
-/* =============================== Find mode ================================ */
-
-static int find_lua(lua_State *L)
-{
-    (void)L;
-    char query[KILO_QUERY_LEN + 1] = {0};
-    int qlen = 0;
-    int last_match = -1; /* Last line where a match was found. -1 for none. */
-    int find_next = 0; /* if 1 search next, if -1 search prev. */
-    int saved_hl_line = -1;  /* No saved HL */
-    char *saved_hl = NULL;
-
-#define FIND_RESTORE_HL do { \
-    if (saved_hl) { \
-        memcpy(E.row[saved_hl_line].hl,saved_hl, E.row[saved_hl_line].rsize); \
-        saved_hl = NULL; \
-    } \
-} while (0)
-
-    /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.cx, saved_cy = E.cy;
-    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
-
-    while (1)
-    {
-        editorSetStatusMessage(
-            "Search: %s (Use ESC/Arrows/Enter)", query);
-        editorRefreshScreen();
-
-        int c = editorReadKey(STDIN_FILENO);
-
-        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE)
-        {
-            if (qlen != 0) query[--qlen] = '\0';
-
-            last_match = -1;
-        }
-        else if (c == ESC || c == ENTER)
-        {
-            if (c == ESC)
-            {
-                E.cx = saved_cx;
-                E.cy = saved_cy;
-                E.coloff = saved_coloff;
-                E.rowoff = saved_rowoff;
-            }
-
-            FIND_RESTORE_HL;
-            editorSetStatusMessage("");
-            return 0;
-        }
-        else if (c == ARROW_RIGHT || c == ARROW_DOWN)
-        {
-            find_next = 1;
-        }
-        else if (c == ARROW_LEFT || c == ARROW_UP)
-        {
-            find_next = -1;
-        }
-        else if (isprint(c))
-        {
-            if (qlen < KILO_QUERY_LEN)
-            {
-                query[qlen++] = c;
-                query[qlen] = '\0';
-                last_match = -1;
-            }
-        }
-
-        /* Search occurrence. */
-        if (last_match == -1) find_next = 1;
-
-        if (find_next)
-        {
-            char *match = NULL;
-            int match_offset = 0;
-            int i, current = last_match;
-
-            for (i = 0; i < E.numrows; i++)
-            {
-                current += find_next;
-
-                if (current == -1) current = E.numrows - 1;
-                else if (current == E.numrows) current = 0;
-
-                match = strstr(E.row[current].render, query);
-
-                if (match)
-                {
-                    match_offset = match - E.row[current].render;
-                    break;
-                }
-            }
-
-            find_next = 0;
-
-            /* Highlight */
-            FIND_RESTORE_HL;
-
-            if (match)
-            {
-                erow *row = &E.row[current];
-                last_match = current;
-
-                if (row->hl)
-                {
-                    saved_hl_line = current;
-                    saved_hl = malloc(row->rsize);
-                    memcpy(saved_hl, row->hl, row->rsize);
-                    memset(row->hl + match_offset, HL_MATCH, qlen);
-                }
-
-                E.cy = 0;
-                E.cx = match_offset;
-                E.rowoff = current;
-                E.coloff = 0;
-
-                /* Scroll horizontally as needed. */
-                if (E.cx > E.screencols)
-                {
-                    int diff = E.cx - E.screencols;
-                    E.cx -= diff;
-                    E.coloff += diff;
-                }
-            }
-        }
-    }
-}
-
-/* prompt for a string, and evaluate that as lua. */
-static int eval_lua(lua_State *L)
-{
-    (void)L;
-
-    char *txt = get_input("Eval: ");
-
-    if (txt)
-    {
-        int res =  luaL_loadstring(lua, txt);
-
-        if (res == 0)
-        {
-            res = lua_pcall(lua, 0, LUA_MULTRET, 0);
-        }
-        else
-        {
-            const char *er = lua_tostring(lua, -1);
-
-            if (er)
-                editorSetStatusMessage(er);
-        }
-
-        free(txt);
-    }
-
-    return 0;
-}
 
 /* ========================= Editor events handling  ======================== */
 
@@ -2269,26 +2335,6 @@ void editorMoveCursor(int key)
             E.coloff += E.cx;
             E.cx = 0;
         }
-    }
-}
-
-/* Call a lua function which accepts a single string argument
- * and returns no result. */
-void call_lua(char *function, char *arg)
-{
-    lua_getglobal(lua, function);
-
-    if (lua_isnil(lua, -1))
-    {
-        editorSetStatusMessage("Failed to find function %s", function);
-        return;
-    }
-
-    lua_pushstring(lua, arg);
-
-    if (lua_pcall(lua, 1, 0, 0) != 0)
-    {
-        editorSetStatusMessage("%s failed %s", function, lua_tostring(lua, -1));
     }
 }
 
