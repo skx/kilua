@@ -371,7 +371,7 @@ char *get_selection()
          * a null-terminated copy of the append-buffer's contents.
          */
         result = malloc(ab.len + 1);
-        memset(result, '\0', ab.len);
+        memset(result, '\0', ab.len + 1);
         memcpy(result, ab.b, ab.len);
 
         strrev(result);
@@ -405,7 +405,7 @@ char *get_selection()
          * a null-terminated copy of the append-buffer's contents.
          */
         result = malloc(ab.len + 1);
-        memset(result, '\0', ab.len);
+        memset(result, '\0', ab.len + 1);
         memcpy(result, ab.b, ab.len);
 
     }
