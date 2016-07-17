@@ -1496,6 +1496,40 @@ void editorRefreshScreen(void) {
                         /*
                          * cursor is below the mark.
                          */
+                        if ( cy == my )
+                        {
+                            /*
+                             * Point and mark on same line
+                             */
+                            if ( ( cy == filerow ) && ( j < mx && j >= cx ) )
+                                color = HL_SELECTION;
+                        }
+                        else
+                        {
+                            /*
+                             * Point + mark on different lines.
+                             *
+                             * mark is after point
+                             */
+
+                            /*
+                             * Cover the line containing the mark.
+                             */
+                            if( ( filerow == my ) && ( j <= mx ) )
+                                color = HL_SELECTION;
+
+                            /*
+                             * Cover the line containing the cursor.
+                             */
+                            if ( ( filerow == cy ) && ( j > cx ) )
+                                color = HL_SELECTION;
+
+                            /*
+                             * Cover the lines in between.
+                             */
+                            if ( filerow > cy && filerow < my )
+                                color = HL_SELECTION;
+                        }
                     }
                 }
 
