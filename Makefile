@@ -6,7 +6,7 @@ kilo: kilo.c
 
 .PHONY: indent
 indent:
-	astyle --style=allman -A1 --indent=spaces=4   --break-blocks --pad-oper --pad-header --unpad-paren --max-code-length=200 kilo.c
+	astyle --style=allman -A1 --indent=spaces=4   --break-blocks --pad-oper --pad-header --unpad-paren --max-code-length=200 *.c *.h
 
 
 protos: kilo.c
