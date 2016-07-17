@@ -1136,7 +1136,26 @@ int get_line_lua(lua_State *L)
 int kill_line_lua(lua_State *L)
 {
     (void)L;
-    editorDelRow(E.rowoff + E.cy);
+
+    /* move to end of line. */
+    eol_lua(L);
+
+    /* number of deletes we need. */
+    int len = 0;
+
+    /* count the characters */
+    int filerow = E.rowoff + E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+
+    if (row)
+        len =  row->rsize;
+
+    while (len > 0)
+    {
+        delete_lua(L);
+        len -= 1;
+    }
+
     return 0;
 }
 
