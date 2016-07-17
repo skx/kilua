@@ -57,7 +57,6 @@ keymap['^N']        = function() record_mark() end
 keymap['^Q']        = function() quit() end
 keymap['^O']        = open
 keymap['^R']        = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
-keymap['^P']        = function() selection() end
 keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
 keymap['^U']        = function() yank() end
