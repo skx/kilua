@@ -312,7 +312,7 @@ char at()
 
     if (row)
     {
-        if (E.cx < row->size)
+        if (E.cx < row->rsize)
             tmp[0] = row->render[E.cx];
     }
 
