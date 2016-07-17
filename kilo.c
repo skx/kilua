@@ -1213,7 +1213,16 @@ static int prompt_lua(lua_State *L) {
 
 /* Save the current file on disk. Return 0 on success, 1 on error. */
 static int save_lua(lua_State *L) {
-    (void)L;
+
+    /*
+     * If we were given a filename then use that.
+     */
+    char *path = (char *)lua_tostring(L,-1);
+    if ( path != NULL ) {
+        free(E.filename);
+        E.filename = strdup(path);
+    }
+
     int len;
     char *buf = editorRowsToString(&len);
     int fd = open(E.filename,O_RDWR|O_CREAT,0644);

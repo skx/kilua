@@ -175,8 +175,6 @@ The Future?
 
 Future plans?
 
-* The save() primitive should allow:  save( "new/file/name" )
-
 
 Steve
 --
