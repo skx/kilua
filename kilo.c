@@ -1328,10 +1328,10 @@ int cut_selection_lua(lua_State *L)
 
     if (left == 0)
     {
-        for(int i = 0; i < max ; i++ )
+        for (int i = 0; i < max ; i++)
         {
-             editorMoveCursor(ARROW_RIGHT);
-             delete_lua(L);
+            editorMoveCursor(ARROW_RIGHT);
+            delete_lua(L);
         }
     }
     else
@@ -1340,7 +1340,7 @@ int cut_selection_lua(lua_State *L)
            we move one place right before we remove the characters. */
         editorMoveCursor(ARROW_RIGHT);
 
-        for(int i = 0; i < max ; i++ )
+        for (int i = 0; i < max ; i++)
             delete_lua(L);
     }
 
