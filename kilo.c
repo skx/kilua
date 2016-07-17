@@ -1937,6 +1937,7 @@ void editorRefreshScreen(void)
                     int cx = E.coloff + E.cx;
                     int cy = E.rowoff + E.cy;
 
+                    /* is the cursor above the mark? */
                     if ((cy > my) || (cx > mx && cy == my))
                     {
                         if (cy == my)
@@ -1984,7 +1985,7 @@ void editorRefreshScreen(void)
                             /*
                              * Point and mark on same line
                              */
-                            if ((cy == filerow) && (j < mx && j >= cx))
+                            if ((cy == filerow) && (j <= mx && j >= cx))
                                 color = HL_SELECTION;
                         }
                         else
