@@ -344,7 +344,9 @@ char *get_selection()
     /* Return value */
     char *result = NULL;
 
-
+    /*
+     * The cursor is above the mark.
+     */
     if ((y > E.marky) || (x > E.markx && y == E.marky))
     {
         /*
@@ -355,14 +357,17 @@ char *get_selection()
             /*
              * Get the character at the point.
              */
-            editorMoveCursor(ARROW_LEFT);
-
             tmp[0] = at();
             abAppend(&ab, tmp, 1);
+
+            editorMoveCursor(ARROW_LEFT);
 
             if ((E.coloff + E.cx == E.markx) && (E.rowoff + E.cy == E.marky))
                 break;
         }
+
+        tmp[0] = at();
+        abAppend(&ab, tmp, 1);
 
         /*
          * The append-buffer does not contain a trailing NULL.
@@ -1302,54 +1307,35 @@ int cut_selection_lua(lua_State *L)
     int x = E.coloff + E.cx;
     int y = E.rowoff + E.cy;
 
-    /*
-     * No selection - either because the mark is not set, and
-     * the cursor is in the mark.
-     */
+    /* There is no mark. */
     if ((E.markx == -1) && (E.marky == -1))
-    {
         return 0;
-    }
 
+    /* The cursor is at the mark. */
     if ((E.markx == x) && (E.marky == y))
-    {
         return 0;
-    }
 
     int left = 0;
 
     if ((y > E.marky) || (x > E.markx && y == E.marky))
-    {
         left = 1;
-    }
 
+    /* Get the selection text */
     char *sel = get_selection();
 
-    if (left)
-    {
-        int max = (int)strlen(sel);
+    /* Delete the number of characters that the selection includes. */
+    int max = (int)strlen(sel);
 
-        for (int i = 0; i < max; i++)
-        {
-            delete_lua(L);
-        }
-    }
-    else
+    for (int i = 0; i <= max; i++)
     {
-        int max = (int)strlen(sel);
-
-        for (int i = 0; i < max; i++)
-        {
+        if (left == 0)
             editorMoveCursor(ARROW_RIGHT);
-            delete_lua(L);
-        }
+
+        delete_lua(L);
     }
 
+    /* Cleanup & remove the mark. */
     free(sel);
-
-    /*
-     * Remove the mark.
-     */
     E.markx = -1;
     E.marky = -1;
     return 0;
