@@ -53,6 +53,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <fcntl.h>
+#include <getopt.h>
 
 /* Lua interface */
 #include <lua.h>
@@ -2349,43 +2350,100 @@ void initEditor(void)
     lua_register(lua, "status", status_lua);
     lua_register(lua, "sol", sol_lua);
     lua_register(lua, "up", up_lua);
+}
 
+int main(int argc, char **argv)
+{
+    /*
+     * Initialize our editor.  We do this first so that
+     * we have lua enabled which is required if we want
+     * to load a configuration file specified by the command-line
+     * arguments.
+     */
+    initEditor();
+
+    /*
+     * Count of init-files loaded.
+     */
     int loaded = 0;
 
     /*
-     * Load an init-file from ~/.kilo.lua
+     * Load our default configuration files: ~/.kilo.lua + ./kilo.lua.
      */
     char init_buf[1024] = {'\0'};
     snprintf(init_buf, sizeof(init_buf) - 1, "%s%s",
              getenv("HOME"), "/.kilo.lua");
     loaded += load_lua(init_buf);
-
-    /*
-     * Load an init-file from the PWD.
-     */
     loaded += load_lua("kilo.lua");
 
+    /*
+     * Parse command-line options.
+     */
+    while (1)
+    {
+        static struct option long_options[] =
+        {
+            {"config", required_argument, 0, 'c'},
+            {"version", no_argument, 0, 'v'},
+            {0, 0, 0, 0}
+        };
+
+        /* getopt_long stores the option index here. */
+        int option_index = 0;
+
+        char c = getopt_long(argc, argv, "c:v", long_options, &option_index);
+
+        /* Detect the end of the options. */
+        if (c == -1)
+            break;
+
+        switch (c)
+        {
+        case 'v':
+            fprintf(stderr, "kilo v%s\n", KILO_VERSION);
+            exit(0);
+            break;
+
+        case 'c':
+            loaded += load_lua(optarg);
+            break;
+        }
+    }
+
+    /*
+     * If we've not loaded at least one configuration file then
+     * we will have no `on_key` defined, which means the editor
+     * will be broken.
+     *
+     * On that basis we immediately exit.
+     */
     if (loaded == 0)
     {
         fprintf(stderr, "Neither ./kilo.lua nor ~/.kilo.lua could be loaded\n");
         exit(1);
     }
-}
 
-int main(int argc, char **argv)
-{
-    if (argc != 2)
+    /*
+     * Ensure we have at least one command-line parameter left, which
+     * is the file to edit.
+     */
+    if (optind >= argc)
     {
-        fprintf(stderr, "Usage: kilo <filename>\n");
+        fprintf(stderr, "Usage: kilo [options] filename\n");
         exit(1);
     }
 
-    initEditor();
-    editorOpen(argv[1]);
+    /*
+     * Open the file, setup the mode, and the status-message.
+     */
+    editorOpen(argv[optind]);
     enableRawMode(STDIN_FILENO);
     editorSetStatusMessage(
         "HELP: ^o = open | ^s = save | ^q = quit | ^f = find | ^l = eval");
 
+    /*
+     * Run our event loop.
+     */
     while (1)
     {
         editorRefreshScreen();
