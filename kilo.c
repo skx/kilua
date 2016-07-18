@@ -454,44 +454,54 @@ int editorOpen(char *filename)
     E.markx = -1;
     E.marky = -1;
     E.numrows = 0;
-    free(E.filename);
-    E.filename = strdup(filename);
+
+    if (filename)
+        free(E.filename);
+
+    if (filename)
+        E.filename = strdup(filename);
+    else
+        E.filename = NULL;
 
 #ifdef _UNDO
     /* kill our undo stack */
     us_clear(E.undo);
 #endif
 
-    fp = fopen(filename, "r");
-
-    if (!fp)
+    if (filename != NULL)
     {
-        if (errno != ENOENT)
+        fp = fopen(filename, "r");
+
+        if (!fp)
         {
-            perror("Opening file");
-            exit(1);
+            if (errno != ENOENT)
+            {
+                perror("Opening file");
+                exit(1);
+            }
+
+            /* invoke our lua callback function, even if opening failed.*/
+            call_lua("on_loaded", E.filename);
+
+            return 1;
         }
 
-        /* invoke our lua callback function, even if opening failed.*/
-        call_lua("on_loaded", E.filename);
+        char *line = NULL;
+        size_t linecap = 0;
+        ssize_t linelen;
 
-        return 1;
+        while ((linelen = getline(&line, &linecap, fp)) != -1)
+        {
+            if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
+                line[--linelen] = '\0';
+
+            editorInsertRow(E.numrows, line, linelen);
+        }
+
+        free(line);
+        fclose(fp);
     }
 
-    char *line = NULL;
-    size_t linecap = 0;
-    ssize_t linelen;
-
-    while ((linelen = getline(&line, &linecap, fp)) != -1)
-    {
-        if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
-            line[--linelen] = '\0';
-
-        editorInsertRow(E.numrows, line, linelen);
-    }
-
-    free(line);
-    fclose(fp);
     E.dirty = 0;
 
     /* invoke our lua callback function */
@@ -737,7 +747,8 @@ void editorUpdateSyntax(erow *row)
                 /*
                  * Can't compile?  Skip.
                  */
-                if ( regcomp(&regex, tmp, 0) != 0 ) {
+                if (regcomp(&regex, tmp, 0) != 0)
+                {
                     free(tmp);
                     continue;
                 }
@@ -754,7 +765,9 @@ void editorUpdateSyntax(erow *row)
                     i += klen;
                     break;
                 }
+
 #else
+
                 if (!memcmp(p, keywords[j], klen) &&
                         is_separator(*(p + klen)))
                 {
@@ -766,6 +779,7 @@ void editorUpdateSyntax(erow *row)
                     break;
 
                 }
+
                 free(tmp);
 #endif
             }
@@ -2074,11 +2088,12 @@ void editorRefreshScreen(void)
 
         if (filerow >= E.numrows)
         {
-            if (E.numrows == 0 && ( y == ( E.screenrows / 3 ) + drawn) &&
-                ( drawn < 4 ) )
+            if (E.numrows == 0 && (y == (E.screenrows / 3) + drawn) &&
+                    (drawn < 4))
             {
 
-                const char * array[] = {
+                const char * array[] =
+                {
                     "Kilo editor -- version " KILO_VERSION "\x1b[0K\r\n",
                     "\r\n",
 #ifdef _REGEXP
@@ -2100,6 +2115,7 @@ void editorRefreshScreen(void)
                     abAppend(&ab, "~", 1);
                     padding--;
                 }
+
                 while (padding--) abAppend(&ab, " ", 1);
 
                 abAppend(&ab, array[drawn], strlen(array[drawn]));
@@ -2293,7 +2309,7 @@ void editorRefreshScreen(void)
     abAppend(&ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
     int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
-                       E.filename, E.numrows, E.dirty ? "(modified)" : "");
+                       E.filename ? E.filename : "<NONE>", E.numrows, E.dirty ? "(modified)" : "");
     int rlen = snprintf(rstatus, sizeof(rstatus),
                         "Col:%d Row:%d/%d", E.coloff + E.cx + 1, E.rowoff + E.cy + 1, E.numrows);
 
@@ -2660,19 +2676,14 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Ensure we have at least one command-line parameter left, which
-     * is the file to edit.
-     */
-    if (optind >= argc)
-    {
-        fprintf(stderr, "Usage: kilo [options] filename\n");
-        exit(1);
-    }
-
-    /*
      * Open the file, setup the mode, and the status-message.
      */
-    editorOpen(argv[optind]);
+
+    /*
+     * Open the file if we got one, otherwise open "NULL".
+     */
+    editorOpen(optind < argc ? argv[optind] : NULL);
+
     enableRawMode(STDIN_FILENO);
     editorSetStatusMessage(
         "HELP: ^o = open | ^s = save | ^q = quit | ^f = find | ^l = eval");
