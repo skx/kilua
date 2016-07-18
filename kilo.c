@@ -1402,16 +1402,26 @@ void warp(int x, int y)
     E.cx = E.coloff = E.cy = E.rowoff = 0;
 
     /*
+     * Is that where we wanted to go?
+     */
+    if ( x == 0 && y == 0 )
+        return;
+
+    /*
      * Move down first - that should always work.
      */
-    while (y--)
+    while (y > 0 ) {
         editorMoveCursor(ARROW_DOWN);
+        y -= 1;
+    }
 
     /*
      * Now move right.
      */
-    while (x--)
+    while (x >0) {
         editorMoveCursor(ARROW_RIGHT);
+        x -= 1;
+    }
 
 }
 
