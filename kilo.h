@@ -37,7 +37,9 @@
 
 #pragma once
 
-#include "undo_stack.h"
+#ifdef _UNDO
+# include "undo_stack.h"
+#endif
 
 
 /* Syntax highlight types */
@@ -97,8 +99,9 @@ struct editorConfig
     char statusmsg[80];
     time_t statusmsg_time;
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
+#ifdef _UNDO
     UndoStack *undo;
-
+#endif
 };
 
 static struct editorConfig E;
@@ -144,7 +147,7 @@ void editorAtExit(void);
 int enableRawMode(int fd);
 int editorReadKey(int fd);
 int getCursorPosition(int ifd, int ofd, int *rows, int *cols);
-void getWindowSize(int ifd, int ofd, int *rows, int *cols);
+void getWindowSize();
 void call_lua(char *function, char *arg);
 void strrev(char *p);
 char at(void);

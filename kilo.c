@@ -83,6 +83,30 @@ void disableRawMode(int fd)
 /* Called at exit to avoid remaining in raw mode, and clear the screen */
 void editorAtExit(void)
 {
+#ifdef _UNDO
+    /* kill our undo stack, to prevent valgrind leaks */
+    us_clear(E.undo);
+    free(E.undo);
+#endif
+
+    /* free all our rows */
+    for (int i = 0; i < E.numrows; i++)
+    {
+        editorFreeRow(&E.row[i]);
+    }
+
+    free(E.row);
+
+    /* close lua */
+    lua_close(lua);
+
+    if (E.filename)
+    {
+        free(E.filename);
+        E.filename = NULL;
+    }
+
+    /* reset our input-mode and clear the screen. */
     disableRawMode(STDIN_FILENO);
     printf("\033[2J\033[1;1H");
 }
@@ -250,15 +274,14 @@ int getCursorPosition(int ifd, int ofd, int *rows, int *cols)
     return 0;
 }
 
-/* Get the number of rows/columns in the current terminal. */
-void getWindowSize(int ifd, int ofd, int *rows, int *cols)
+/* Record the size of our window */
+void getWindowSize()
 {
-    (void)ofd;
-    (void)ifd;
-    struct winsize ws;
-    ioctl(1, TIOCGWINSZ, &ws);
-    *cols = ws.ws_col;
-    *rows = ws.ws_row;
+    struct winsize w;
+    ioctl(0, TIOCGWINSZ, &w);
+
+    E.screenrows = w.ws_row;
+    E.screencols = w.ws_col;
 }
 
 
@@ -459,8 +482,10 @@ int editorOpen(char *filename)
     free(E.filename);
     E.filename = strdup(filename);
 
+#ifdef _UNDO
     /* kill our undo stack */
     us_clear(E.undo);
+#endif
 
     fp = fopen(filename, "r");
 
@@ -869,7 +894,8 @@ void editorUpdateRow(erow *row)
     }
 
     row->rsize = idx;
-    if ( row->rsize < idx )
+
+    if (row->rsize < idx)
         row->render[idx] = '\0';
 
     /* Update the syntax highlighting attributes of the row. */
@@ -1014,19 +1040,23 @@ void editorRowDelChar(erow *row, int at)
 {
     if (row->size <= at)
         return;
-    if ( at < 0 )
+
+    if (at < 0)
         return;
 
     /*
      * Record the character we're deleting - and where we were
      * before we deleted it.
      */
+#ifdef _UNDO
     int x = E.coloff + E.cx;
     int y = E.rowoff + E.cy;
 
 
-    if ( row->rsize >= at )
+    if (row->rsize >= at)
         add_undo(E.undo, INSERT, row->render[at], x, y);
+
+#endif
 
     memmove(row->chars + at, row->chars + at + 1, row->size - at);
     editorUpdateRow(row);
@@ -1205,13 +1235,14 @@ int insert_lua(lua_State *L)
         for (unsigned int i = 0; i < len; i++)
         {
             editorInsertChar(str[i]);
-
+#ifdef _UNDO
             /*
              * Add the undo-record.
              */
             int x = E.coloff + E.cx;
             int y = E.rowoff + E.cy;
             add_undo(E.undo, DELETE, ' ', x, y);
+#endif
         }
     }
 
@@ -1263,6 +1294,7 @@ int sol_lua(lua_State *L)
 int undo_lua(lua_State *L)
 {
     (void)L;
+#ifdef _UNDO
     UndoAction *action = us_pop(E.undo);
 
     if (action == NULL)
@@ -1273,12 +1305,12 @@ int undo_lua(lua_State *L)
 
     if (action->type == DELETE)
     {
-        warp( action->x, action->y);
+        warp(action->x, action->y);
         delete_lua(L);
     }
     else if (action->type == INSERT)
     {
-        warp( action->x, action->y);
+        warp(action->x, action->y);
 
         char str[2] = { '\0', '\0' };
         editorSetStatusMessage("Inserting '%c'", str[0]);
@@ -1294,7 +1326,9 @@ int undo_lua(lua_State *L)
      * So we need to explicitly remove that faux addition here.
      */
     us_pop(E.undo);
-
+#else
+    editorSetStatusMessage("undo-support is not compiled in");
+#endif
     return 0;
 }
 
@@ -1314,30 +1348,30 @@ int down_lua(lua_State *L)
     return 0;
 }
 
-void warp( int x, int y )
+void warp(int x, int y)
 {
-        if (y < 0)
-            y = 0;
+    if (y < 0)
+        y = 0;
 
-        if (x < 0)
-            x = 0;
+    if (x < 0)
+        x = 0;
 
-        /*
-         * Move to top-left
-         */
-        E.cx = E.coloff = E.cy = E.rowoff = 0;
+    /*
+     * Move to top-left
+     */
+    E.cx = E.coloff = E.cy = E.rowoff = 0;
 
-        /*
-         * Move down first - that should always work.
-         */
-        while (y--)
-            editorMoveCursor(ARROW_DOWN);
+    /*
+     * Move down first - that should always work.
+     */
+    while (y--)
+        editorMoveCursor(ARROW_DOWN);
 
-        /*
-         * Now move right.
-         */
-        while (x--)
-            editorMoveCursor(ARROW_RIGHT);
+    /*
+     * Now move right.
+     */
+    while (x--)
+        editorMoveCursor(ARROW_RIGHT);
 
 }
 
@@ -1350,7 +1384,7 @@ int point_lua(lua_State *L)
         int y = lua_tonumber(L, -1) - 1;
         int x = lua_tonumber(L, -2) - 1;
 
-        warp( x, y );
+        warp(x, y);
     }
 
     lua_pushnumber(L, E.cx + E.coloff);
@@ -1368,8 +1402,8 @@ int mark_lua(lua_State *L)
         int y = lua_tonumber(L, -1);
         int x = lua_tonumber(L, -2);
 
-        if ( ( x >= 0 || x == -1 ) &&
-             ( y >= 0 || y == -1 ) )
+        if ((x >= 0 || x == -1) &&
+                (y >= 0 || y == -1))
         {
             E.markx = x ;
             E.marky = y ;
@@ -1542,9 +1576,11 @@ int delete_lua(lua_State *L)
 
     if (filecol == 0)
     {
+#ifdef _UNDO
         int x = E.coloff + E.cx;
         int y = E.rowoff + E.cy;
         add_undo(E.undo, INSERT, '\n', x, y);
+#endif
 
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
@@ -1636,8 +1672,10 @@ int save_lua(lua_State *L)
     /* invoke our lua callback function */
     call_lua("on_saved", E.filename);
 
+#ifdef _UNDO
     /* since we've saved - kill our undo stack */
     us_clear(E.undo);
+#endif
 
     return 0;
 
@@ -2435,9 +2473,14 @@ void initEditor(void)
     E.dirty = 0;
     E.filename = NULL;
     E.syntax = NULL;
-    getWindowSize(STDIN_FILENO, STDOUT_FILENO, &E.screenrows, &E.screencols);
+
+    getWindowSize();
     E.screenrows -= 2; /* Get room for status bar. */
+
+#ifdef _UNDO
     E.undo = us_create();
+#endif
+
     /*
      * Setup lua.
      */
@@ -2588,8 +2631,9 @@ int main(int argc, char **argv)
         /*
          * If we have a function to evaluate, post-load, do that.
          */
-        if ( eval != NULL ) {
-            call_lua(eval, "" );
+        if (eval != NULL)
+        {
+            call_lua(eval, "");
             free(eval);
             eval = NULL;
         }

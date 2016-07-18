@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _UNDO
 
 /*
  * Each undo operations we support.
@@ -127,6 +128,7 @@ UndoAction *us_pop(UndoStack *S)
 void us_push(UndoStack *S, UndoAction *action)
 {
     int size = S->size;
+
     S->elements = realloc(S->elements, sizeof(UndoAction) * size + 1);
     S->elements[size] = action;
     S->size = size + 1;
@@ -169,3 +171,5 @@ void add_undo(UndoStack *S, undo_type type, char data, int x, int y)
 
     us_push(S, u);
 }
+
+#endif
