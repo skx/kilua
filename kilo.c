@@ -55,7 +55,10 @@
 #include <time.h>
 #include <fcntl.h>
 #include <getopt.h>
+
+#ifdef _REGEXP
 #include <regex.h>
+#endif
 
 
 /* Lua interface */
@@ -720,34 +723,51 @@ void editorUpdateSyntax(erow *row)
                  * Compare the keyword as a regexp.
                  */
                 if (kw2)
-                {
                     klen--;
-                    tmp[klen] = '\0';
-                }
 
+#ifdef _REGEXP
                 regex_t regex;
-                int reti = regcomp(&regex, tmp, 0);
 
-                if (reti != 0)
-                {
+                /*
+                 * Strip the trailing "|"
+                 */
+                if (kw2)
+                    tmp[klen] = '\0';
+
+                /*
+                 * Can't compile?  Skip.
+                 */
+                if ( regcomp(&regex, tmp, 0) != 0 ) {
                     free(tmp);
                     continue;
                 }
 
-
                 regmatch_t result[1];
-                reti = regexec(&regex, p, 1, result, 0);
+                int res = regexec(&regex, p, 1, result, 0);
                 klen = (result[0]).rm_eo;
-
                 free(tmp);
 
-                if ((reti == 0) && (is_separator(*(p + klen))))
+                if ((res == 0) && (is_separator(*(p + klen))))
                 {
                     memset(row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
                     p += klen;
                     i += klen;
                     break;
                 }
+#else
+                if (!memcmp(p, keywords[j], klen) &&
+                        is_separator(*(p + klen)))
+                {
+                    /* Keyword */
+                    memset(row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
+                    p += klen;
+                    i += klen;
+                    free(tmp);
+                    break;
+
+                }
+                free(tmp);
+#endif
             }
 
             if (keywords[j] != NULL)
@@ -2046,28 +2066,45 @@ void editorRefreshScreen(void)
     abAppend(&ab, "\x1b[?25l", 6); /* Hide cursor. */
     abAppend(&ab, "\x1b[H", 3); /* Go home. */
 
+    int drawn = 0;
+
     for (y = 0; y < E.screenrows; y++)
     {
         int filerow = E.rowoff + y;
 
         if (filerow >= E.numrows)
         {
-            if (E.numrows == 0 && y == E.screenrows / 3)
+            if (E.numrows == 0 && ( y == ( E.screenrows / 3 ) + drawn) &&
+                ( drawn < 4 ) )
             {
-                char welcome[80];
-                int welcomelen = snprintf(welcome, sizeof(welcome),
-                                          "Kilo editor -- version %s\x1b[0K\r\n", KILO_VERSION);
-                int padding = (E.screencols - welcomelen) / 2;
+
+                const char * array[] = {
+                    "Kilo editor -- version " KILO_VERSION "\x1b[0K\r\n",
+                    "\r\n",
+#ifdef _REGEXP
+                    "Regular expression support enabled.\r\n",
+#else
+                    "\r\n",
+#endif
+#ifdef _UNDO
+                    "Undo-support enabled.\r\n",
+#else
+                    "\r\n",
+#endif
+                };
+
+                int padding = (E.screencols - strlen(array[drawn])) / 2;
 
                 if (padding)
                 {
                     abAppend(&ab, "~", 1);
                     padding--;
                 }
-
                 while (padding--) abAppend(&ab, " ", 1);
 
-                abAppend(&ab, welcome, welcomelen);
+                abAppend(&ab, array[drawn], strlen(array[drawn]));
+                drawn += 1;
+
             }
             else
             {
@@ -2103,11 +2140,9 @@ void editorRefreshScreen(void)
                  */
                 if ((E.markx != -1) && (E.marky != -1))
                 {
-                    // mark
                     int mx = E.markx;
                     int my = E.marky;
 
-                    // cursor
                     int cx = E.coloff + E.cx;
                     int cy = E.rowoff + E.cy;
 
