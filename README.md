@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/skx/kilo.png)](https://travis-ci.org/skx/kilo)
+[![license](https://img.shields.io/github/license/skx/kilo.svg)]()
 
 # Kilo
 
