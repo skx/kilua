@@ -549,7 +549,9 @@ void editorUpdateSyntax(erow *row)
     row->hl = realloc(row->hl, row->rsize);
     memset(row->hl, HL_NORMAL, row->rsize);
 
-    if (E.syntax == NULL) return; /* No syntax, everything is HL_NORMAL. */
+    /* No syntax, everything is HL_NORMAL. */
+    if (E.syntax == NULL)
+        return;
 
     int i, prev_sep, in_string, in_comment;
     char *p;
@@ -1469,13 +1471,10 @@ int page_down_lua(lua_State *L)
 {
     (void)L;
 
-    if (E.cy != E.screenrows - 1)
-        E.cy = E.screenrows - 1;
-
-    int times = E.screenrows;
+    int times = E.screenrows - 1;
 
     while (times--)
-        down_lua(NULL);
+        down_lua(L);
 
     return 0;
 }
@@ -1484,11 +1483,10 @@ int page_down_lua(lua_State *L)
 int page_up_lua(lua_State *L)
 {
     (void)L;
-    E.cy = 0;
-    int times = E.screenrows;
+    int times = E.screenrows - 1;
 
     while (times--)
-        up_lua(NULL);
+        up_lua(L);
 
     return 0;
 }
@@ -2346,16 +2344,22 @@ void editorMoveCursor(int key)
         }
         else if (row && filecol == row->size)
         {
-            E.cx = 0;
-            E.coloff = 0;
-
             if (E.cy == E.screenrows - 1)
             {
+                E.cx = 0;
+                E.coloff = 0;
+
                 E.rowoff++;
             }
             else
             {
-                E.cy += 1;
+                if (filerow < (E.numrows - 1))
+                {
+                    E.cx = 0;
+                    E.coloff = 0;
+
+                    E.cy += 1;
+                }
             }
         }
 
@@ -2374,7 +2378,7 @@ void editorMoveCursor(int key)
         break;
 
     case ARROW_DOWN:
-        if (filerow < E.numrows)
+        if (filerow < (E.numrows - 1))
         {
             if (E.cy == E.screenrows - 1)
             {
