@@ -304,14 +304,20 @@ end
 -- Move to end of file
 --
 function end_of_file()
+   -- Move to top of file.
    point(0,0)
 
+   -- Move to last line
    repeat
       local x,y = point()
       down()
       local a,b  = point()
    until ( a==x ) and ( b == y )
    up()
+
+   -- Move to end of line.
+   eol()
+
 end
 
 
