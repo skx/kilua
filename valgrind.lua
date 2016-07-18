@@ -1,7 +1,7 @@
 --
 -- Cause corruption.
 --
-function on_init()
+function valgrind()
    -- Create an input-file
    os.execute( "cp kilo.c kilo.c.tmp" )
 
