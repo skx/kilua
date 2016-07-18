@@ -313,7 +313,6 @@ function end_of_file()
       down()
       local a,b  = point()
    until ( a==x ) and ( b == y )
-   up()
 
    -- Move to end of line.
    eol()
