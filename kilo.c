@@ -1204,13 +1204,19 @@ int kill_line_lua(lua_State *L)
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     if (row)
-        len =  row->rsize;
+        len = row->rsize;
 
     while (len > 0)
     {
         delete_lua(L);
         len -= 1;
     }
+
+    /*
+     * Remove the line itself.
+     */
+    right_lua(L);
+    delete_lua(L);
 
     return 0;
 }
