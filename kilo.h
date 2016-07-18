@@ -146,7 +146,6 @@ void disableRawMode(int fd);
 void editorAtExit(void);
 int enableRawMode(int fd);
 int editorReadKey(int fd);
-int getCursorPosition(int ifd, int ofd, int *rows, int *cols);
 void getWindowSize();
 void call_lua(char *function, char *arg);
 void strrev(char *p);
