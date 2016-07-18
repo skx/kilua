@@ -2506,6 +2506,11 @@ int main(int argc, char **argv)
     loaded += load_lua("kilo.lua");
 
     /*
+     * An init-function to call, if any.
+     */
+    char *eval = NULL;
+
+    /*
      * Parse command-line options.
      */
     while (1)
@@ -2513,6 +2518,7 @@ int main(int argc, char **argv)
         static struct option long_options[] =
         {
             {"config", required_argument, 0, 'c'},
+            {"eval", required_argument, 0, 'e'},
             {"version", no_argument, 0, 'v'},
             {0, 0, 0, 0}
         };
@@ -2520,7 +2526,7 @@ int main(int argc, char **argv)
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        char c = getopt_long(argc, argv, "c:v", long_options, &option_index);
+        char c = getopt_long(argc, argv, "e:c:v", long_options, &option_index);
 
         /* Detect the end of the options. */
         if (c == -1)
@@ -2535,6 +2541,10 @@ int main(int argc, char **argv)
 
         case 'c':
             loaded += load_lua(optarg);
+            break;
+
+        case 'e':
+            eval = strdup(optarg);
             break;
         }
     }
@@ -2575,6 +2585,15 @@ int main(int argc, char **argv)
      */
     while (1)
     {
+        /*
+         * If we have a function to evaluate, post-load, do that.
+         */
+        if ( eval != NULL ) {
+            call_lua(eval, "" );
+            free(eval);
+            eval = NULL;
+        }
+
         editorRefreshScreen();
         editorProcessKeypress(STDIN_FILENO);
     }
