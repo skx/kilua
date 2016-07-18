@@ -910,6 +910,13 @@ void editorFreeRow(erow *row)
     free(row->render);
     free(row->chars);
     free(row->hl);
+
+    /* Sanity-check - ensure we're not dereferenced / used */
+    row->render = NULL;
+    row->chars  = NULL;
+    row->hl     = NULL;
+    row->size   = 0;
+    row->rsize  = 0;
 }
 
 /* Remove the row at the specified position, shifting the remaining on the
