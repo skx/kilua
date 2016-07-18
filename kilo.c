@@ -1613,6 +1613,16 @@ int delete_lua(lua_State *L)
             E.cx--;
     }
 
+    /*
+     * BUGFIX: Ensure we don't walk off the screen, and draw gibberish.
+     *
+     * This seems to happen when `shift` becomes negative above.
+     */
+    if ( E.coloff < 0 )
+        E.coloff = 0;
+    if ( E.rowoff < 0 )
+        E.rowoff = 0;
+
     if (row) editorUpdateRow(row);
 
     E.dirty++;
