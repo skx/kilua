@@ -13,3 +13,8 @@ protos: kilo.c
 	cproto kilo.c $(shell pkg-config --cflags lua5.2) > kilo.h
 clean:
 	rm kilo || true
+
+valgrind:
+	make clean
+	make
+	valgrind --log-file=valgrind.out --read-var-info=yes --read-inline-info=yes --undef-value-errors=yes --track-origins=yes --keep-stacktraces=alloc-and-free  --tool=memcheck --leak-check=yes  --track-origins=yes -v --leak-check=full --show-leak-kinds=all -v ./kilo /dev/null --config=valgrind.lua --eval=on_init
