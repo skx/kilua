@@ -1353,7 +1353,6 @@ int undo_lua(lua_State *L)
         warp(action->x, action->y);
 
         char str[2] = { '\0', '\0' };
-        editorSetStatusMessage("Inserting '%c'", str[0]);
         str[0] = action->data;
         lua_pushstring(L, str);
         insert_lua(L);
