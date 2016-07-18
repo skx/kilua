@@ -34,7 +34,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define KILO_VERSION "0.2"
+#ifndef KILO_VERSION
+#  define KILO_VERSION "unknown"
+#endif
 
 #define _BSD_SOURCE
 #define _GNU_SOURCE
@@ -44,7 +46,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -54,6 +55,8 @@
 #include <time.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <regex.h>
+
 
 /* Lua interface */
 #include <lua.h>
@@ -707,12 +710,39 @@ void editorUpdateSyntax(erow *row)
                 int klen = strlen(keywords[j]);
                 int kw2 = keywords[j][klen - 1] == '|';
 
-                if (kw2) klen--;
+                /*
+                 * Take a copy of the keyword, so that we can
+                 * remove the "|" from it, if we required
+                 */
+                char *tmp = strdup(keywords[j]);
 
-                if (!memcmp(p, keywords[j], klen) &&
-                        is_separator(*(p + klen)))
+                /*
+                 * Compare the keyword as a regexp.
+                 */
+                if (kw2)
                 {
-                    /* Keyword */
+                    klen--;
+                    tmp[klen] = '\0';
+                }
+
+                regex_t regex;
+                int reti = regcomp(&regex, tmp, 0);
+
+                if (reti != 0)
+                {
+                    free(tmp);
+                    continue;
+                }
+
+
+                regmatch_t result[1];
+                reti = regexec(&regex, p, 1, result, 0);
+                klen = (result[0]).rm_eo;
+
+                free(tmp);
+
+                if ((reti == 0) && (is_separator(*(p + klen))))
+                {
                     memset(row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
                     p += klen;
                     i += klen;
@@ -725,6 +755,7 @@ void editorUpdateSyntax(erow *row)
                 prev_sep = 0;
                 continue; /* We had a keyword match */
             }
+
         }
 
         /* Not special chars */

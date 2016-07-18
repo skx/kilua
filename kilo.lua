@@ -82,8 +82,9 @@ syn['c']   = {
    keywords = {
       "switch","if","while","for","break","continue","return","else",
       "struct","union","typedef","static","enum","class",
-      "int|","long|","short|", "double|","float|","char|","unsigned|","signed|",
-      "void|", "#include|","#define|","#ifdef|","#endif|" },
+      "int|","long|","short|", "double|","float|","char|","unsigned|","signed|","void|",
+      "^#\\s*define|", "#endif|", "#if|", "#ifdef", "#ifndef|", "#include|",
+   },
    single      = "//",
    multi_open  = "/*",
    multi_close = "*/"
