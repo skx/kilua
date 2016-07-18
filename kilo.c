@@ -863,9 +863,7 @@ void editorUpdateRow(erow *row)
     }
 
     row->rsize = idx;
-
-    if (row->rsize < idx)
-        row->render[idx] = '\0';
+    row->render[idx] = '\0';
 
     /* Update the syntax highlighting attributes of the row. */
     editorUpdateSyntax(row);
