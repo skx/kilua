@@ -80,10 +80,14 @@ keymap['END']       = function() end_of_file() end
 local syn = {}
 syn['c']   = {
    keywords = {
-      "switch","if","while","for","break","continue","return","else",
-      "struct","union","typedef","static","enum","class",
-      "int|","long|","short|", "double|","float|","char|","unsigned|","signed|","void|",
-      "^#\\s*define|", "#endif|", "#if|", "#ifdef", "#ifndef|", "#include|",
+      -- These come first because otherwise "if" matches the token "#if".
+      "#endif|", "#if|", "#ifdef|", "#ifndef|", "#include|",
+      -- This is duplicated to cover both regexp support enabled & disabled.
+      "#define|","^#\\s*define|",
+      -- Keywords
+      "auto","break","case","const","continue","default","do","else","enum","extern", "enum","for","goto","if","register","return","sizeof","switch","while",
+      -- Types
+      "char|","double|","extern|","float|","int|","long|","short|","signed|","static|","struct|","typedef|","union|","unsigned|","void|","volatile|",
    },
    single      = "//",
    multi_open  = "/*",
