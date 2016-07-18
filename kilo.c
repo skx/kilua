@@ -1142,6 +1142,15 @@ int get_line_lua(lua_State *L)
     return 0;
 }
 
+/* read a single key */
+int key_lua(lua_State *L)
+{
+    char buf[2] = { '\0', '\0' };
+    buf[0] = editorReadKey(STDIN_FILENO);
+    lua_pushstring(L, buf);
+    return 1;
+}
+
 /* Remove the current line. */
 int kill_line_lua(lua_State *L)
 {
@@ -2442,6 +2451,7 @@ void initEditor(void)
     lua_register(lua, "find", find_lua);
     lua_register(lua, "get_line", get_line_lua);
     lua_register(lua, "kill", kill_line_lua);
+    lua_register(lua, "key", key_lua);
     lua_register(lua, "insert", insert_lua);
     lua_register(lua, "left", left_lua);
     lua_register(lua, "right", right_lua);
