@@ -757,7 +757,7 @@ void editorUpdateSyntax(erow *row)
                 int res = regexec(&regex, p, 1, result, 0);
 
                 /* the offset of the match */
-                int offset = result[0]).rm_so;
+                int offset = result[0].rm_so;
 
                 /* the length of the match */
                 klen = (result[0]).rm_eo - (result[0]).rm_so;
