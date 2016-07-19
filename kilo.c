@@ -755,10 +755,25 @@ void editorUpdateSyntax(erow *row)
 
                 regmatch_t result[1];
                 int res = regexec(&regex, p, 1, result, 0);
-                klen = (result[0]).rm_eo;
+
+                /* the offset of the match */
+                int offset = result[0]).rm_so;
+
+                /* the length of the match */
+                klen = (result[0]).rm_eo - (result[0]).rm_so;
                 free(tmp);
 
-                if ((res == 0) && (is_separator(*(p + klen))))
+                /*
+                 * We need :
+                 *
+                 *  The match succeeded:  (res == 0 )
+                 *
+                 *  The match was made at the current position
+                 *   (offset == 0 )
+                 *
+                 *  The separator magic.
+                 */
+                if ((res == 0) && ( ( offset == 0 ) && (is_separator(*(p + klen))))
                 {
                     memset(row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
                     p += klen;
