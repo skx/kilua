@@ -1783,6 +1783,37 @@ int search_lua(lua_State *L)
     for (int i = 0; i < E.numrows; i++)
     {
         /*
+         * For each character in the current row .. do we match?
+         */
+        for( int x = E.cx + E.coloff; x < E.row[current].rsize; x++ )
+        {
+            if ( strncmp(E.row[current].render + x, term, strlen(term)) == 0 )
+            {
+                /*
+                 * The column in which we matched.
+                 */
+                E.cx = x;
+                E.coloff = 0;
+
+                /* The matching row will be at the top of the screen. */
+                E.cy = 0;
+                E.rowoff = current;
+
+                /* Scroll horizontally as needed. */
+                if (E.cx > E.screencols)
+                {
+                    int diff = abs(E.cx - E.screencols);
+                    E.cx -= diff;
+                    E.coloff += diff;
+                }
+
+                /* Return the length of the match */
+                lua_pushnumber(L, strlen(term));
+                return 1;
+            }
+        }
+
+        /*
          * Current line.
          */
         current += 1;
@@ -1790,35 +1821,15 @@ int search_lua(lua_State *L)
         /*
          * Wrap around the end/start of the file.
          */
-        if (current <= -1)
-            current = E.numrows - 1;
-        else if (current == E.numrows)
+        if (current == E.numrows)
             current = 0;
 
         /*
-         * Do the search.
+         * We've moved forward a row, so we can now start at the
+         * beginning of the row.
          */
-        char *match = stristr(E.row[current].render, term);
-
-        if (match)
-        {
-            E.cy = 0;
-            E.cx = match - E.row[current].render;
-            E.rowoff = current ;
-            E.coloff = 0;
-
-            /* Scroll horizontally as needed. */
-            if (E.cx > E.screencols)
-            {
-                int diff = abs(E.cx - E.screencols);
-                E.cx -= diff;
-                E.coloff += diff;
-            }
-
-            /* Return the length of the match */
-            lua_pushnumber(L, strlen(term));
-            return 1;
-        }
+        E.cx = 0;
+        E.coloff = 0;
     }
 
     /*
@@ -2032,8 +2043,10 @@ int find_lua(lua_State *L)
             {
                 current += find_next;
 
-                if (current == -1) current = E.numrows - 1;
-                else if (current == E.numrows) current = 0;
+                if (current == -1)
+                    current = E.numrows - 1;
+                else if (current == E.numrows)
+                    current = 0;
 
                 match = strstr(E.row[current].render, query);
 
