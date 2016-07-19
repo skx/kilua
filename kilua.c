@@ -2268,27 +2268,17 @@ void editorRefreshScreen(void)
             if (E.numrows == 0 && (y == (E.screenrows / 3) + drawn) &&
                     (drawn < welcome_len))
             {
+                /* open the line, as usual. */
+                abAppend(&ab, "\x1b[2K~ ", 6);
 
-                /*
-                 * Lines will be centered.
-                 */
-                int padding = (E.screencols - strlen(welcome_msg[drawn])) / 2;
-
-                if (padding)
-                {
-                    abAppend(&ab, "~", 1);
-                    padding--;
-                }
-
-                while (padding--) abAppend(&ab, " ", 1);
-
+                /* Add the message */
                 abAppend(&ab, welcome_msg[drawn], strlen(welcome_msg[drawn]));
                 drawn += 1;
 
             }
             else
             {
-                abAppend(&ab, "~\x1b[0K\r\n", 7);
+                abAppend(&ab, "\x1b[2K~\r\n", 7);
             }
 
             continue;
