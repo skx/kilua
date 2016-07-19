@@ -464,3 +464,24 @@ function goto_mark()
       status( "Mark not set '" .. k .. "'" )
    end
 end
+
+
+--
+-- Simple function to do a global search&replace.
+--
+-- Invoke via "Ctrl-l" then "search_replace('kemp','smith')"
+--
+-- NOTE: Bad things will happen if the replacement text
+--       also matches the search pattern.
+--
+function search_replace( orig, new )
+   while( search( orig ) ) do
+      -- Delete the match
+      for i=1, #orig  do
+         right()
+         delete()
+      end
+      -- Insert the replacement
+      insert( new )
+   end
+end
