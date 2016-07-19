@@ -12,7 +12,7 @@
 
  There are three callback functions that kilua invokes at various times:
 
-  * on_keypress()
+  * on_key(key)
      Called when input is received.
 
   * on_loaded(filename)
@@ -90,8 +90,15 @@ keymap['END']       = function() end_of_file() end
 -- Test things out
 --
 keymap['^X'] = {}
+
+-- Ctrl-x, Ctrl-a Ctrl-3
+
 keymap['^X']['1']  = function() status ( "ONE!") end
 keymap['^X']['2']  = function() status ( "TWO!") end
+
+keymap['^X']['^A'] = {}
+keymap['^X']['^A']['3'] = function() status("THREE!") end
+
 keymap['^X']['^S'] = save
 keymap['^X']['^C'] = function() quit() end
 
@@ -251,7 +258,11 @@ do
          tmp = tmp .. "['" .. o .. "']"
       end
       tmp = tmp .. "['" .. k .. "']"
-
+      if ( not tmp )then
+         status( "TMP IS NULL!!!!")
+      else
+         status( "Appended " .. tmp )
+      end
       (loadstring(tmp))()
 
       if ( type(tmp) == 'function' ) then
@@ -262,13 +273,17 @@ do
          pending_input = {}
          return
       end
+      if ( type(tmp) == 'table' ) then
+         return
+      end
+
 
       --
       --
       -- Otherwise just insert the character.
       --
       insert(k)
-
+      pending_input = {}
       --
       -- If we reached here the previous character was not Ctrl-q
       -- so we reset the global-quit-count

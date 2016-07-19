@@ -105,7 +105,7 @@ In addition to those functions there are also the obvious movement-related primi
 There is room for lots more functionality to be delegated to callbacks,
 but right now there are just three:
 
-* `on_key()`
+* `on_key(key)`
     * Called to process a single key input.
 * `on_loaded(filename)`
     * Called when a file is loaded.
