@@ -1761,6 +1761,16 @@ int search_lua(lua_State *L)
         return 0;
     }
 
+#ifdef _REGEXP
+    regex_t regex;
+    if (regcomp(&regex, term, 0) != 0)
+    {
+        editorSetStatusMessage("Failed to compile regular expression!");
+        return 0;
+    };
+#endif
+
+
     /* Save the cursor position in order to restore it later. */
     int saved_cx = E.cx, saved_cy = E.cy;
     int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
@@ -1787,7 +1797,30 @@ int search_lua(lua_State *L)
          */
         for( int x = E.cx + E.coloff; x < E.row[current].rsize; x++ )
         {
+            int match     = 0;
+            int match_len = 0;
+
+#ifdef _REGEXP
+            regmatch_t result[1];
+            if ( regexec(&regex, E.row[current].render + x, 1, result, 0) == 0 )
+            {
+                match = 1;
+                match_len =(result[0]).rm_eo - (result[0]).rm_so;
+
+                /*
+                 * Start of the match.
+                 */
+                x += (result[0]).rm_so;
+            }
+#else
             if ( strncmp(E.row[current].render + x, term, strlen(term)) == 0 )
+            {
+                match = 1;
+                match_len = strlen(term);
+            }
+#endif
+
+            if ( match )
             {
                 /*
                  * The column in which we matched.
@@ -1808,7 +1841,7 @@ int search_lua(lua_State *L)
                 }
 
                 /* Return the length of the match */
-                lua_pushnumber(L, strlen(term));
+                lua_pushnumber(L, match_len);
                 return 1;
             }
         }
