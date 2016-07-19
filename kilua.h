@@ -1,6 +1,4 @@
-/* Kilo -- A very simple editor in around 1-kilo lines of code (as counted
- *         by "cloc"). Does not depend on libcurses, directly emits VT100
- *         escapes on the terminal.
+/* kilua.h - Header file.
  *
  * -----------------------------------------------------------------------
  *
@@ -144,7 +142,7 @@ struct abuf
  */
 const char * welcome_msg[] =
 {
-    "Kilo editor -- version " KILO_VERSION "\x1b[0K\r\n",
+    "kilua, version " _VERSION "\x1b[0K\r\n",
     "\r\n",
 #ifdef _REGEXP
     "Regular expression support enabled.\r\n",

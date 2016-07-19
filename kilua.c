@@ -1,6 +1,4 @@
-/* Kilo -- A very simple editor in around 1-kilo lines of code (as counted
- *         by "cloc"). Does not depend on libcurses, directly emits VT100
- *         escapes on the terminal.
+/* kilua.h - Implementation file.
  *
  * -----------------------------------------------------------------------
  *
@@ -34,8 +32,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef KILO_VERSION
-#  define KILO_VERSION "unknown"
+#ifndef _VERSION
+#  define _VERSION "unknown"
 #endif
 
 #define _BSD_SOURCE
@@ -66,7 +64,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "kilo.h"
+#include "kilua.h"
 
 
 
@@ -175,9 +173,11 @@ int editorReadKey(int fd)
         case ESC:    /* escape sequence */
 
             /* If this is just an ESC, we'll timeout here. */
-            if (read(fd, seq, 1) == 0) return ESC;
+            if (read(fd, seq, 1) == 0)
+                return ESC;
 
-            if (read(fd, seq + 1, 1) == 0) return ESC;
+            if (read(fd, seq + 1, 1) == 0)
+                return ESC;
 
             /* ESC [ sequences. */
             if (seq[0] == '[')
@@ -225,6 +225,7 @@ int editorReadKey(int fd)
                         return END_KEY;
                     }
                 }
+
             }
 
             /* ESC O sequences. */
@@ -241,6 +242,7 @@ int editorReadKey(int fd)
             }
 
             break;
+
 
         default:
             return c;
@@ -773,7 +775,7 @@ void editorUpdateSyntax(erow *row)
                  *
                  *  The separator magic.
                  */
-                if ((res == 0) && ( offset == 0 ) && (is_separator(*(p + klen))))
+                if ((res == 0) && (offset == 0) && (is_separator(*(p + klen))))
                 {
                     memset(row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
                     p += klen;
@@ -2773,13 +2775,13 @@ int main(int argc, char **argv)
     int loaded = 0;
 
     /*
-     * Load our default configuration files: ~/.kilo.lua + ./kilo.lua.
+     * Load our default configuration files: ~/.kilua.lua + ./kilua.lua.
      */
     char init_buf[1024] = {'\0'};
     snprintf(init_buf, sizeof(init_buf) - 1, "%s%s",
-             getenv("HOME"), "/.kilo.lua");
+             getenv("HOME"), "/.kilua.lua");
     loaded += load_lua(init_buf);
-    loaded += load_lua("kilo.lua");
+    loaded += load_lua("kilua.lua");
 
     /*
      * An init-function to call, if any.
@@ -2811,7 +2813,7 @@ int main(int argc, char **argv)
         switch (c)
         {
         case 'v':
-            fprintf(stderr, "kilo v%s\n", KILO_VERSION);
+            fprintf(stderr, "kilua v%s\n", _VERSION);
             exit(0);
             break;
 
@@ -2834,7 +2836,7 @@ int main(int argc, char **argv)
      */
     if (loaded == 0)
     {
-        fprintf(stderr, "Neither ./kilo.lua nor ~/.kilo.lua could be loaded\n");
+        fprintf(stderr, "Neither ./kilua.lua nor ~/.kilua.lua could be loaded\n");
         exit(1);
     }
 

@@ -1,25 +1,27 @@
 --[[
 
- This is the configuration file for kilo.
+ This is the configuration file for kilua.
 
- When kilo starts it will look for its configuration-file in two
+ When kilua starts it will look for its configuration-file in two
  locations:
 
-   ~/.kilo.lua
-   ./kilo.lua
+   ~/.kilua.lua
+   ./kilua.lua
 
  If neither location exists this is a fatal error.
 
- There are three callback functions that kilo invokes at various times:
+ There are three callback functions that kilua invokes at various times:
 
   * on_keypress()
      Called when input is received.
+
   * on_loaded(filename)
      Called after a file is loaded.
+
   * on_saved(filename)
      Called after a file is saved.
 
- Otherwise the only magic here is the `keymap` table.  Kilo will lookup
+ Otherwise the only magic here is the `keymap` table.  Kilua will lookup
  every keypress in this table, and if there is a matching function defined
  it will be invoked, otherwise the literal character will be inserted.
 
@@ -82,7 +84,7 @@ keymap['RIGHT']     = right
 keymap['UP']        = up
 keymap['DOWN']      = down
 keymap['HOME']      = function() point(0,0) end
-keymap['END']       = function() end_of_file() end 
+keymap['END']       = function() end_of_file() end
 
 
 --
@@ -426,7 +428,7 @@ quit_count = 2
 --
 --  * If the buffer is clean then exit immediately.
 --  * If the buffer is dirty require N Ctrl-q presses to exit.
---     * Although this is odd to me, this is how kilo worked in pure C.
+--     * Although this is odd to me, this is how kilua worked in pure C.
 --
 function quit()
    if ( dirty() ) then

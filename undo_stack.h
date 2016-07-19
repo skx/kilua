@@ -1,10 +1,6 @@
-/* Kilo -- A very simple editor in around 1-kilo lines of code (as counted
- *         by "cloc"). Does not depend on libcurses, directly emits VT100
- *         escapes on the terminal.
+/* undo_stack.h -- Simple stack-implementation for recording "undo" info.
  *
  * -----------------------------------------------------------------------
- *
- * Copyright (C) 2016 Salvatore Sanfilippo <antirez at gmail dot com>
  *
  * Copyright (C) 2016 Steve Kemp https://steve.kemp.fi/
  *

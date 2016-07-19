@@ -1,26 +1,19 @@
-[![Build Status](https://travis-ci.org/skx/kilo.png)](https://travis-ci.org/skx/kilo)
-[![license](https://img.shields.io/github/license/skx/kilo.svg)]()
+[![Build Status](https://travis-ci.org/skx/kilua.png)](https://travis-ci.org/skx/kilo)
+[![license](https://img.shields.io/github/license/skx/kilua.svg)]()
 
-# Kilo
+# Kilua
 
-Kilo is a minimal text editor written in around 2K lines of code, as
-counted with `cloc`:
-
-     ----------------------------------------------------------------------
-     Language            files          blank        comment           code
-     ----------------------------------------------------------------------
-     C                       1            419            309           1668
-     Lua                     1             88            163            193
-     ----------------------------------------------------------------------
+Kilo is a minimal text editor written in around 2K lines of code, which
+was forked from the minimal [kilo editor](https://github.com/antirez/kilo)
+which was written by @antirez.
 
 You can launch the editor via :
 
-    $ kilo /path/to/file
+    $ kilua /path/to/file
 
 Once launched the arrow keys will move you around, and the main keybindings
 to learn are:
 
-    Ctrl-d: Insert date/time
     CTRL-l: Read lua from the user, and evaluate it.
     CTRL-o: Open a new file.
     CTRL-s: Save the current file.
@@ -28,27 +21,16 @@ to learn are:
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
 
 
-There's a screencast showing the differences between this fork and
-the original `kilo` available here:
-
-* https://asciinema.org/a/2tkjh1gog1y3e5jmpdk9a663k
-
-
-## License
-
-Kilo was written by Salvatore Sanfilippo, aka antirez, and is released
-under the BSD 2 clause license.
-
 
 ## Lua Support
 
-This fork of `kilo` was hacked together by [Steve Kemp](https://steve.kemp.fi/)
+This project was hacked together by [Steve Kemp](https://steve.kemp.fi/)
 to include a lua intepreter, and delegate as much as possible of the operation
 to that lua instance.
 
 * On startup our initialization files are read:
-    * `~/.kilo.lua`.
-    * `./kilo.lua`.
+    * `~/.kilua.lua`.
+    * `./kilua.lua`.
     * If zero startup files are loaded this is a fatal error.
 * Input is processed via the `on_key()` function defined in that file.
      * We use a global keymap to bind control-keys to lua functions.
@@ -184,7 +166,7 @@ undo-stack.  Specifically difficult functions are:
 
 ## The Future
 
-There are no obvious future plans, but [bug reports](https://github.com/skx/kilo/issues) may be made if you have a feature to suggest (or bug to report)!
+There are no obvious future plans, but [bug reports](https://github.com/skx/kilua/issues) may be made if you have a feature to suggest (or bug to report)!
 
 
 Steve
