@@ -13,7 +13,7 @@ indent:
 protos: kilo.c
 	cproto kilo.c $(shell pkg-config --cflags lua5.2) > kilo.h
 clean:
-	rm kilo || true
+	rm kilo *.orig || true
 
 valgrind:
 	make clean
