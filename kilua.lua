@@ -87,20 +87,18 @@ keymap['HOME']      = function() point(0,0) end
 keymap['END']       = function() end_of_file() end
 
 --
--- Test things out
+-- Prefixed keybindings
+--
+--  ^X ^S => Save
+--
+--  ^X ^C => Exit
+--
+--  ^X ^X => Swap point and mark
 --
 keymap['^X'] = {}
-
--- Ctrl-x, Ctrl-a Ctrl-3
-
-keymap['^X']['1']  = function() status ( "ONE!") end
-keymap['^X']['2']  = function() status ( "TWO!") end
-
-keymap['^X']['^A'] = {}
-keymap['^X']['^A']['3'] = function() status("THREE!") end
-
-keymap['^X']['^S'] = save
 keymap['^X']['^C'] = function() quit() end
+keymap['^X']['^S'] = save
+keymap['^X']['^X'] = function() swap_point_mark() end
 
 
 --
@@ -210,7 +208,7 @@ end
 -- the editor, literally.
 --
 do
-   pending_input = {}
+   pending_char = nil
 
    function on_key(k)
 
@@ -221,9 +219,36 @@ do
       k = expand_key(k)
 
       --
+      -- At this point the key didn't result in a function.
+      --
+      -- Nor did it terminate a special action.
+      --
+      -- So we'll now look for the expanded function.
+      --
+      if ( pending_char ) then
+         local val = keymap[pending_char][k]
+
+         if ( type(val) == 'function' ) then
+            --
+            -- We got a function to invoke!
+            --
+            val()
+            pending_char = nil
+            return
+         else
+            --
+            -- Failure
+            --
+            pending_char = nil
+         end
+      end
+
+      --
       -- Lookup the key in our key-map.
       --
       local result = keymap[k]
+
+
 
       --
       -- Was there a result?
@@ -237,53 +262,20 @@ do
          end
          if ( type(result) == 'table' ) then
             --
-            -- This is a pending multi-part key.
+            -- This is a pending multi-part key - record this part
+            -- away.
             --
-            -- Append the key and return.
-            --
-            pending_input[#pending_input + 1 ] = k
+            pending_char = k
             return
          end
       end
-
-      --
-      -- At this point the key didn't result in a function.
-      --
-      -- Nor did it terminate a special action.
-      --
-      -- So we'll now look for the expanded function.
-      --
-      tmp = "tmp = keymap"
-      for i,o in pairs(pending_input) do
-         tmp = tmp .. "['" .. o .. "']"
-      end
-      tmp = tmp .. "['" .. k .. "']"
-      if ( not tmp )then
-         status( "TMP IS NULL!!!!")
-      else
-         status( "Appended " .. tmp )
-      end
-      (loadstring(tmp))()
-
-      if ( type(tmp) == 'function' ) then
-         --
-         -- We got a function to invoke!
-         --
-         tmp()
-         pending_input = {}
-         return
-      end
-      if ( type(tmp) == 'table' ) then
-         return
-      end
-
 
       --
       --
       -- Otherwise just insert the character.
       --
       insert(k)
-      pending_input = {}
+      pending_char = nil
       --
       -- If we reached here the previous character was not Ctrl-q
       -- so we reset the global-quit-count
@@ -518,6 +510,23 @@ end
 --  Implementation of setting/jumping to (named) marks.
 -----------------------------------------------------------------------------
 
+
+--
+-- Swap the position of the point and mark
+--
+function swap_point_mark()
+   m_x, m_y = mark()
+
+   if ( m_x == -1 and m_y == -1 ) then
+      -- no mark
+      status( "No mark is set!" )
+      return
+   end
+
+   x,y = point()
+   mark( x, y)
+   point( m_x , m_y )
+end
 
 
 --
