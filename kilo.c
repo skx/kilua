@@ -773,7 +773,7 @@ void editorUpdateSyntax(erow *row)
                  *
                  *  The separator magic.
                  */
-                if ((res == 0) && ( ( offset == 0 ) && (is_separator(*(p + klen))))
+                if ((res == 0) && ( offset == 0 ) && (is_separator(*(p + klen))))
                 {
                     memset(row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
                     p += klen;
