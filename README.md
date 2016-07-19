@@ -1,9 +1,9 @@
-[![Build Status](https://travis-ci.org/skx/kilua.png)](https://travis-ci.org/skx/kilo)
+[![Build Status](https://travis-ci.org/skx/kilua.png)](https://travis-ci.org/skx/kilua)
 [![license](https://img.shields.io/github/license/skx/kilua.svg)]()
 
 # Kilua
 
-Kilo is a minimal text editor written in around 2K lines of code, which
+Kilua is a minimal text editor written in around 2K lines of code, which
 was forked from the minimal [kilo editor](https://github.com/antirez/kilo)
 which was written by @antirez.
 
