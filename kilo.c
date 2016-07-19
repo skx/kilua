@@ -1746,6 +1746,101 @@ writeerr:
     return 1;
 }
 
+
+/* Search for the given string */
+int search_lua(lua_State *L)
+{
+    /*
+     * Get the search pattern.
+     */
+    char *term = (char *)lua_tostring(L, -1);
+
+    if (term == NULL)
+    {
+        editorSetStatusMessage("No search term given!");
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+
+    /* Save the cursor position in order to restore it later. */
+    int saved_cx = E.cx, saved_cy = E.cy;
+    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+
+    /* Move forward one character - to ensure that we
+     * are able to find the next match, not keep on the first
+     * one.
+     */
+    right_lua(L);
+
+    int found = 0;
+
+    /*
+     * Current line;
+     */
+    int current = E.cy + E.rowoff;
+
+    /*
+     * Now for each line ..
+     */
+    for (int i = 0; i < E.numrows; i++)
+    {
+        /*
+         * Current line.
+         */
+        current += 1;
+
+        /*
+         * Wrap around the end/start of the file.
+         */
+        if (current <= -1)
+            current = E.numrows - 1;
+        else if (current == E.numrows)
+            current = 0;
+
+        /*
+         * Do the search.
+         */
+        char *match = strstr(E.row[current].render, term);
+
+        if (match)
+        {
+            found = 1;
+
+            E.cy = 0;
+            E.cx = match - E.row[current].render;
+            E.rowoff = current ;
+            E.coloff = 0;
+
+            /* Scroll horizontally as needed. */
+            if (E.cx > E.screencols)
+            {
+                int diff = abs(E.cx - E.screencols);
+                E.cx -= diff;
+                E.coloff += diff;
+            }
+        }
+    }
+
+    /*
+     * If we didn't find a match we need to restore the
+     * position to where where we were before.
+     */
+    if (found == 0)
+    {
+        editorSetStatusMessage("No match found");
+        E.cx = saved_cx;
+        E.cy = saved_cy;
+        E.coloff = saved_coloff;
+        E.rowoff = saved_rowoff;
+        lua_pushboolean(L, 0);
+    }
+    else
+    {
+        lua_pushboolean(L, 1);
+    }
+    return 1;
+}
+
 /* set the syntax keywords. */
 int set_syntax_keywords_lua(lua_State *L)
 {
@@ -2590,6 +2685,7 @@ void initEditor(void)
     lua_register(lua, "save", save_lua);
     lua_register(lua, "selection", selection_lua);
     lua_register(lua, "cut_selection", cut_selection_lua);
+    lua_register(lua, "search", search_lua);
     lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
     lua_register(lua, "set_syntax_comments", set_syntax_comments_lua);
     lua_register(lua, "syntax_highlight_numbers", syntax_highlight_numbers_lua);
