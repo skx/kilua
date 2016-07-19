@@ -36,7 +36,7 @@ https://steve.kemp.fi/
 --
 -- Keymap of bound keys
 --
-local keymap = {}
+keymap = {}
 
 --
 --  Key bindings.
@@ -85,6 +85,15 @@ keymap['UP']        = up
 keymap['DOWN']      = down
 keymap['HOME']      = function() point(0,0) end
 keymap['END']       = function() end_of_file() end
+
+--
+-- Test things out
+--
+keymap['^X'] = {}
+keymap['^X']['1']  = function() status ( "ONE!") end
+keymap['^X']['2']  = function() status ( "TWO!") end
+keymap['^X']['^S'] = save
+keymap['^X']['^C'] = function() quit() end
 
 
 --
@@ -193,34 +202,79 @@ end
 -- If no binding is found then the key is inserted into
 -- the editor, literally.
 --
-function on_key(k)
+do
+   pending_input = {}
 
-   --
-   -- Expand the character we've received to deal with
-   -- control-codes, & etc.
-   --
-   k = expand_key(k)
+   function on_key(k)
 
-   --
-   -- Lookup the function in the key-map.
-   --
-   local func = keymap[k]
+      --
+      -- Expand the character we've received to deal with
+      -- control-codes, & etc.
+      --
+      k = expand_key(k)
 
-   --
-   -- If found, execute it.
-   --
-   if ( func ~= nil ) then func() return end
+      --
+      -- Lookup the key in our key-map.
+      --
+      local result = keymap[k]
 
-   --
-   -- Otherwise just insert the character.
-   --
-   insert(k)
+      --
+      -- Was there a result?
+      --
+      if ( result ) then
 
-   --
-   -- If we reached here the previous character was not Ctrl-q
-   -- so we reset the global-quit-count
-   --
-   quit_count = 2
+         if ( type(result) == 'function' ) then
+            result()
+            pending_input = {}
+            return
+         end
+         if ( type(result) == 'table' ) then
+            --
+            -- This is a pending multi-part key.
+            --
+            -- Append the key and return.
+            --
+            pending_input[#pending_input + 1 ] = k
+            return
+         end
+      end
+
+      --
+      -- At this point the key didn't result in a function.
+      --
+      -- Nor did it terminate a special action.
+      --
+      -- So we'll now look for the expanded function.
+      --
+      tmp = "tmp = keymap"
+      for i,o in pairs(pending_input) do
+         tmp = tmp .. "['" .. o .. "']"
+      end
+      tmp = tmp .. "['" .. k .. "']"
+
+      (loadstring(tmp))()
+
+      if ( type(tmp) == 'function' ) then
+         --
+         -- We got a function to invoke!
+         --
+         tmp()
+         pending_input = {}
+         return
+      end
+
+      --
+      --
+      -- Otherwise just insert the character.
+      --
+      insert(k)
+
+      --
+      -- If we reached here the previous character was not Ctrl-q
+      -- so we reset the global-quit-count
+      --
+      quit_count = 2
+   end
 end
 
 
