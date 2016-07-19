@@ -139,6 +139,25 @@ struct abuf
 
 #define ABUF_INIT {NULL,0}
 
+/*
+ * Startup banner.
+ */
+const char * welcome_msg[] =
+{
+    "Kilo editor -- version " KILO_VERSION "\x1b[0K\r\n",
+    "\r\n",
+#ifdef _REGEXP
+    "Regular expression support enabled.\r\n",
+#else
+    "\r\n",
+#endif
+#ifdef _UNDO
+    "Undo-support enabled.\r\n",
+#else
+    "\r\n",
+#endif
+};
+const int welcome_len = (sizeof(welcome_msg) / sizeof(welcome_msg[0]));
 
 
 /* prototypes */

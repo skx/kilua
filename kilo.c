@@ -1403,13 +1403,14 @@ void warp(int x, int y)
     /*
      * Is that where we wanted to go?
      */
-    if ( x == 0 && y == 0 )
+    if (x == 0 && y == 0)
         return;
 
     /*
      * Move down first - that should always work.
      */
-    while (y > 0 ) {
+    while (y > 0)
+    {
         editorMoveCursor(ARROW_DOWN);
         y -= 1;
     }
@@ -1417,7 +1418,8 @@ void warp(int x, int y)
     /*
      * Now move right.
      */
-    while (x >0) {
+    while (x > 0)
+    {
         editorMoveCursor(ARROW_RIGHT);
         x -= 1;
     }
@@ -2089,6 +2091,9 @@ void editorRefreshScreen(void)
     abAppend(&ab, "\x1b[?25l", 6); /* Hide cursor. */
     abAppend(&ab, "\x1b[H", 3); /* Go home. */
 
+    /*
+     * The number of lines we've drawn of the welcome-message, if any.
+     */
     int drawn = 0;
 
     for (y = 0; y < E.screenrows; y++)
@@ -2097,27 +2102,19 @@ void editorRefreshScreen(void)
 
         if (filerow >= E.numrows)
         {
+            /*
+             * If the contents are empty, and we're above the top
+             * third of the screen .. draw the Nth line of the startup
+             * banner.
+             */
             if (E.numrows == 0 && (y == (E.screenrows / 3) + drawn) &&
-                    (drawn < 4))
+                    (drawn < welcome_len))
             {
 
-                const char * array[] =
-                {
-                    "Kilo editor -- version " KILO_VERSION "\x1b[0K\r\n",
-                    "\r\n",
-#ifdef _REGEXP
-                    "Regular expression support enabled.\r\n",
-#else
-                    "\r\n",
-#endif
-#ifdef _UNDO
-                    "Undo-support enabled.\r\n",
-#else
-                    "\r\n",
-#endif
-                };
-
-                int padding = (E.screencols - strlen(array[drawn])) / 2;
+                /*
+                 * Lines will be centered.
+                 */
+                int padding = (E.screencols - strlen(welcome_msg[drawn])) / 2;
 
                 if (padding)
                 {
@@ -2127,7 +2124,7 @@ void editorRefreshScreen(void)
 
                 while (padding--) abAppend(&ab, " ", 1);
 
-                abAppend(&ab, array[drawn], strlen(array[drawn]));
+                abAppend(&ab, welcome_msg[drawn], strlen(welcome_msg[drawn]));
                 drawn += 1;
 
             }
