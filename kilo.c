@@ -1758,21 +1758,19 @@ int search_lua(lua_State *L)
     if (term == NULL)
     {
         editorSetStatusMessage("No search term given!");
-        lua_pushboolean(L, 0);
-        return 1;
+        return 0;
     }
 
     /* Save the cursor position in order to restore it later. */
     int saved_cx = E.cx, saved_cy = E.cy;
     int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
 
-    /* Move forward one character - to ensure that we
+    /*
+     * Move forward one character - to ensure that we
      * are able to find the next match, not keep on the first
      * one.
      */
     right_lua(L);
-
-    int found = 0;
 
     /*
      * Current line;
@@ -1800,12 +1798,10 @@ int search_lua(lua_State *L)
         /*
          * Do the search.
          */
-        char *match = strstr(E.row[current].render, term);
+        char *match = stristr(E.row[current].render, term);
 
         if (match)
         {
-            found = 1;
-
             E.cy = 0;
             E.cx = match - E.row[current].render;
             E.rowoff = current ;
@@ -1818,6 +1814,10 @@ int search_lua(lua_State *L)
                 E.cx -= diff;
                 E.coloff += diff;
             }
+
+            /* Return the length of the match */
+            lua_pushnumber(L, strlen(term));
+            return 1;
         }
     }
 
@@ -1825,19 +1825,12 @@ int search_lua(lua_State *L)
      * If we didn't find a match we need to restore the
      * position to where where we were before.
      */
-    if (found == 0)
-    {
-        editorSetStatusMessage("No match found");
-        E.cx = saved_cx;
-        E.cy = saved_cy;
-        E.coloff = saved_coloff;
-        E.rowoff = saved_rowoff;
-        lua_pushboolean(L, 0);
-    }
-    else
-    {
-        lua_pushboolean(L, 1);
-    }
+    editorSetStatusMessage("No match found");
+    E.cx = saved_cx;
+    E.cy = saved_cy;
+    E.coloff = saved_coloff;
+    E.rowoff = saved_rowoff;
+    lua_pushnumber(L, 0);
     return 1;
 }
 

@@ -103,6 +103,9 @@ The following primitives are exported to lua:
 * save([filename])
     * Save the file we're operating upon.
     * If you give a new name that will be used thereafter.
+* search( "string" )
+    * Search forward for the given text.
+    * Returns the length of the match on success, zero on failure.
 * selection()
     * Return the text between cursor and mark.
 * set_syntax_comments()

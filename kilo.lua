@@ -471,17 +471,22 @@ end
 --
 -- Invoke via "Ctrl-l" then "search_replace('kemp','smith')"
 --
--- NOTE: Bad things will happen if the replacement text
---       also matches the search pattern.
+-- NOTE: Bad things will happen if the replacement text also matches
+--       the search pattern.
 --
 function search_replace( orig, new )
-   while( search( orig ) ) do
+   local length = search( orig )
+
+   while( length > 0 ) do
       -- Delete the match
-      for i=1, #orig  do
+      for i=1,length  do
          right()
          delete()
       end
       -- Insert the replacement
       insert( new )
+
+      -- Repeat the search.
+      length = search( orig )
    end
 end
