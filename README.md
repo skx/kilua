@@ -3,13 +3,13 @@
 
 # Kilua
 
-Kilua is a minimal text editor written in around 2K lines of code, which
+Kilua is a Lua-powered text editor written in around 2K lines of code, which
 was forked from the minimal [kilo editor](https://github.com/antirez/kilo)
-which was written by @antirez.
+originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108).
 
 You can launch the editor via :
 
-    $ kilua /path/to/file
+    $ kilua [options] /path/to/file
 
 Once launched the arrow keys will move you around, and the main keybindings
 to learn are:
@@ -20,11 +20,19 @@ to learn are:
     CTRL-q: Quit
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
 
+Currently supported options are:
+
+* `--config file`
+    * Load the named (lua) configuration file, in addition to the defaults.
+* `--eval`
+    * Evaluate the given lua, post-load.
+* `--version`
+    * Report the version and exit.
 
 
 ## Lua Support
 
-This project was hacked together by [Steve Kemp](https://steve.kemp.fi/)
+This project was updated by [Steve Kemp](https://steve.kemp.fi/)
 to include a lua intepreter, and delegate as much as possible of the operation
 to that lua instance.
 
