@@ -2542,8 +2542,9 @@ void editorRefreshScreen(void)
     abAppend(&ab, "\x1b[0K", 4);
     abAppend(&ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
-    int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
-                       E.file[E.current_file].filename ? E.file[E.current_file].filename : "<NONE>", E.file[E.current_file].numrows, E.file[E.current_file].dirty ? "(modified)" : "");
+    int len = snprintf(status, sizeof(status), "File %d/%d: %.32s %s",
+                       E.current_file+1, E.max_files,
+                       E.file[E.current_file].filename ? E.file[E.current_file].filename : "<NONE>", E.file[E.current_file].dirty ? "(modified)" : "");
     int rlen = snprintf(rstatus, sizeof(rstatus),
                         "Col:%d Row:%d/%d", E.file[E.current_file].coloff + E.file[E.current_file].cx + 1, E.file[E.current_file].rowoff + E.file[E.current_file].cy + 1, E.file[E.current_file].numrows);
 
