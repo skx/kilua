@@ -61,6 +61,7 @@ keymap['^D']        = function() insert( os.date() ) end
 keymap['^E']        = eol
 keymap['^F']        = find
 keymap['^H']        = delete
+keymap['^_']        = undo
 keymap['^G']        = function() search( prompt( "Search:" ) ) end
 keymap['^J']        = function() goto_mark() end
 keymap['^K']        = function() kill_line() end
