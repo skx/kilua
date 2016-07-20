@@ -104,6 +104,8 @@ The following primitives are exported to lua:
     * Setup keyword-handling for syntax-highlighting.
 * sol()
     * Move the cursor to the start of the current line.
+* status("text-message")
+    * Show the given message in the status-area.
 
 In addition to those functions there are also the obvious movement-related primitives: `up()`, `down()`, `left()`, and `right()`.
 
