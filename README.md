@@ -106,6 +106,10 @@ The following primitives are exported to lua:
     * Move the cursor to the start of the current line.
 * status("text-message")
     * Show the given message in the status-area.
+* tabsize()
+    * Get the width of TAB characters (default 8).
+* tabsize(N)
+    * Set the width of TAB characters.
 
 In addition to those functions there are also the obvious movement-related primitives: `up()`, `down()`, `left()`, and `right()`.
 

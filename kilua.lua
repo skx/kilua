@@ -100,7 +100,7 @@ keymap['M-END']     = function() end_of_file() end
 --
 -- M-x -> eval, just like emacs.
 --
-keymap['M-x']       = eval
+keymap['M-x'] = eval
 
 --
 -- M-! ("Escape", then "!") will run a command and insert the output
@@ -111,7 +111,7 @@ keymap['M-!'] = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( c
 --
 -- M-SPACE will record a mark.
 --
-keymap['M- ']       = function() record_mark() end
+keymap['M- '] = function() record_mark() end
 
 --
 -- Prefix-map for jumping to recorded marks.
@@ -133,6 +133,15 @@ keymap['^X']['^C'] = function() quit() end
 keymap['^X']['^S'] = save
 keymap['^X']['^X'] = function() swap_point_mark() end
 
+
+
+--
+-- By default a TAB equates to 8 characters.
+--
+-- Uncomment the following line to cut that in half:
+--
+-- tabsize(4)
+--
 
 --
 -- Syntax highlighting

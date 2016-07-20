@@ -93,6 +93,7 @@ struct editorConfig
     int rawmode;    /* Is terminal raw mode enabled? */
     erow *row;      /* Rows */
     int dirty;      /* File modified but not saved. */
+    int tab_size;   /* Width of tabs */
     char *filename; /* Currently open filename */
     char statusmsg[KILO_QUERY_LEN + 1];
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */

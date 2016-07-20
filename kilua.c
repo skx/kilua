@@ -917,9 +917,10 @@ void editorUpdateRow(erow *row)
     free(row->render);
 
     for (j = 0; j < row->size; j++)
-        if (row->chars[j] == TAB) tabs++;
+        if (row->chars[j] == TAB)
+            tabs++;
 
-    row->render = malloc(row->size + (tabs * 8) + 1);
+    row->render = malloc(row->size + (tabs * (E.tab_size)) + 1);
     idx = 0;
 
     for (j = 0; j < row->size; j++)
@@ -928,7 +929,8 @@ void editorUpdateRow(erow *row)
         {
             row->render[idx++] = ' ';
 
-            while ((idx + 1) % 8 != 0) row->render[idx++] = ' ';
+            while ((idx + 1) % (E.tab_size) != 0)
+                row->render[idx++] = ' ';
         }
         else
         {
@@ -1450,6 +1452,26 @@ int point_lua(lua_State *L)
     return 2;
 }
 
+
+/* Get/Set tabsize. */
+int tabsize_lua(lua_State *L)
+{
+    if (lua_isnumber(L, -1))
+    {
+        int width = lua_tonumber(L, -1);
+        E.tab_size = width;
+
+        /*
+         * Force a re-render
+         */
+        for (int i = 0; i < E.numrows; i++)
+            editorUpdateRow(E.row + i);
+
+    }
+
+    lua_pushnumber(L, E.tab_size);
+    return 1;
+}
 
 /* Get/Set X,Y position of the mark. */
 int mark_lua(lua_State *L)
@@ -2545,7 +2567,8 @@ void editorRefreshScreen(void)
     {
         for (j = E.coloff; j < (E.cx + E.coloff); j++)
         {
-            if (j < row->size && row->chars[j] == TAB) cx += 7 - ((cx) % 8);
+            if (j < row->size && row->chars[j] == TAB)
+                cx += (E.tab_size - 1) - ((cx) % (E.tab_size));
 
             cx++;
         }
@@ -2726,6 +2749,7 @@ void initEditor(void)
 {
     E.markx = -1;
     E.marky = -1;
+    E.tab_size = 8;
     E.cx = 0;
     E.cy = 0;
     E.rowoff = 0;
@@ -2783,6 +2807,7 @@ void initEditor(void)
     lua_register(lua, "syntax_highlight_strings", syntax_highlight_strings_lua);
     lua_register(lua, "status", status_lua);
     lua_register(lua, "sol", sol_lua);
+    lua_register(lua, "tabsize", tabsize_lua);
     lua_register(lua, "undo", undo_lua);
     lua_register(lua, "up", up_lua);
 }
