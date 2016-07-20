@@ -113,8 +113,10 @@ In addition to those functions there are also the obvious movement-related primi
 ## Callbacks
 
 There is room for lots more functionality to be delegated to callbacks,
-but right now there are just three:
+but right now there are only these:
 
+* `on_idle()`
+    * Called roughly once a second, can be used to run background things.
 * `on_key(key)`
     * Called to process a single key input.
 * `on_loaded(filename)`

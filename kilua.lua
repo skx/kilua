@@ -12,6 +12,9 @@
 
  There are three callback functions that kilua invokes at various times:
 
+  * on_idle(key)
+     Called when things are idle, to allow actions to be carried out.
+
   * on_key(key)
      Called when input is received.
 
@@ -632,4 +635,12 @@ function search_replace( orig, new )
       -- Repeat the search.
       length = search( orig )
    end
+end
+
+
+--
+-- Test function just to prove `on_idle` is called every second, or so.
+--
+function on_idle()
+   status(  os.date() )
 end
