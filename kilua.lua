@@ -324,6 +324,14 @@ do
       end
 
       --
+      -- We should ignore escape-characters and ctrl-characters
+      -- here.
+      --
+      if ( #k > 1 ) then
+         status("Ignoring special-character which isn't bound : " .. k )
+         return
+      end
+      --
       --
       -- Otherwise just insert the character.
       --
