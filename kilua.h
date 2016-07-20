@@ -59,16 +59,40 @@
 /* Global lua handle */
 lua_State * lua;
 
+
+/**
+ * This structure holds the details of the syntax-highlighting
+ * which is enabled for a particular file.
+ */
 struct editorSyntax
 {
+    /**
+     * An array of keywords.
+     */
     char **keywords;
+
+    /**
+     * The text-string that marks a single-line comment.
+     */
     char singleline_comment_start[5];
+
+    /**
+     * The text-string that marks the opening of a multi-line comment.
+     */
     char multiline_comment_start[5];
+
+    /**
+     * The text-string that marks the closing of a multi-line comment.
+     */
     char multiline_comment_end[5];
     int flags;
 };
 
-/* This structure represents a single line of the file we are editing. */
+
+
+/**
+ * This structure represents a single line of the file we are editing.
+ */
 typedef struct erow
 {
     int idx;            /* Row index in the file, zero-based. */
@@ -81,29 +105,58 @@ typedef struct erow
                            check. */
 } erow;
 
-struct editorConfig
+
+
+/**
+ * This structure represents the state of a file.
+ *
+ * It is distinct from the editorState because we expect we'll
+ * allow multiple files in the future.
+ */
+struct fileState
 {
     int cx, cy; /* Cursor x and y position in characters */
     int markx, marky; /*  x and y position of mark in characters */
     int rowoff;     /* Offset of row displayed. */
     int coloff;     /* Offset of column displayed. */
-    int screenrows; /* Number of rows that we can show */
-    int screencols; /* Number of cols that we can show */
     int numrows;    /* Number of rows */
-    int rawmode;    /* Is terminal raw mode enabled? */
     erow *row;      /* Rows */
     int dirty;      /* File modified but not saved. */
     int tab_size;   /* Width of tabs */
     char *filename; /* Currently open filename */
-    char statusmsg[KILO_QUERY_LEN + 1];
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
 #ifdef _UNDO
     UndoStack *undo;
 #endif
 };
 
-static struct editorConfig E;
 
+/**
+ * This structure represents the global state of the editor.
+ */
+struct editorState
+{
+    int screenrows; /* Number of rows that we can show */
+    int screencols; /* Number of cols that we can show */
+    int rawmode;    /* Is terminal raw mode enabled? */
+    char statusmsg[KILO_QUERY_LEN + 1]; /* The status-message */
+
+    /*
+     * The file(s) we have open.  At the moment just one.
+     */
+    struct fileState file;
+};
+
+/**
+ * The state of the editor.
+ */
+static struct editorState E;
+
+
+
+/**
+ * These are used for key-recognition.
+ */
 enum KEY_ACTION
 {
     CTRL_H = 8,         /* Ctrl-h */
@@ -125,20 +178,26 @@ enum KEY_ACTION
 };
 
 
-/* We define a very simple "append buffer" structure, that is an heap
+/**
+ * We define a very simple "append buffer" structure, that is an heap
  * allocated string where we can append to. This is useful in order to
  * write all the escape sequences in a buffer and flush them to the standard
- * output in a single call, to avoid flickering effects. */
+ * output in a single call, to avoid flickering effects.
+ */
 struct abuf
 {
     char *b;
     int len;
 };
 
+
+/**
+ * A new/empty append-buffer.
+ */
 #define ABUF_INIT {NULL,0}
 
-/*
- * Startup banner.
+/**
+ *  Our startup banner.
  */
 const char * welcome_msg[] =
 {
