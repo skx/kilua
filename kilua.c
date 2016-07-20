@@ -2790,6 +2790,10 @@ void initEditor(void)
 
 int main(int argc, char **argv)
 {
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+
     /*
      * Initialize our editor.  We do this first so that
      * we have lua enabled which is required if we want
@@ -2898,7 +2902,25 @@ int main(int argc, char **argv)
         }
 
         editorRefreshScreen();
-        editorProcessKeypress(STDIN_FILENO);
+
+        /* Wait to see when we have input. */
+        FD_ZERO(&rfds);
+        FD_SET(STDIN_FILENO, &rfds);
+
+        /* Wait a second at the most */
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+
+        retval = select(1, &rfds, NULL, NULL, &tv);
+
+        if (retval == -1)
+            perror("select()");
+        else if (retval)
+            editorProcessKeypress(STDIN_FILENO);
+        else
+        {
+            call_lua("on_idle", "");
+        }
     }
 
     return 0;
