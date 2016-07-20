@@ -87,6 +87,11 @@ keymap['HOME']      = function() point(0,0) end
 keymap['END']       = function() end_of_file() end
 
 --
+-- M-x -> eval, just like emacs.
+--
+keymap['M-x']       = eval
+
+--
 -- Prefixed keybindings
 --
 --  ^X ^S => Save
@@ -167,6 +172,10 @@ function expand_key(k)
 
    if ( b == nil ) then return "^ " end
 
+   if ( b == 27 ) then
+      return "ESC"
+   end
+
    -- Control-code
    if ( b < 32 ) then
       if ( b == 9 ) then
@@ -209,6 +218,7 @@ end
 --
 do
    pending_char = nil
+   pending_esc  = false
 
    function on_key(k)
 
@@ -217,6 +227,24 @@ do
       -- control-codes, & etc.
       --
       k = expand_key(k)
+
+      --
+      -- Pending-escape?
+      --
+      if ( pending_esc == true ) then
+         k = "M-" .. k
+         pending_esc = false
+      end
+
+
+      --
+      -- Was this escape?
+      --
+      if ( k == "ESC" ) then
+         pending_esc = true
+         return
+      end
+
 
       --
       -- At this point the key didn't result in a function.
@@ -243,11 +271,11 @@ do
          end
       end
 
+
       --
       -- Lookup the key in our key-map.
       --
       local result = keymap[k]
-
 
 
       --
