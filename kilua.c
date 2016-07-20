@@ -1726,6 +1726,15 @@ int save_lua(lua_State *L)
         E.filename = strdup(path);
     }
 
+    /*
+     * If we don't have a filename we can't save
+     */
+    if (E.filename == NULL)
+    {
+        editorSetStatusMessage("No filename is set!");
+        return 0;
+    }
+
     int len;
     char *buf = editorRowsToString(&len);
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
