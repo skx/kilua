@@ -141,6 +141,12 @@ keymap['^X']['^S'] = save
 keymap['^X']['^X'] = function() swap_point_mark() end
 
 
+--
+-- Next/Previous Files
+--
+keymap['M-RIGHT'] = next_file
+keymap['M-LEFT']  = prev_file
+
 
 --
 -- Global Settings
@@ -403,7 +409,7 @@ do
       -- here.
       --
       if ( #k > 1 ) then
-         status("Ignoring special-character which isn't bound : " .. k )
+         status("Ignoring special-character which isn't bound : '" .. k  .. "'")
          return
       end
       --

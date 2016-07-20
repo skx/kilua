@@ -85,6 +85,10 @@ struct editorSyntax
      * The text-string that marks the closing of a multi-line comment.
      */
     char multiline_comment_end[5];
+
+    /**
+     * Flags in-play for highlighting numbers/strings/etc.
+     */
     int flags;
 };
 
@@ -144,7 +148,9 @@ struct editorState
     /*
      * The file(s) we have open.  At the moment just one.
      */
-    struct fileState file;
+    struct fileState *file;
+    int current_file ;
+    int max_files;
 };
 
 /**
