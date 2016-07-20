@@ -70,7 +70,6 @@ keymap['^M']        = function() insert("\n" ) end
 keymap['^N']        = function() record_mark() end
 keymap['^Q']        = function() quit() end
 keymap['^O']        = open
-keymap['^R']        = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
 keymap['^S']        = save
 keymap['^T']        = function() status( os.date() ) end
 keymap['^U']        = function() yank() end
@@ -93,11 +92,19 @@ keymap['END']       = function() end_of_file() end
 keymap['M-x']       = eval
 
 --
--- Meta-Space record mark.
---   When you record a mark you'll be prompted for a key, and that
--- will be saved as "M-m X".
+-- M-! ("Escape", then "!") will run a command and insert the output
+-- into your document
+--
+keymap['M-!'] = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
+
+--
+-- M-SPACE will record a mark.
 --
 keymap['M- ']       = function() record_mark() end
+
+--
+-- Prefix-map for jumping to recorded marks.
+--
 keymap['M-m'] = {}
 
 
