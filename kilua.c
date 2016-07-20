@@ -689,16 +689,6 @@ void editorUpdateSyntax(erow *row)
             }
         }
 
-        /* Handle non printable chars. */
-        if (!isprint(*p))
-        {
-            row->hl[i] = HL_NONPRINT;
-            p++;
-            i++;
-            prev_sep = 0;
-            continue;
-        }
-
         /* Handle numbers */
         if ((isdigit(*p) && (prev_sep || row->hl[i - 1] == HL_NUMBER)) ||
                 (*p == '.' && i > 0 && row->hl[i - 1] == HL_NUMBER))
@@ -920,7 +910,7 @@ char *get_input(char *prompt)
 /* Update the rendered version and the syntax highlight of a row. */
 void editorUpdateRow(erow *row)
 {
-    int tabs = 0, nonprint = 0, j, idx;
+    int tabs = 0, j, idx;
 
     /* Create a version of the row we can directly print on the screen,
       * respecting tabs, substituting non printable characters with '?'. */
@@ -929,7 +919,7 @@ void editorUpdateRow(erow *row)
     for (j = 0; j < row->size; j++)
         if (row->chars[j] == TAB) tabs++;
 
-    row->render = malloc(row->size + tabs * 8 + nonprint * 9 + 1);
+    row->render = malloc(row->size + (tabs * 8) + 1);
     idx = 0;
 
     for (j = 0; j < row->size; j++)
@@ -2405,29 +2395,25 @@ void editorRefreshScreen(void)
                     }
                 }
 
-
-                if (color == HL_NONPRINT)
+                if (color == HL_NORMAL)
                 {
-                    char sym;
-                    abAppend(&ab, "\x1b[7m", 4);
-
-                    if (c[j] <= 26)
-                        sym = '@' + c[j];
-                    else
-                        sym = '?';
-
-                    abAppend(&ab, &sym, 1);
-                    abAppend(&ab, "\x1b[0m", 4);
-                }
-                else if (color == HL_NORMAL)
-                {
-                    if (current_color != -1)
+                    if (isprint(c[j]))
                     {
-                        abAppend(&ab, "\x1b[39m", 5);
+                        if (current_color != -1)
+                        {
+                            abAppend(&ab, "\x1b[39m", 5);
+                            current_color = -1;
+                        }
+
+                        abAppend(&ab, c + j, 1);
+                    }
+                    else
+                    {
+                        char buf[16];
+                        sprintf(buf, "\x1b[41m%c\x1b[49m", '?');
+                        abAppend(&ab, buf, strlen(buf));
                         current_color = -1;
                     }
-
-                    abAppend(&ab, c + j, 1);
                 }
                 else
                 {
@@ -2439,7 +2425,12 @@ void editorRefreshScreen(void)
                         char buf[16];
                         int clen = snprintf(buf, sizeof(buf), "\x1b[47m");
                         abAppend(&ab, buf, clen);
-                        abAppend(&ab, c + j, 1);
+
+                        if (isprint(c[j]))
+                            abAppend(&ab, c + j, 1);
+                        else
+                            abAppend(&ab, "?", 1);
+
                         clen = snprintf(buf, sizeof(buf), "\x1b[49m");
                         abAppend(&ab, buf, clen);
                     }
@@ -2455,9 +2446,19 @@ void editorRefreshScreen(void)
                             abAppend(&ab, buf, clen);
                         }
 
-                        abAppend(&ab, c + j, 1);
-                    }
 
+                        if (isprint(c[j]))
+                        {
+                            abAppend(&ab, c + j, 1);
+                        }
+                        else
+                        {
+                            char buf[16];
+                            sprintf(buf, "\x1b[41m%c\x1b[49m", '?');
+                            abAppend(&ab, buf, strlen(buf));
+                            current_color = -1;
+                        }
+                    }
                 }
             }
         }
