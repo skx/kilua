@@ -95,7 +95,6 @@ struct editorConfig
     int dirty;      /* File modified but not saved. */
     char *filename; /* Currently open filename */
     char statusmsg[KILO_QUERY_LEN + 1];
-    time_t statusmsg_time;
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
 #ifdef _UNDO
     UndoStack *undo;

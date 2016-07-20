@@ -2501,7 +2501,7 @@ void editorRefreshScreen(void)
     abAppend(&ab, "\x1b[0K", 4);
     int msglen = strlen(E.statusmsg);
 
-    if (msglen && time(NULL) - E.statusmsg_time < 5)
+    if (msglen)
     {
 
         /*
@@ -2566,7 +2566,6 @@ void editorSetStatusMessage(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(E.statusmsg, sizeof(E.statusmsg), fmt, ap);
     va_end(ap);
-    E.statusmsg_time = time(NULL);
 }
 
 
