@@ -136,6 +136,16 @@ You can also cut the current line via `Ctrl-y`.
 In both cases you can yank the selection back with `Ctrl-u`.
 
 
+## Marks
+
+You can record your position (i.e. "mark") in a named key, and
+later jump to it, just like in `vi`.
+
+To record the current position use `M-SPACE`, and press the key
+you wish to use.  To return to it use `M-m XX` where XX was the
+key you chose.
+
+
 ## Syntax Highlighting
 
 Syntax highlighting is defined in lua, and configured by calling:

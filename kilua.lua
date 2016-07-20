@@ -92,6 +92,15 @@ keymap['END']       = function() end_of_file() end
 keymap['M-x']       = eval
 
 --
+-- Meta-Space record mark.
+--   When you record a mark you'll be prompted for a key, and that
+-- will be saved as "M-m X".
+--
+keymap['M- ']       = function() record_mark() end
+keymap['M-m'] = {}
+
+
+--
 -- Prefixed keybindings
 --
 --  ^X ^S => Save
@@ -558,29 +567,21 @@ end
 
 
 --
--- Table of marks.
+-- Read a character, then use that to set a mark.
 --
-marks = {}
-
+-- Marks are bound to `M-m XX` where XX is the key
+-- the user entered.
+--
 function record_mark()
-   k = key()
-   x,y = point()
-   marks[k] = {}
-   marks[k]['x'] = x
-   marks[k]['y'] = y
-   status( "Mark saved '" .. k .. "' =" .. x .. "," .. y )
-end
+   k = expand_key(key())
 
-function goto_mark()
-   k = key()
-   if ( marks[k] ) then
-      x = marks[k]['x']
-      y = marks[k]['y']
-      status( "Jumping to " .. x .. "," .. y )
-      point(x,y)
-   else
-      status( "Mark not set '" .. k .. "'" )
-   end
+   -- Ensure the values persist
+   local x
+   local y
+   x,y = point()
+
+   keymap['M-m'][k] = function() point(x,y) end
+   status( "M-m " .. k .. " will now take you to " .. x .. "," .. y )
 end
 
 
