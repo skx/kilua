@@ -2492,7 +2492,36 @@ void editorRefreshScreen(void)
     int msglen = strlen(E.statusmsg);
 
     if (msglen && time(NULL) - E.statusmsg_time < 5)
-        abAppend(&ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols);
+    {
+
+        /*
+         * If the status-message is too long to fit we show the last part
+         * of it.
+         * We do this such that the get_input() method shows useful content.
+         */
+        if (msglen > E.screencols)
+        {
+            /*
+             * We'll just truncate to the last screen-width of content.
+             */
+            char *offset = E.statusmsg + msglen - E.screencols;
+            abAppend(&ab, offset, strlen(offset));
+        }
+        else
+        {
+            /*
+             * Pad out a short line.
+             */
+            int diff = E.screencols - msglen;
+            abAppend(&ab, E.statusmsg, msglen);
+
+            while (diff)
+            {
+                abAppend(&ab, " ", 1);
+                diff --;
+            }
+        }
+    }
 
     /* Put cursor at its current position. Note that the horizontal position
      * at which the cursor is displayed may be different compared to 'E.cx'
