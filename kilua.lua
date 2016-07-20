@@ -83,8 +83,16 @@ keymap['LEFT']      = left
 keymap['RIGHT']     = right
 keymap['UP']        = up
 keymap['DOWN']      = down
-keymap['HOME']      = function() point(0,0) end
-keymap['END']       = function() end_of_file() end
+
+--
+-- Home/End goes to start/end of line
+--
+-- Esc-Home/Esc-End goes to start/end of file
+--
+keymap['HOME']      = sol
+keymap['M-HOME']    = function() point(0,0) end
+keymap['END']       = eol
+keymap['M-END']     = function() end_of_file() end
 
 --
 -- M-x -> eval, just like emacs.
