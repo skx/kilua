@@ -739,7 +739,7 @@ void editorUpdateSyntax(erow *row)
                 /*
                  * Can't compile?  Skip.
                  */
-                if (regcomp(&regex, tmp, 0) != 0)
+                if (regcomp(&regex, tmp, REG_EXTENDED) != 0)
                 {
                     free(tmp);
                     continue;
@@ -1802,7 +1802,7 @@ int search_lua(lua_State *L)
 #ifdef _REGEXP
     regex_t regex;
 
-    if (regcomp(&regex, term, 0) != 0)
+    if (regcomp(&regex, term, REG_EXTENDED) != 0)
     {
         editorSetStatusMessage("Failed to compile regular expression!");
         return 0;

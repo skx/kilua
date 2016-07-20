@@ -37,7 +37,14 @@ https://steve.kemp.fi/
 
 
 --
--- Keymap of bound keys
+-- Keybinding Settings.
+--
+------------------------------------------------------------------------
+--======================================================================
+------------------------------------------------------------------------
+
+--
+-- Table of bound keys
 --
 keymap = {}
 
@@ -136,6 +143,13 @@ keymap['^X']['^X'] = function() swap_point_mark() end
 
 
 --
+-- Global Settings
+--
+------------------------------------------------------------------------
+--======================================================================
+------------------------------------------------------------------------
+
+--
 -- By default a TAB equates to 8 characters.
 --
 -- Uncomment the following line to cut that in half:
@@ -143,10 +157,27 @@ keymap['^X']['^X'] = function() swap_point_mark() end
 -- tabsize(4)
 --
 
+
+
+
+
+
 --
--- Syntax highlighting
+-- Syntax-Highlighting Setup
+--
+------------------------------------------------------------------------
+--======================================================================
+------------------------------------------------------------------------
+
+--
+-- Table to hold per-mode settings.
 --
 local syn = {}
+
+
+--
+-- C
+--
 syn['c']   = {
    keywords = {
       -- These come first because otherwise "if" matches the token "#if".
@@ -162,10 +193,18 @@ syn['c']   = {
    multi_open  = "/*",
    multi_close = "*/"
 }
+
+--
+-- Copies of C
+--
 syn['c++'] = syn['c']
 syn['cc']  = syn['c']
 syn['h']  = syn['c']
 
+
+--
+-- Lua
+--
 syn['lua'] = { keywords =
                { "and", "break", "do", "else", "elseif", "end", "false",
                  "for", "function", "if", "in", "local", "nil", "not",
@@ -175,6 +214,26 @@ syn['lua'] = { keywords =
                multi_open  = "--[[",
                multi_close = "--]]"
 }
+
+
+--
+-- Makefile: This is very naive, but surprisingly effective.
+--
+syn['Makefile'] = {
+   keywords = {
+      "^\\S+:|",             -- targets
+      "^([^=]+)\\s*=\\s*.*", -- variables
+      "shell|", "wildcard|"  -- tokens
+   },
+   single = "#",
+   multi_open = "",
+   multi_close = "",
+}
+
+
+--
+-- Perl
+--
 syn['pl'] = { keywords =
               { "continue", "foreach", "require", "package", "scalar", "format", "unless", "local", "until", "while", "elsif", "next", "last", "goto", "else", "redo", "our", "sub", "for", "use", "no", "if",  "my" },
               single      = "# ",
@@ -182,6 +241,10 @@ syn['pl'] = { keywords =
               multi_close = ""
 }
 
+
+--
+-- Shell Scripts
+--
 syn['sh'] = { keywords =
               {
                  "case", "do", "done", "else", "env", "esac", "exit","export","fi","for","function","getopts","hash","if","import","in","let","local","read","select","set","shift","source","then","trap","true","type", "until", "while",
