@@ -3210,11 +3210,6 @@ void initEditor(void)
      */
     create_buffer_lua(lua);
     E.file[0]->filename = strdup("*Messages*");
-
-    /*
-     * Create a new buffer for working with.
-     */
-    create_buffer_lua(lua);
 }
 
 int main(int argc, char **argv)
@@ -3302,14 +3297,29 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    /*
-     * Open the file, setup the mode, and the status-message.
-     */
+    if (argc - optind)
+    {
+        /*
+         * For each file on the command line.
+         */
+        for (int i = 0; i < (argc - optind); i++)
+        {
+            /*
+             * Create a new buffer, and read the file.
+             */
+            create_buffer_lua(lua);
+            editorOpen(argv[optind + i]);
+        }
+    }
+    else
+    {
+        /*
+         * No named files.  Just create a new buffer
+         */
+        create_buffer_lua(lua);
+    }
 
-    /*
-     * Open the file if we got one, otherwise open "NULL".
-     */
-    editorOpen(optind < argc ? argv[optind] : NULL);
+
 
     enableRawMode(STDIN_FILENO);
     editorSetStatusMessage(1,
