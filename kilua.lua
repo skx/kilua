@@ -728,3 +728,23 @@ end
 function on_idle()
    status(  os.date() )
 end
+
+
+--
+-- Call `make` - showing the output in our `*MAKE*` buffer.
+--
+function make()
+   local result = select_buffer( "*Make*" )
+   if ( result == 0 ) then
+      create_buffer( "*Make*" )
+   end
+
+   -- Ensure we append output
+   end_of_file()
+
+   -- Run the command.
+   insert(cmd_output( "make" ) )
+
+   -- completed
+   insert("completed\n")
+end

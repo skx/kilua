@@ -1533,7 +1533,10 @@ int select_buffer_lua(lua_State *L)
 /* Create a new buffer */
 int create_buffer_lua(lua_State *L)
 {
-    (void)L;
+    /*
+     * Is there a name for the new buffer?
+     */
+    const char *name = lua_tostring(L,-1);
 
     /*
      * Reallocate our buffer-list to be one larger.
@@ -1568,6 +1571,9 @@ int create_buffer_lua(lua_State *L)
 #ifdef _UNDO
     E.file[i]->undo = us_create();
 #endif
+
+    if ( name != NULL )
+        E.file[i]->filename = strdup(name);
 
     return 0;
 }
