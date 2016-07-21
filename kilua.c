@@ -275,7 +275,7 @@ void call_lua(char *function, char *arg)
 
     if (lua_isnil(lua, -1))
     {
-        editorSetStatusMessage("Failed to find function %s", function);
+        editorSetStatusMessage(1,"Failed to find function %s", function);
         return;
     }
 
@@ -283,7 +283,7 @@ void call_lua(char *function, char *arg)
 
     if (lua_pcall(lua, 1, 0, 0) != 0)
     {
-        editorSetStatusMessage("%s failed %s", function, lua_tostring(lua, -1));
+        editorSetStatusMessage(1,"%s failed %s", function, lua_tostring(lua, -1));
     }
 }
 
@@ -867,7 +867,7 @@ char *get_input(char *prompt)
 
     while (1)
     {
-        editorSetStatusMessage("%s%s", prompt, query);
+        editorSetStatusMessage(0, "%s%s", prompt, query);
         editorRefreshScreen();
 
         int c = editorReadKey(STDIN_FILENO);
@@ -882,7 +882,7 @@ char *get_input(char *prompt)
             E.file[E.current_file]->cy = saved_cy;
             E.file[E.current_file]->coloff = saved_coloff;
             E.file[E.current_file]->rowoff = saved_rowoff;
-            editorSetStatusMessage("");
+            editorSetStatusMessage(0,"");
             return NULL;
         }
         else if (c == ENTER)
@@ -891,7 +891,7 @@ char *get_input(char *prompt)
             E.file[E.current_file]->cy = saved_cy;
             E.file[E.current_file]->coloff = saved_coloff;
             E.file[E.current_file]->rowoff = saved_rowoff;
-            editorSetStatusMessage("");
+            editorSetStatusMessage(0,"");
             return (strdup(query));
         }
         else if (isprint(c))
@@ -1363,7 +1363,7 @@ int undo_lua(lua_State *L)
 
     if (action == NULL)
     {
-        editorSetStatusMessage("Undo stack is empty!");
+        editorSetStatusMessage(1,"Undo stack is empty!");
         return 0;
     }
 
@@ -1390,7 +1390,7 @@ int undo_lua(lua_State *L)
      */
     us_pop(E.file[E.current_file]->undo);
 #else
-    editorSetStatusMessage("undo-support is not compiled in");
+    editorSetStatusMessage(1,"undo-support is not compiled in");
 #endif
     return 0;
 }
@@ -1473,6 +1473,13 @@ int next_buffer_lua(lua_State *L)
     return 0;
 }
 
+
+/* count the buffers */
+int count_buffers_lua(lua_State *L)
+{
+    lua_pushnumber(L,E.max_files);
+    return 1;
+}
 
 /* Create a new buffer */
 int create_buffer_lua(lua_State *L)
@@ -1786,7 +1793,7 @@ int page_up_lua(lua_State *L)
 int status_lua(lua_State *L)
 {
     const char *str = lua_tostring(L, -1);
-    editorSetStatusMessage(str);
+    editorSetStatusMessage(1,str);
     return 0;
 }
 
@@ -1923,7 +1930,7 @@ int save_lua(lua_State *L)
      */
     if (E.file[E.current_file]->filename == NULL)
     {
-        editorSetStatusMessage("No filename is set!");
+        editorSetStatusMessage(1,"No filename is set!");
         return 0;
     }
 
@@ -1943,7 +1950,7 @@ int save_lua(lua_State *L)
     free(buf);
     E.file[E.current_file]->dirty = 0;
 
-    editorSetStatusMessage("%d bytes written to %s", len, E.file[E.current_file]->filename);
+    editorSetStatusMessage(1,"%d bytes written to %s", len, E.file[E.current_file]->filename);
 
     /* invoke our lua callback function */
     call_lua("on_saved", E.file[E.current_file]->filename);
@@ -1960,7 +1967,7 @@ writeerr:
 
     if (fd != -1) close(fd);
 
-    editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno));
+    editorSetStatusMessage(1,"Can't save! I/O error: %s", strerror(errno));
     return 1;
 }
 
@@ -1975,7 +1982,7 @@ int search_lua(lua_State *L)
 
     if (term == NULL)
     {
-        editorSetStatusMessage("No search term given!");
+        editorSetStatusMessage(1,"No search term given!");
         return 0;
     }
 
@@ -1984,7 +1991,7 @@ int search_lua(lua_State *L)
 
     if (regcomp(&regex, term, REG_EXTENDED) != 0)
     {
-        editorSetStatusMessage("Failed to compile regular expression!");
+        editorSetStatusMessage(1,"Failed to compile regular expression!");
         return 0;
     };
 
@@ -2094,7 +2101,7 @@ int search_lua(lua_State *L)
      * If we didn't find a match we need to restore the
      * position to where where we were before.
      */
-    editorSetStatusMessage("No match found");
+    editorSetStatusMessage(1,"No match found");
     E.file[E.current_file]->cx = saved_cx;
     E.file[E.current_file]->cy = saved_cy;
     E.file[E.current_file]->coloff = saved_coloff;
@@ -2244,7 +2251,7 @@ int find_lua(lua_State *L)
 
     while (1)
     {
-        editorSetStatusMessage(
+        editorSetStatusMessage(1,
             "Search: %s (Use ESC/Arrows/Enter)", query);
         editorRefreshScreen();
 
@@ -2267,7 +2274,7 @@ int find_lua(lua_State *L)
             }
 
             FIND_RESTORE_HL;
-            editorSetStatusMessage("");
+            editorSetStatusMessage(0,"");
             return 0;
         }
         else if (c == ARROW_RIGHT || c == ARROW_DOWN)
@@ -2374,7 +2381,7 @@ int eval_lua(lua_State *L)
             const char *er = lua_tostring(lua, -1);
 
             if (er)
-                editorSetStatusMessage(er);
+                editorSetStatusMessage(1,er);
         }
 
         free(txt);
@@ -2764,7 +2771,7 @@ void editorRefreshScreen(void)
 
 /* Set an editor status message for the second line of the status, at the
  * end of the screen. */
-void editorSetStatusMessage(const char *fmt, ...)
+void editorSetStatusMessage(int log, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -2774,38 +2781,31 @@ void editorSetStatusMessage(const char *fmt, ...)
     /*
      * Find the *Messages* buffer if we can.
      */
-    for (int i = 0; i < E.max_files; i++)
-    {
-
-        /*
-         * Get the entry.
-         */
-        struct fileState *tmp = E.file[i];
-
-        /*
-         * Is it `*messages*` ?
-         */
-        if (tmp->filename && (strcmp(tmp->filename, "*Messages*") == 0))
+    if ( log ) {
+        for (int i = 0; i < E.max_files; i++)
         {
-            /* switch to it */
-            int old = E.current_file;
-            E.current_file = i;
 
-            /*
-             * Insert the status-message
-             */
-            for (unsigned int i = 0; i < strlen(E.statusmsg); i++)
+            struct fileState *tmp = E.file[i];
+            if (tmp->filename && (strcmp(tmp->filename, "*Messages*") == 0))
             {
-                editorInsertChar(E.statusmsg[i]);
+                /* switch to it */
+                int old = E.current_file;
+                E.current_file = i;
+
+                /*
+                 * Insert the status-message
+                 */
+                for (unsigned int i = 0; i < strlen(E.statusmsg); i++)
+                {
+                    editorInsertChar(E.statusmsg[i]);
+                }
+
+                editorInsertChar('\n');
+
+                E.current_file = old;
+                break;
             }
 
-            editorInsertChar('\n');
-
-            /*
-             * Restore
-             */
-            E.current_file = old;
-            break;
         }
     }
 }
@@ -2995,10 +2995,6 @@ void initEditor(void)
     lua_register(lua, "left", left_lua);
     lua_register(lua, "right", right_lua);
     lua_register(lua, "mark", mark_lua);
-    lua_register(lua, "create_buffer", create_buffer_lua);
-    lua_register(lua, "kill_buffer", kill_buffer_lua);
-    lua_register(lua, "next_buffer", next_buffer_lua);
-    lua_register(lua, "prev_buffer", prev_buffer_lua);
     lua_register(lua, "point", point_lua);
     lua_register(lua, "page_down", page_down_lua);
     lua_register(lua, "page_up", page_up_lua);
@@ -3017,6 +3013,17 @@ void initEditor(void)
     lua_register(lua, "tabsize", tabsize_lua);
     lua_register(lua, "undo", undo_lua);
     lua_register(lua, "up", up_lua);
+
+
+    /*
+     * Buffers.
+     */
+    lua_register(lua, "create_buffer", create_buffer_lua);
+    lua_register(lua, "buffers", count_buffers_lua);
+    lua_register(lua, "kill_buffer", kill_buffer_lua);
+    lua_register(lua, "next_buffer", next_buffer_lua);
+    lua_register(lua, "prev_buffer", prev_buffer_lua);
+
 
     /*
      * Create a new `Messages` buffer.
@@ -3125,7 +3132,7 @@ int main(int argc, char **argv)
     editorOpen(optind < argc ? argv[optind] : NULL);
 
     enableRawMode(STDIN_FILENO);
-    editorSetStatusMessage(
+    editorSetStatusMessage(1,
         "HELP: ^o = open | ^s = save | ^q = quit | ^f = find | ^l = eval");
 
     /*

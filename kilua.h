@@ -282,7 +282,7 @@ int open_lua(lua_State *L);
 void abAppend(struct abuf *ab, const char *s, int len);
 void abFree(struct abuf *ab);
 void editorRefreshScreen(void);
-void editorSetStatusMessage(const char *fmt, ...);
+void editorSetStatusMessage(int log, const char *fmt, ...);
 void editorMoveCursor(int key);
 int load_lua(char *filename);
 void editorProcessKeypress(int fd);
