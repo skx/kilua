@@ -1,4 +1,4 @@
-/* kilua.h - Implementation file.
+/* kilua.c - Implementation file.
  *
  * -----------------------------------------------------------------------
  *
@@ -37,13 +37,14 @@
 #endif
 
 #define _BSD_SOURCE
-#define _GNU_SOURCE
+#define _GNU_SOURCE 1
 
 #include <termios.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <malloc.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -54,18 +55,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 
-#ifdef _REGEXP
-#include <regex.h>
-#endif
-
-
-/* Lua interface */
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-
 #include "kilua.h"
-
 
 
 
@@ -318,6 +308,45 @@ char at()
     return (tmp[0]);
 }
 
+void warp(int x, int y)
+{
+    if (y < 0)
+        y = 0;
+
+    if (x < 0)
+        x = 0;
+
+    /*
+     * Move to top-left
+     */
+    E.file[E.current_file]->cx = E.file[E.current_file]->coloff = E.file[E.current_file]->cy = E.file[E.current_file]->rowoff = 0;
+
+    /*
+     * Is that where we wanted to go?
+     */
+    if (x == 0 && y == 0)
+        return;
+
+    /*
+     * Move down first - that should always work.
+     */
+    while (y > 0)
+    {
+        editorMoveCursor(ARROW_DOWN);
+        y -= 1;
+    }
+
+    /*
+     * Now move right.
+     */
+    while (x > 0)
+    {
+        editorMoveCursor(ARROW_RIGHT);
+        x -= 1;
+    }
+
+}
+
 /* Get the text which is currently selected - i.e. between mark & cursor */
 char *get_selection()
 {
@@ -533,6 +562,1362 @@ int editorOpen(char *filename)
     return 0;
 }
 
+
+
+
+
+/* ======================= Lua Functions ======================= */
+
+
+/* Accessors */
+
+/* get the character that the current position */
+int at_lua(lua_State *L)
+{
+    char tmp[2] = {'\n', '\0'};
+    tmp[0] = at();
+    lua_pushstring(L, tmp);
+    return 1;
+}
+
+/* is the buffer dirty? */
+int dirty_lua(lua_State *L)
+{
+    if (dirty())
+        lua_pushboolean(L, 1);
+    else
+        lua_pushboolean(L, 0);
+
+    return 1;
+}
+/* return the contents of the line from the point-onwards */
+int get_line_lua(lua_State *L)
+{
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
+
+    if (row)
+    {
+        lua_pushstring(L, row->chars + E.file[E.current_file]->cx);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/* Movement */
+/* move cursor one character down */
+int down_lua(lua_State *L)
+{
+    (void)L;
+    editorMoveCursor(ARROW_DOWN);
+    return 0;
+}
+
+/* move to end of line */
+int eol_lua(lua_State *L)
+{
+    (void)L;
+
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
+
+    if (row)
+    {
+        /*
+         * Row width.
+         */
+        int size = row->rsize;
+        int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+
+        while (x < size)
+        {
+            editorMoveCursor(ARROW_RIGHT);
+            x += 1;
+        }
+    }
+
+    return 0;
+}
+
+/* move the cursor one character left */
+int left_lua(lua_State *L)
+{
+    (void)L;
+    editorMoveCursor(ARROW_LEFT);
+    return 0;
+}
+
+/* page down */
+int page_down_lua(lua_State *L)
+{
+    (void)L;
+
+    int times = E.screenrows - 1;
+
+    while (times--)
+        down_lua(L);
+
+    return 0;
+}
+
+/* page up */
+int page_up_lua(lua_State *L)
+{
+    (void)L;
+    int times = E.screenrows - 1;
+
+    while (times--)
+        up_lua(L);
+
+    return 0;
+}
+
+/* move the cursor one character right */
+int right_lua(lua_State *L)
+{
+    (void)L;
+    editorMoveCursor(ARROW_RIGHT);
+    return 0;
+}
+
+/* Move to start of line */
+int sol_lua(lua_State *L)
+{
+    (void)L;
+
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+
+    while (x)
+    {
+        editorMoveCursor(ARROW_LEFT);
+        x -= 1;
+    }
+
+    return 0;
+}
+
+/* move cursor one character up */
+int up_lua(lua_State *L)
+{
+    (void)L;
+    editorMoveCursor(ARROW_UP);
+    return 0;
+}
+
+/* Selection */
+
+/* Delete the text between the point and the mark */
+int cut_selection_lua(lua_State *L)
+{
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+
+    /* There is no mark. */
+    if ((E.file[E.current_file]->markx == -1) && (E.file[E.current_file]->marky == -1))
+        return 0;
+
+    /* The cursor is at the mark. */
+    if ((E.file[E.current_file]->markx == x) && (E.file[E.current_file]->marky == y))
+        return 0;
+
+    int left = 0;
+
+    if ((y > E.file[E.current_file]->marky) || (x > E.file[E.current_file]->markx && y == E.file[E.current_file]->marky))
+        left = 1;
+
+    /* Get the selection text */
+    char *sel = get_selection();
+
+    /* Delete the number of characters that the selection includes. */
+    int max = (int)strlen(sel);
+
+    if (left == 0)
+    {
+        for (int i = 0; i < max ; i++)
+        {
+            editorMoveCursor(ARROW_RIGHT);
+            delete_lua(L);
+        }
+    }
+    else
+    {
+        /* we want to delete the character under the cursor too - so
+           we move one place right before we remove the characters. */
+        editorMoveCursor(ARROW_RIGHT);
+
+        for (int i = 0; i < max ; i++)
+            delete_lua(L);
+    }
+
+    /* Cleanup & remove the mark. */
+    free(sel);
+    E.file[E.current_file]->markx = -1;
+    E.file[E.current_file]->marky = -1;
+    return 0;
+}
+
+/* Get the text between the point and the mark */
+int selection_lua(lua_State *L)
+{
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+
+    /*
+     * No selection - either because the mark is not set, and
+     * the cursor is in the mark.
+     */
+    if ((E.file[E.current_file]->markx == -1) && (E.file[E.current_file]->marky == -1))
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if ((E.file[E.current_file]->markx == x) && (E.file[E.current_file]->marky == y))
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    char *t = get_selection();
+    lua_pushstring(L, t);
+    free(t);
+    return 1;
+
+}
+
+
+/* Removals */
+
+/* Delete the char at the current position. */
+int delete_lua(lua_State *L)
+{
+    (void)L;
+
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    int filecol = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
+
+    if (!row || (filecol == 0 && filerow == 0))
+        return 0;
+
+
+    if (filecol == 0)
+    {
+#ifdef _UNDO
+        int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+        int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+        add_undo(E.file[E.current_file]->undo, INSERT, '\n', x, y);
+#endif
+
+        /* Handle the case of column 0, we need to move the current line
+         * on the right of the previous one. */
+        filecol = E.file[E.current_file]->row[filerow - 1].size;
+        editorRowAppendString(&E.file[E.current_file]->row[filerow - 1], row->chars, row->size);
+        editorDelRow(filerow);
+        row = NULL;
+
+        if (E.file[E.current_file]->cy == 0)
+            E.file[E.current_file]->rowoff--;
+        else
+            E.file[E.current_file]->cy--;
+
+        E.file[E.current_file]->cx = filecol;
+
+        if (E.file[E.current_file]->cx >= E.screencols)
+        {
+            int shift = (E.screencols - E.file[E.current_file]->cx) + 1;
+            E.file[E.current_file]->cx -= shift;
+            E.file[E.current_file]->coloff += shift;
+        }
+    }
+    else
+    {
+        editorRowDelChar(row, filecol - 1);
+
+        if (E.file[E.current_file]->cx == 0 && E.file[E.current_file]->coloff)
+            E.file[E.current_file]->coloff--;
+        else
+            E.file[E.current_file]->cx--;
+    }
+
+    /*
+     * BUGFIX: Ensure we don't walk off the screen, and draw gibberish.
+     *
+     * This seems to happen when `shift` becomes negative above.
+     */
+    if (E.file[E.current_file]->coloff < 0)
+        E.file[E.current_file]->coloff = 0;
+
+    if (E.file[E.current_file]->rowoff < 0)
+        E.file[E.current_file]->rowoff = 0;
+
+    if (row) editorUpdateRow(row);
+
+    E.file[E.current_file]->dirty++;
+    return 0;
+}
+
+/* Remove the current line. */
+int kill_line_lua(lua_State *L)
+{
+    (void)L;
+
+    /* move to end of line. */
+    eol_lua(L);
+
+    /* number of deletes we need. */
+    int len = 0;
+
+    /* count the characters */
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
+
+    if (row)
+        len = row->rsize;
+
+    while (len > 0)
+    {
+        delete_lua(L);
+        len -= 1;
+    }
+
+    /*
+     * Remove the line itself.
+     */
+    right_lua(L);
+    delete_lua(L);
+
+    return 0;
+}
+
+/* read a single key */
+int key_lua(lua_State *L)
+{
+    char buf[2] = { '\0', '\0' };
+    buf[0] = editorReadKey(STDIN_FILENO);
+    lua_pushstring(L, buf);
+    return 1;
+}
+
+/* insert a string. */
+int insert_lua(lua_State *L)
+{
+    const char *str = lua_tostring(L, -1);
+
+    if (str != NULL)
+    {
+        size_t len = strlen(str);
+
+        for (unsigned int i = 0; i < len; i++)
+        {
+            editorInsertChar(str[i]);
+#ifdef _UNDO
+            /*
+             * Add the undo-record.
+             */
+            int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+            int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+            add_undo(E.file[E.current_file]->undo, DELETE, ' ', x, y);
+#endif
+        }
+    }
+
+    return 0;
+}
+
+
+/* Markers */
+
+/* Get/Set X,Y position of the mark. */
+int mark_lua(lua_State *L)
+{
+    if (lua_isnumber(L, -2) &&
+            lua_isnumber(L, -1))
+    {
+        int y = lua_tonumber(L, -1);
+        int x = lua_tonumber(L, -2);
+
+        if ((x >= 0 || x == -1) &&
+                (y >= 0 || y == -1))
+        {
+            E.file[E.current_file]->markx = x ;
+            E.file[E.current_file]->marky = y ;
+        }
+
+    }
+
+    lua_pushnumber(L, E.file[E.current_file]->markx);
+    lua_pushnumber(L, E.file[E.current_file]->marky);
+    return 2;
+}
+
+/* Get/Set X,Y position of the cursor. */
+int point_lua(lua_State *L)
+{
+    if (lua_isnumber(L, -2) &&
+            lua_isnumber(L, -1))
+    {
+        int y = lua_tonumber(L, -1) - 1;
+        int x = lua_tonumber(L, -2) - 1;
+
+        warp(x, y);
+    }
+
+    lua_pushnumber(L, E.file[E.current_file]->cx + E.file[E.current_file]->coloff);
+    lua_pushnumber(L, E.file[E.current_file]->cy + E.file[E.current_file]->rowoff);
+    return 2;
+}
+
+
+/* Core */
+
+/* prompt for a string, and evaluate that as lua. */
+int eval_lua(lua_State *L)
+{
+    (void)L;
+
+    char *txt = get_input("Eval: ");
+
+    if (txt)
+    {
+        int res =  luaL_loadstring(lua, txt);
+
+        if (res == 0)
+        {
+            res = lua_pcall(lua, 0, LUA_MULTRET, 0);
+        }
+        else
+        {
+            const char *er = lua_tostring(lua, -1);
+
+            if (er)
+                editorSetStatusMessage(1, er);
+        }
+
+        free(txt);
+    }
+
+    return 0;
+}
+
+/* exit the editor */
+int exit_lua(lua_State *L)
+{
+    (void)L;
+    exit(0);
+    return 0;
+}
+
+/* Switch to find-mode */
+int find_lua(lua_State *L)
+{
+    (void)L;
+    char query[KILO_QUERY_LEN + 1] = {0};
+    int qlen = 0;
+    int last_match = -1; /* Last line where a match was found. -1 for none. */
+    int find_next = 0; /* if 1 search next, if -1 search prev. */
+    int saved_hl_line = -1;  /* No saved HL */
+    char *saved_hl = NULL;
+
+#define FIND_RESTORE_HL do { \
+    if (saved_hl) { \
+        memcpy(E.file[E.current_file]->row[saved_hl_line].hl,saved_hl, E.file[E.current_file]->row[saved_hl_line].rsize); \
+        saved_hl = NULL; \
+    } \
+} while (0)
+
+    /* Save the cursor position in order to restore it later. */
+    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
+    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
+
+    while (1)
+    {
+        editorSetStatusMessage(1,
+                               "Search: %s (Use ESC/Arrows/Enter)", query);
+        editorRefreshScreen();
+
+        int c = editorReadKey(STDIN_FILENO);
+
+        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE)
+        {
+            if (qlen != 0) query[--qlen] = '\0';
+
+            last_match = -1;
+        }
+        else if (c == ESC || c == ENTER)
+        {
+            if (c == ESC)
+            {
+                E.file[E.current_file]->cx = saved_cx;
+                E.file[E.current_file]->cy = saved_cy;
+                E.file[E.current_file]->coloff = saved_coloff;
+                E.file[E.current_file]->rowoff = saved_rowoff;
+            }
+
+            FIND_RESTORE_HL;
+            editorSetStatusMessage(0, "");
+            return 0;
+        }
+        else if (c == ARROW_RIGHT || c == ARROW_DOWN)
+        {
+            find_next = 1;
+        }
+        else if (c == ARROW_LEFT || c == ARROW_UP)
+        {
+            find_next = -1;
+        }
+        else if (isprint(c))
+        {
+            if (qlen < KILO_QUERY_LEN)
+            {
+                query[qlen++] = c;
+                query[qlen] = '\0';
+                last_match = -1;
+            }
+        }
+
+        /* Search occurrence. */
+        if (last_match == -1) find_next = 1;
+
+        if (find_next)
+        {
+            char *match = NULL;
+            int match_offset = 0;
+            int i, current = last_match;
+
+            for (i = 0; i < E.file[E.current_file]->numrows; i++)
+            {
+                current += find_next;
+
+                if (current == -1)
+                    current = E.file[E.current_file]->numrows - 1;
+                else if (current == E.file[E.current_file]->numrows)
+                    current = 0;
+
+                match = strstr(E.file[E.current_file]->row[current].render, query);
+
+                if (match)
+                {
+                    match_offset = match - E.file[E.current_file]->row[current].render;
+                    break;
+                }
+            }
+
+            find_next = 0;
+
+            /* Highlight */
+            FIND_RESTORE_HL;
+
+            if (match)
+            {
+                erow *row = &E.file[E.current_file]->row[current];
+                last_match = current;
+
+                if (row->hl)
+                {
+                    saved_hl_line = current;
+                    saved_hl = malloc(row->rsize);
+                    memcpy(saved_hl, row->hl, row->rsize);
+                    memset(row->hl + match_offset, HL_MATCH, qlen);
+                }
+
+                /*
+                 * NOTE: This breaks our undo, by warping to a new
+                 * position that isn't tracked by our stack.
+                 */
+                E.file[E.current_file]->cy = 0;
+                E.file[E.current_file]->cx = match_offset;
+                E.file[E.current_file]->rowoff = current;
+                E.file[E.current_file]->coloff = 0;
+
+                /* Scroll horizontally as needed. */
+                if (E.file[E.current_file]->cx > E.screencols)
+                {
+                    int diff = E.file[E.current_file]->cx - E.screencols;
+                    E.file[E.current_file]->cx -= diff;
+                    E.file[E.current_file]->coloff += diff;
+                }
+            }
+        }
+    }
+}
+
+
+/* Prompt for a filename and open it. */
+int open_lua(lua_State *L)
+{
+    (void)L;
+    /*
+     * If we got a string then open it as a filename.
+     */
+    char *path = (char *)lua_tostring(L, -1);
+
+    if (path != NULL)
+    {
+        editorOpen(path);
+        return 0;
+    }
+
+    /*
+     * Prompt for a path.
+     */
+    path = get_input("Open: ");
+
+    if (path)
+    {
+        editorOpen(path);
+        free(path);
+    }
+
+    return 0;
+}
+
+/* prompt for input */
+int prompt_lua(lua_State *L)
+{
+    char *prompt = (char *)lua_tostring(L, -1);
+    char *buf = get_input(prompt);
+
+    if (buf)
+    {
+        lua_pushstring(lua, buf);
+        free(buf);
+        return 1;
+    }
+
+    return 0;
+}
+
+/* Save the current file on disk. Return 0 on success, 1 on error. */
+int save_lua(lua_State *L)
+{
+
+    /*
+     * If we were given a filename then use that.
+     */
+    char *path = (char *)lua_tostring(L, -1);
+
+    if (path != NULL)
+    {
+        free(E.file[E.current_file]->filename);
+        E.file[E.current_file]->filename = strdup(path);
+    }
+
+    /*
+     * If we don't have a filename we can't save
+     */
+    if (E.file[E.current_file]->filename == NULL)
+    {
+        editorSetStatusMessage(1, "No filename is set!");
+        return 0;
+    }
+
+    int len;
+    char *buf = editorRowsToString(&len);
+    int fd = open(E.file[E.current_file]->filename, O_RDWR | O_CREAT, 0644);
+
+    if (fd == -1) goto writeerr;
+
+    /* Use truncate + a single write(2) call in order to make saving
+     * a bit safer, under the limits of what we can do in a small editor. */
+    if (ftruncate(fd, len) == -1) goto writeerr;
+
+    if (write(fd, buf, len) != len) goto writeerr;
+
+    close(fd);
+    free(buf);
+    E.file[E.current_file]->dirty = 0;
+
+    editorSetStatusMessage(1, "%d bytes written to %s", len, E.file[E.current_file]->filename);
+
+    /* invoke our lua callback function */
+    call_lua("on_saved", E.file[E.current_file]->filename);
+
+#ifdef _UNDO
+    /* since we've saved - kill our undo stack */
+    us_clear(E.file[E.current_file]->undo);
+#endif
+
+    return 0;
+
+writeerr:
+    free(buf);
+
+    if (fd != -1) close(fd);
+
+    editorSetStatusMessage(1, "Can't save! I/O error: %s", strerror(errno));
+    return 1;
+}
+
+
+/* Search for the given string */
+int search_lua(lua_State *L)
+{
+    /*
+     * Get the search pattern.
+     */
+    char *term = (char *)lua_tostring(L, -1);
+
+    if (term == NULL)
+    {
+        editorSetStatusMessage(1, "No search term given!");
+        return 0;
+    }
+
+#ifdef _REGEXP
+    regex_t regex;
+
+    if (regcomp(&regex, term, REG_EXTENDED) != 0)
+    {
+        editorSetStatusMessage(1, "Failed to compile regular expression!");
+        return 0;
+    };
+
+#endif
+
+
+    /* Save the cursor position in order to restore it later. */
+    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
+
+    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
+
+    /*
+     * Move forward one character - to ensure that we
+     * are able to find the next match, not keep on the first
+     * one.
+     */
+    right_lua(L);
+
+    /*
+     * Current line;
+     */
+    int current = E.file[E.current_file]->cy + E.file[E.current_file]->rowoff;
+
+    /*
+     * Now for each line ..
+     */
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+    {
+        /*
+         * For each character in the current row .. do we match?
+         */
+        for (int x = E.file[E.current_file]->cx + E.file[E.current_file]->coloff; x < E.file[E.current_file]->row[current].rsize; x++)
+        {
+            int match     = 0;
+            int match_len = 0;
+
+#ifdef _REGEXP
+            regmatch_t result[1];
+
+            if (regexec(&regex, E.file[E.current_file]->row[current].render + x, 1, result, 0) == 0)
+            {
+                match = 1;
+                match_len = (result[0]).rm_eo - (result[0]).rm_so;
+
+                /*
+                 * Start of the match.
+                 */
+                x += (result[0]).rm_so;
+            }
+
+#else
+
+            if (strncmp(E.file[E.current_file]->row[current].render + x, term, strlen(term)) == 0)
+            {
+                match = 1;
+                match_len = strlen(term);
+            }
+
+#endif
+
+            if (match)
+            {
+                /*
+                 * The column in which we matched.
+                 */
+                E.file[E.current_file]->cx = x;
+                E.file[E.current_file]->coloff = 0;
+
+                /* The matching row will be at the top of the screen. */
+                E.file[E.current_file]->cy = 0;
+                E.file[E.current_file]->rowoff = current;
+
+                /* Scroll horizontally as needed. */
+                if (E.file[E.current_file]->cx > E.screencols)
+                {
+                    int diff = abs(E.file[E.current_file]->cx - E.screencols);
+                    E.file[E.current_file]->cx -= diff;
+                    E.file[E.current_file]->coloff += diff;
+                }
+
+                /* Return the length of the match */
+                lua_pushnumber(L, match_len);
+                return 1;
+            }
+        }
+
+        /*
+         * Current line.
+         */
+        current += 1;
+
+        /*
+         * Wrap around the end/start of the file.
+         */
+        if (current == E.file[E.current_file]->numrows)
+            current = 0;
+
+        /*
+         * We've moved forward a row, so we can now start at the
+         * beginning of the row.
+         */
+        E.file[E.current_file]->cx = 0;
+        E.file[E.current_file]->coloff = 0;
+    }
+
+    /*
+     * If we didn't find a match we need to restore the
+     * position to where where we were before.
+     */
+    editorSetStatusMessage(1, "No match found");
+    E.file[E.current_file]->cx = saved_cx;
+    E.file[E.current_file]->cy = saved_cy;
+    E.file[E.current_file]->coloff = saved_coloff;
+    E.file[E.current_file]->rowoff = saved_rowoff;
+    lua_pushnumber(L, 0);
+    return 1;
+}
+
+/* set the status-bar text */
+int status_lua(lua_State *L)
+{
+    const char *str = lua_tostring(L, -1);
+    editorSetStatusMessage(1, str);
+    editorRefreshScreen();
+    return 0;
+}
+
+/* Undo the most recent change. */
+int undo_lua(lua_State *L)
+{
+    (void)L;
+#ifdef _UNDO
+    UndoAction *action = us_pop(E.file[E.current_file]->undo);
+
+    if (action == NULL)
+    {
+        editorSetStatusMessage(1, "Undo stack is empty!");
+        return 0;
+    }
+
+    if (action->type == DELETE)
+    {
+        warp(action->x, action->y);
+        delete_lua(L);
+    }
+    else if (action->type == INSERT)
+    {
+        warp(action->x, action->y);
+
+        char str[2] = { '\0', '\0' };
+        str[0] = action->data;
+        lua_pushstring(L, str);
+        insert_lua(L);
+    }
+
+    /*
+     * Performing the action to undo the user's previous
+     * thing will add a new action to the undo-stack.
+     *
+     * So we need to explicitly remove that faux addition here.
+     */
+    us_pop(E.file[E.current_file]->undo);
+#else
+    editorSetStatusMessage(1, "undo-support is not compiled in");
+#endif
+    return 0;
+}
+
+
+
+/* Syntax highlighting */
+
+/* Set comment handling. */
+int set_syntax_comments_lua(lua_State *L)
+{
+    char *single = (char *)lua_tostring(L, -3);
+    char *multi_open = (char *)lua_tostring(L, -2);
+    char *multi_end = (char *)lua_tostring(L, -1);
+
+    if ((single == NULL) ||
+            (multi_open == NULL) ||
+            (multi_end == NULL))
+        return 0;
+
+    /*
+     * If we don't have syntax that's a bug.
+     */
+    if (E.file[E.current_file]->syntax == NULL)
+        return 0;
+
+    strcpy(E.file[E.current_file]->syntax->singleline_comment_start, single);
+    strcpy(E.file[E.current_file]->syntax->multiline_comment_start, multi_open);
+    strcpy(E.file[E.current_file]->syntax->multiline_comment_end, multi_end);
+
+    /*
+     * Force re-render.
+     */
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
+
+    return 0;
+}
+
+/* set the syntax keywords. */
+int set_syntax_keywords_lua(lua_State *L)
+{
+    if (! lua_istable(L, 1))
+        return 0;
+
+    if (E.file[E.current_file]->syntax == NULL)
+    {
+        struct editorSyntax *s = (struct editorSyntax*)malloc(sizeof(struct editorSyntax));
+        s->keywords                    = NULL;
+        s->singleline_comment_start[0] = '\0';
+        s->multiline_comment_start[0]  = '\0';
+        s->multiline_comment_end[0]    = '\0';
+        s->flags                       =  HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS;
+        E.file[E.current_file]->syntax = s;
+    }
+
+    size_t len = lua_rawlen(L, 1);
+    E.file[E.current_file]->syntax->keywords = malloc((1 + len) * sizeof(char*));
+
+    int i = 0;
+    lua_pushnil(L);
+
+    while (lua_next(L, -2) != 0)
+    {
+        const char *str = lua_tostring(L, -1);
+        E.file[E.current_file]->syntax->keywords[i] = strdup(str);
+        lua_pop(L, 1);
+        i += 1;
+    }
+
+    E.file[E.current_file]->syntax->keywords[i] = NULL;
+
+    /*
+     * Force re-render.
+     */
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
+
+    return 0;
+}
+
+/* Enable highlighting of numbers. */
+int syntax_highlight_numbers_lua(lua_State *L)
+{
+    int cond = lua_tonumber(L, -1);
+
+    if (E.file[E.current_file]->syntax)
+    {
+        if (cond == 1)
+            E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_NUMBERS;
+        else
+            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_NUMBERS;
+
+        /*
+         * Force re-render.
+         */
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
+    }
+
+    return 0;
+}
+
+/* Enable highlighting of strings. */
+int syntax_highlight_strings_lua(lua_State *L)
+{
+    int cond = lua_tonumber(L, -1);
+
+    if (E.file[E.current_file]->syntax)
+    {
+        if (cond == 1)
+            E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_STRINGS;
+        else
+            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
+
+        /*
+         * Force re-render.
+         */
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
+    }
+
+    return 0;
+}
+
+/* Get/Set tabsize. */
+int tabsize_lua(lua_State *L)
+{
+    if (lua_isnumber(L, -1))
+    {
+        int width = lua_tonumber(L, -1);
+        E.file[E.current_file]->tab_size = width;
+
+        /*
+         * Force a re-render
+         */
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
+
+    }
+
+    lua_pushnumber(L, E.file[E.current_file]->tab_size);
+    return 1;
+}
+
+
+/* Buffers */
+
+/* Choose a buffer, interatively */
+int choose_buffer_lua(lua_State *L)
+{
+    (void)L;
+
+    int offset = 0;
+
+    while (1)
+    {
+        struct abuf ab = ABUF_INIT;
+        abAppend(&ab, "\x1b[?25l", 6); /* Hide cursor. */
+        abAppend(&ab, "\x1b[H", 3); /* Go home. */
+
+        /*
+         * Draw the list of buffers.
+         */
+        for (int i = 0; i < E.max_files ; i ++)
+        {
+            int selected = (i == offset);
+
+            char *filename = E.file[i]->filename;
+            int dirty = 0;
+
+            if (E.file[i]->dirty != 0)
+                dirty = 1;
+
+            if (filename && filename[0] == '*')
+                dirty = 0;
+
+            if (selected)
+            {
+                abAppend(&ab, "\x1b[47m", 5);
+            }
+            else
+            {
+                abAppend(&ab, "\x1b[49m", 5);
+            }
+
+            char line[255];
+            snprintf(line, sizeof(line) - 1, "%d - %s%s", i + 1,
+                     filename == NULL ? "UNSET" : filename,
+                     dirty ? " (modified)" : "");
+
+            while ((int)strlen(line) < E.screencols)
+            {
+                strcat(line, " ");
+            }
+
+            strcat(line, "\r\n");
+            abAppend(&ab, line, strlen(line));
+        }
+
+        /*
+         * Reset the inverse selection.
+         */
+        abAppend(&ab, "\x1b[49m", 5);
+
+        /*
+         * Pad to the bottom of the screen in empty lines.
+         */
+        for (int i = E.max_files ; i < E.screenrows; i++)
+        {
+            abAppend(&ab, "\x1b[2K~\r\n", 7);
+        }
+
+        abAppend(&ab, "\x1b[D0", 3); /* clear screen */
+        write(STDOUT_FILENO, ab.b, ab.len);
+        abFree(&ab);
+
+        /*
+         * Get a keypress
+         */
+        int c = editorReadKey(STDIN_FILENO);
+
+        if (c == ENTER)
+        {
+            /* Select the buffer.*/
+            E.current_file = offset;
+            return 0;
+        }
+
+        if (c == ESC)
+        {
+            /* Cancel */
+            return 0;
+        }
+
+        if (c == ARROW_UP)
+        {
+            if (offset > 0)
+                offset = 0;
+        }
+
+        if (c == ARROW_DOWN)
+        {
+            if (offset < (E.max_files - 1))
+            {
+                offset += 1;
+            }
+        }
+    }
+}
+
+
+/* count the buffers */
+int count_buffers_lua(lua_State *L)
+{
+    lua_pushnumber(L, E.max_files);
+    return 1;
+}
+
+/* Create a new buffer */
+int create_buffer_lua(lua_State *L)
+{
+    /*
+     * Is there a name for the new buffer?
+     */
+    const char *name = lua_tostring(L, -1);
+
+    /*
+     * Reallocate our buffer-list to be one larger.
+     */
+    E.file = realloc(E.file, (sizeof(struct fileState *) * E.max_files + 1));
+
+    /*
+     * Bump the max-files.
+     */
+    E.max_files += 1;
+    E.current_file = E.max_files - 1;
+
+
+    /*
+     * Create a new buffer to populate our list.
+     */
+    int i = E.current_file;
+    E.file[i] = malloc(sizeof(struct fileState));
+    E.file[i]->markx = -1;
+    E.file[i]->marky = -1;
+    E.file[i]->tab_size = 8;
+    E.file[i]->cx = 0;
+    E.file[i]->cy = 0;
+    E.file[i]->rowoff = 0;
+    E.file[i]->coloff = 0;
+    E.file[i]->numrows = 0;
+    E.file[i]->row = NULL;
+    E.file[i]->dirty = 0;
+    E.file[i]->filename = NULL;
+    E.file[i]->syntax = NULL;
+
+#ifdef _UNDO
+    E.file[i]->undo = us_create();
+#endif
+
+    if (name != NULL)
+        E.file[i]->filename = strdup(name);
+
+    return 0;
+}
+
+/* Return the current buffer */
+int current_buffer_lua(lua_State *L)
+{
+    lua_pushnumber(L, E.current_file);
+    return 1;
+}
+
+/* Kill the current buffer. */
+int kill_buffer_lua(lua_State *L)
+{
+    (void)L;
+
+    if (E.max_files > 1)
+    {
+
+        /*
+         * Free the current buffer.
+         */
+        struct fileState *cur = E.file[E.current_file];
+        free(cur->syntax);
+        cur->syntax = NULL;
+        free(cur->filename);
+        cur->filename = NULL;
+        free(cur->row);
+        cur->row = NULL;
+        free(cur);
+        E.file[E.current_file] = NULL;
+
+
+        /*
+         * Create a new set of buffers.
+         */
+        struct fileState **tmp = malloc((sizeof(struct fileState *) * E.max_files - 1));
+
+        /**
+         * Copy all non-free buffers over to the new structure.
+         */
+        int copied = 0;
+
+        for (int i = 0; i < E.max_files; i++)
+        {
+            if (E.file[i] != NULL)
+            {
+                tmp[copied] = E.file[i];
+                copied ++;
+            }
+        }
+
+        /* Swap them in */
+        free(E.file);
+        E.file = tmp;
+
+        E.max_files -= 1;
+
+        /*
+         * Change to the previous buffer.
+         */
+        if (E.current_file > 0)
+        {
+            E.current_file -= 1;
+        }
+        else
+        {
+            E.current_file = E.max_files - 1;
+        }
+
+        /*
+         * Force re-render
+         */
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
+    }
+    else
+    {
+        exit_lua(L);
+    }
+
+
+    return 0;
+}
+
+/* Move to the next buffer.*/
+int next_buffer_lua(lua_State *L)
+{
+    (void)L;
+
+    if (E.current_file < (E.max_files - 1))
+    {
+        E.current_file += 1;
+    }
+    else
+    {
+        E.current_file = 0;
+    }
+
+    /*
+     * Force re-render
+     */
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
+
+    return 0;
+}
+
+/* Move to the previous buffer.*/
+int prev_buffer_lua(lua_State *L)
+{
+    (void)L;
+
+    if (E.current_file > 0)
+    {
+        E.current_file -= 1;
+    }
+    else
+    {
+        E.current_file = E.max_files - 1;
+    }
+
+    /*
+     * Force re-render
+     */
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
+
+    return 0;
+}
+
+/* select a buffer, by index or name */
+int select_buffer_lua(lua_State *L)
+{
+    if (lua_isnumber(L, -1))
+    {
+        /*
+         * Select buffer by index.
+         */
+        int offset = lua_tonumber(L, -1);
+
+        if (offset >= 0  && offset <= (E.max_files - 1))
+        {
+            E.current_file = offset;
+            lua_pushnumber(L, 1);
+            return 1;
+        }
+
+        lua_pushnumber(L, 0);
+        return 1;
+    }
+
+    if (lua_isstring(L, -1))
+    {
+        /*
+         * Select buffer by name.
+         */
+        const char *name = lua_tostring(L, -1);
+
+        for (int i = 0; i < E.max_files; i++)
+        {
+            struct fileState *tmp = E.file[i];
+
+            if (tmp->filename && (strcmp(tmp->filename, name) == 0))
+            {
+                E.current_file = i;
+                lua_pushnumber(L, 1);
+                return 1;
+            }
+        }
+
+        lua_pushnumber(L, 0);
+        return 1;
+    }
+
+    lua_pushnumber(L, 0);
+    return 1;
+}
 
 
 
@@ -1216,1388 +2601,6 @@ fixcursor:
 
 
 
-/* ======================= Lua Functions ======================= */
-
-
-/* is the buffer dirty? */
-int dirty_lua(lua_State *L)
-{
-    if (dirty())
-        lua_pushboolean(L, 1);
-    else
-        lua_pushboolean(L, 0);
-
-    return 1;
-}
-
-/* return the contents of the line from the point-onwards */
-int get_line_lua(lua_State *L)
-{
-    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
-
-    if (row)
-    {
-        lua_pushstring(L, row->chars + E.file[E.current_file]->cx);
-        return 1;
-    }
-
-    return 0;
-}
-
-/* read a single key */
-int key_lua(lua_State *L)
-{
-    char buf[2] = { '\0', '\0' };
-    buf[0] = editorReadKey(STDIN_FILENO);
-    lua_pushstring(L, buf);
-    return 1;
-}
-
-/* Remove the current line. */
-int kill_line_lua(lua_State *L)
-{
-    (void)L;
-
-    /* move to end of line. */
-    eol_lua(L);
-
-    /* number of deletes we need. */
-    int len = 0;
-
-    /* count the characters */
-    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
-
-    if (row)
-        len = row->rsize;
-
-    while (len > 0)
-    {
-        delete_lua(L);
-        len -= 1;
-    }
-
-    /*
-     * Remove the line itself.
-     */
-    right_lua(L);
-    delete_lua(L);
-
-    return 0;
-}
-
-/* exit the editor */
-int exit_lua(lua_State *L)
-{
-    (void)L;
-    exit(0);
-    return 0;
-}
-
-/* insert a character */
-int insert_lua(lua_State *L)
-{
-    const char *str = lua_tostring(L, -1);
-
-    if (str != NULL)
-    {
-        size_t len = strlen(str);
-
-        for (unsigned int i = 0; i < len; i++)
-        {
-            editorInsertChar(str[i]);
-#ifdef _UNDO
-            /*
-             * Add the undo-record.
-             */
-            int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
-            int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-            add_undo(E.file[E.current_file]->undo, DELETE, ' ', x, y);
-#endif
-        }
-    }
-
-    return 0;
-}
-
-/* move to end of line */
-int eol_lua(lua_State *L)
-{
-    (void)L;
-
-    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
-
-    if (row)
-    {
-        /*
-         * Row width.
-         */
-        int size = row->rsize;
-        int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
-
-        while (x < size)
-        {
-            editorMoveCursor(ARROW_RIGHT);
-            x += 1;
-        }
-    }
-
-    return 0;
-}
-
-/* Move to start of line */
-int sol_lua(lua_State *L)
-{
-    (void)L;
-
-    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
-
-    while (x)
-    {
-        editorMoveCursor(ARROW_LEFT);
-        x -= 1;
-    }
-
-    return 0;
-}
-
-int undo_lua(lua_State *L)
-{
-    (void)L;
-#ifdef _UNDO
-    UndoAction *action = us_pop(E.file[E.current_file]->undo);
-
-    if (action == NULL)
-    {
-        editorSetStatusMessage(1, "Undo stack is empty!");
-        return 0;
-    }
-
-    if (action->type == DELETE)
-    {
-        warp(action->x, action->y);
-        delete_lua(L);
-    }
-    else if (action->type == INSERT)
-    {
-        warp(action->x, action->y);
-
-        char str[2] = { '\0', '\0' };
-        str[0] = action->data;
-        lua_pushstring(L, str);
-        insert_lua(L);
-    }
-
-    /*
-     * Performing the action to undo the user's previous
-     * thing will add a new action to the undo-stack.
-     *
-     * So we need to explicitly remove that faux addition here.
-     */
-    us_pop(E.file[E.current_file]->undo);
-#else
-    editorSetStatusMessage(1, "undo-support is not compiled in");
-#endif
-    return 0;
-}
-
-/* move cursor one character up */
-int up_lua(lua_State *L)
-{
-    (void)L;
-    editorMoveCursor(ARROW_UP);
-    return 0;
-}
-
-/* move cursor one character down */
-int down_lua(lua_State *L)
-{
-    (void)L;
-    editorMoveCursor(ARROW_DOWN);
-    return 0;
-}
-
-void warp(int x, int y)
-{
-    if (y < 0)
-        y = 0;
-
-    if (x < 0)
-        x = 0;
-
-    /*
-     * Move to top-left
-     */
-    E.file[E.current_file]->cx = E.file[E.current_file]->coloff = E.file[E.current_file]->cy = E.file[E.current_file]->rowoff = 0;
-
-    /*
-     * Is that where we wanted to go?
-     */
-    if (x == 0 && y == 0)
-        return;
-
-    /*
-     * Move down first - that should always work.
-     */
-    while (y > 0)
-    {
-        editorMoveCursor(ARROW_DOWN);
-        y -= 1;
-    }
-
-    /*
-     * Now move right.
-     */
-    while (x > 0)
-    {
-        editorMoveCursor(ARROW_RIGHT);
-        x -= 1;
-    }
-
-}
-
-/* Move to the next buffer.*/
-int next_buffer_lua(lua_State *L)
-{
-    (void)L;
-
-    if (E.current_file < (E.max_files - 1))
-    {
-        E.current_file += 1;
-    }
-    else
-    {
-        E.current_file = 0;
-    }
-
-    /*
-     * Force re-render
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
-
-    return 0;
-}
-
-
-/* Choose a buffer, interatively */
-int choose_buffer_lua(lua_State *L)
-{
-    (void)L;
-
-    int offset = 0;
-
-    while (1)
-    {
-        struct abuf ab = ABUF_INIT;
-        abAppend(&ab, "\x1b[?25l", 6); /* Hide cursor. */
-        abAppend(&ab, "\x1b[H", 3); /* Go home. */
-
-        /*
-         * Draw the list of buffers.
-         */
-        for (int i = 0; i < E.max_files ; i ++)
-        {
-            int selected = (i == offset);
-
-            char *filename = E.file[i]->filename;
-            int dirty = 0;
-
-            if (E.file[i]->dirty != 0)
-                dirty = 1;
-
-            if (filename && filename[0] == '*')
-                dirty = 0;
-
-            if (selected)
-            {
-                abAppend(&ab, "\x1b[47m", 5);
-            }
-            else
-            {
-                abAppend(&ab, "\x1b[49m", 5);
-            }
-
-            char line[255];
-            snprintf(line, sizeof(line) - 1, "%d - %s%s", i + 1,
-                     filename == NULL ? "UNSET" : filename,
-                     dirty ? " (modified)" : "");
-
-            while ((int)strlen(line) < E.screencols)
-            {
-                strcat(line, " ");
-            }
-
-            strcat(line, "\r\n");
-            abAppend(&ab, line, strlen(line));
-        }
-
-        /*
-         * Reset the inverse selection.
-         */
-        abAppend(&ab, "\x1b[49m", 5);
-
-        /*
-         * Pad to the bottom of the screen in empty lines.
-         */
-        for (int i = E.max_files ; i < E.screenrows; i++)
-        {
-            abAppend(&ab, "\x1b[2K~\r\n", 7);
-        }
-
-        abAppend(&ab, "\x1b[D0", 3); /* clear screen */
-        write(STDOUT_FILENO, ab.b, ab.len);
-        abFree(&ab);
-
-        /*
-         * Get a keypress
-         */
-        int c = editorReadKey(STDIN_FILENO);
-
-        if (c == ENTER)
-        {
-            /* Select the buffer.*/
-            E.current_file = offset;
-            return 0;
-        }
-
-        if (c == ESC)
-        {
-            /* Cancel */
-            return 0;
-        }
-
-        if (c == ARROW_UP)
-        {
-            if (offset > 0)
-                offset = 0;
-        }
-
-        if (c == ARROW_DOWN)
-        {
-            if (offset < (E.max_files - 1))
-            {
-                offset += 1;
-            }
-        }
-    }
-}
-
-
-
-/* count the buffers */
-int count_buffers_lua(lua_State *L)
-{
-    lua_pushnumber(L, E.max_files);
-    return 1;
-}
-
-/* select a buffer, by index or name */
-int select_buffer_lua(lua_State *L)
-{
-    if (lua_isnumber(L, -1))
-    {
-        /*
-         * Select buffer by index.
-         */
-        int offset = lua_tonumber(L, -1);
-
-        if (offset >= 0  && offset <= (E.max_files - 1))
-        {
-            E.current_file = offset;
-            lua_pushnumber(L, 1);
-            return 1;
-        }
-
-        lua_pushnumber(L, 0);
-        return 1;
-    }
-
-    if (lua_isstring(L, -1))
-    {
-        /*
-         * Select buffer by name.
-         */
-        const char *name = lua_tostring(L, -1);
-
-        for (int i = 0; i < E.max_files; i++)
-        {
-            struct fileState *tmp = E.file[i];
-
-            if (tmp->filename && (strcmp(tmp->filename, name) == 0))
-            {
-                E.current_file = i;
-                lua_pushnumber(L, 1);
-                return 1;
-            }
-        }
-
-        lua_pushnumber(L, 0);
-        return 1;
-    }
-
-    lua_pushnumber(L, 0);
-    return 1;
-}
-
-
-/* Create a new buffer */
-int create_buffer_lua(lua_State *L)
-{
-    /*
-     * Is there a name for the new buffer?
-     */
-    const char *name = lua_tostring(L, -1);
-
-    /*
-     * Reallocate our buffer-list to be one larger.
-     */
-    E.file = realloc(E.file, (sizeof(struct fileState *) * E.max_files + 1));
-
-    /*
-     * Bump the max-files.
-     */
-    E.max_files += 1;
-    E.current_file = E.max_files - 1;
-
-
-    /*
-     * Create a new buffer to populate our list.
-     */
-    int i = E.current_file;
-    E.file[i] = malloc(sizeof(struct fileState));
-    E.file[i]->markx = -1;
-    E.file[i]->marky = -1;
-    E.file[i]->tab_size = 8;
-    E.file[i]->cx = 0;
-    E.file[i]->cy = 0;
-    E.file[i]->rowoff = 0;
-    E.file[i]->coloff = 0;
-    E.file[i]->numrows = 0;
-    E.file[i]->row = NULL;
-    E.file[i]->dirty = 0;
-    E.file[i]->filename = NULL;
-    E.file[i]->syntax = NULL;
-
-#ifdef _UNDO
-    E.file[i]->undo = us_create();
-#endif
-
-    if (name != NULL)
-        E.file[i]->filename = strdup(name);
-
-    return 0;
-}
-
-/* Return the current buffer */
-int current_buffer_lua(lua_State *L)
-{
-    lua_pushnumber(L, E.current_file);
-    return 1;
-}
-
-/* Kill the current buffer. */
-int kill_buffer_lua(lua_State *L)
-{
-    (void)L;
-
-    if (E.max_files > 1)
-    {
-
-        /*
-         * Free the current buffer.
-         */
-        struct fileState *cur = E.file[E.current_file];
-        free(cur->syntax);
-        cur->syntax = NULL;
-        free(cur->filename);
-        cur->filename = NULL;
-        free(cur->row);
-        cur->row = NULL;
-        free(cur);
-        E.file[E.current_file] = NULL;
-
-
-        /*
-         * Create a new set of buffers.
-         */
-        struct fileState **tmp = malloc((sizeof(struct fileState *) * E.max_files - 1));
-
-        /**
-         * Copy all non-free buffers over to the new structure.
-         */
-        int copied = 0;
-
-        for (int i = 0; i < E.max_files; i++)
-        {
-            if (E.file[i] != NULL)
-            {
-                tmp[copied] = E.file[i];
-                copied ++;
-            }
-        }
-
-        /* Swap them in */
-        free(E.file);
-        E.file = tmp;
-
-        E.max_files -= 1;
-
-        /*
-         * Change to the previous buffer.
-         */
-        if (E.current_file > 0)
-        {
-            E.current_file -= 1;
-        }
-        else
-        {
-            E.current_file = E.max_files - 1;
-        }
-
-        /*
-         * Force re-render
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
-    }
-    else
-    {
-        exit_lua(L);
-    }
-
-
-    return 0;
-}
-
-/* Move to the previous buffer.*/
-int prev_buffer_lua(lua_State *L)
-{
-    (void)L;
-
-    if (E.current_file > 0)
-    {
-        E.current_file -= 1;
-    }
-    else
-    {
-        E.current_file = E.max_files - 1;
-    }
-
-    /*
-     * Force re-render
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
-
-    return 0;
-}
-
-
-/* Get/Set X,Y position of the cursor. */
-int point_lua(lua_State *L)
-{
-    if (lua_isnumber(L, -2) &&
-            lua_isnumber(L, -1))
-    {
-        int y = lua_tonumber(L, -1) - 1;
-        int x = lua_tonumber(L, -2) - 1;
-
-        warp(x, y);
-    }
-
-    lua_pushnumber(L, E.file[E.current_file]->cx + E.file[E.current_file]->coloff);
-    lua_pushnumber(L, E.file[E.current_file]->cy + E.file[E.current_file]->rowoff);
-    return 2;
-}
-
-
-/* Get/Set tabsize. */
-int tabsize_lua(lua_State *L)
-{
-    if (lua_isnumber(L, -1))
-    {
-        int width = lua_tonumber(L, -1);
-        E.file[E.current_file]->tab_size = width;
-
-        /*
-         * Force a re-render
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
-
-    }
-
-    lua_pushnumber(L, E.file[E.current_file]->tab_size);
-    return 1;
-}
-
-/* Get/Set X,Y position of the mark. */
-int mark_lua(lua_State *L)
-{
-    if (lua_isnumber(L, -2) &&
-            lua_isnumber(L, -1))
-    {
-        int y = lua_tonumber(L, -1);
-        int x = lua_tonumber(L, -2);
-
-        if ((x >= 0 || x == -1) &&
-                (y >= 0 || y == -1))
-        {
-            E.file[E.current_file]->markx = x ;
-            E.file[E.current_file]->marky = y ;
-        }
-
-    }
-
-    lua_pushnumber(L, E.file[E.current_file]->markx);
-    lua_pushnumber(L, E.file[E.current_file]->marky);
-    return 2;
-}
-
-
-/* Get the text between the point and the mark */
-int selection_lua(lua_State *L)
-{
-    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
-    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-
-    /*
-     * No selection - either because the mark is not set, and
-     * the cursor is in the mark.
-     */
-    if ((E.file[E.current_file]->markx == -1) && (E.file[E.current_file]->marky == -1))
-    {
-        lua_pushnil(L);
-        return 1;
-    }
-
-    if ((E.file[E.current_file]->markx == x) && (E.file[E.current_file]->marky == y))
-    {
-        lua_pushnil(L);
-        return 1;
-    }
-
-    char *t = get_selection();
-    lua_pushstring(L, t);
-    free(t);
-    return 1;
-
-}
-
-
-/* Delete the text between the point and the mark */
-int cut_selection_lua(lua_State *L)
-{
-    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
-    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-
-    /* There is no mark. */
-    if ((E.file[E.current_file]->markx == -1) && (E.file[E.current_file]->marky == -1))
-        return 0;
-
-    /* The cursor is at the mark. */
-    if ((E.file[E.current_file]->markx == x) && (E.file[E.current_file]->marky == y))
-        return 0;
-
-    int left = 0;
-
-    if ((y > E.file[E.current_file]->marky) || (x > E.file[E.current_file]->markx && y == E.file[E.current_file]->marky))
-        left = 1;
-
-    /* Get the selection text */
-    char *sel = get_selection();
-
-    /* Delete the number of characters that the selection includes. */
-    int max = (int)strlen(sel);
-
-    if (left == 0)
-    {
-        for (int i = 0; i < max ; i++)
-        {
-            editorMoveCursor(ARROW_RIGHT);
-            delete_lua(L);
-        }
-    }
-    else
-    {
-        /* we want to delete the character under the cursor too - so
-           we move one place right before we remove the characters. */
-        editorMoveCursor(ARROW_RIGHT);
-
-        for (int i = 0; i < max ; i++)
-            delete_lua(L);
-    }
-
-    /* Cleanup & remove the mark. */
-    free(sel);
-    E.file[E.current_file]->markx = -1;
-    E.file[E.current_file]->marky = -1;
-    return 0;
-}
-
-/* page down */
-int page_down_lua(lua_State *L)
-{
-    (void)L;
-
-    int times = E.screenrows - 1;
-
-    while (times--)
-        down_lua(L);
-
-    return 0;
-}
-
-/* page up */
-int page_up_lua(lua_State *L)
-{
-    (void)L;
-    int times = E.screenrows - 1;
-
-    while (times--)
-        up_lua(L);
-
-    return 0;
-}
-
-/* set the status-bar text */
-int status_lua(lua_State *L)
-{
-    const char *str = lua_tostring(L, -1);
-    editorSetStatusMessage(1, str);
-    editorRefreshScreen();
-    return 0;
-}
-
-/* move the cursor one character left */
-int left_lua(lua_State *L)
-{
-    (void)L;
-    editorMoveCursor(ARROW_LEFT);
-    return 0;
-}
-
-/* move the cursor one character right */
-int right_lua(lua_State *L)
-{
-    (void)L;
-    editorMoveCursor(ARROW_RIGHT);
-    return 0;
-}
-
-/* get the character that the current position */
-int at_lua(lua_State *L)
-{
-    char tmp[2] = {'\n', '\0'};
-    tmp[0] = at();
-    lua_pushstring(L, tmp);
-    return 1;
-
-}
-
-/* Delete the char at the current position. */
-int delete_lua(lua_State *L)
-{
-    (void)L;
-
-    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-    int filecol = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
-
-    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
-
-    if (!row || (filecol == 0 && filerow == 0))
-        return 0;
-
-
-    if (filecol == 0)
-    {
-#ifdef _UNDO
-        int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
-        int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
-        add_undo(E.file[E.current_file]->undo, INSERT, '\n', x, y);
-#endif
-
-        /* Handle the case of column 0, we need to move the current line
-         * on the right of the previous one. */
-        filecol = E.file[E.current_file]->row[filerow - 1].size;
-        editorRowAppendString(&E.file[E.current_file]->row[filerow - 1], row->chars, row->size);
-        editorDelRow(filerow);
-        row = NULL;
-
-        if (E.file[E.current_file]->cy == 0)
-            E.file[E.current_file]->rowoff--;
-        else
-            E.file[E.current_file]->cy--;
-
-        E.file[E.current_file]->cx = filecol;
-
-        if (E.file[E.current_file]->cx >= E.screencols)
-        {
-            int shift = (E.screencols - E.file[E.current_file]->cx) + 1;
-            E.file[E.current_file]->cx -= shift;
-            E.file[E.current_file]->coloff += shift;
-        }
-    }
-    else
-    {
-        editorRowDelChar(row, filecol - 1);
-
-        if (E.file[E.current_file]->cx == 0 && E.file[E.current_file]->coloff)
-            E.file[E.current_file]->coloff--;
-        else
-            E.file[E.current_file]->cx--;
-    }
-
-    /*
-     * BUGFIX: Ensure we don't walk off the screen, and draw gibberish.
-     *
-     * This seems to happen when `shift` becomes negative above.
-     */
-    if (E.file[E.current_file]->coloff < 0)
-        E.file[E.current_file]->coloff = 0;
-
-    if (E.file[E.current_file]->rowoff < 0)
-        E.file[E.current_file]->rowoff = 0;
-
-    if (row) editorUpdateRow(row);
-
-    E.file[E.current_file]->dirty++;
-    return 0;
-}
-
-
-/* prompt for input */
-int prompt_lua(lua_State *L)
-{
-    char *prompt = (char *)lua_tostring(L, -1);
-    char *buf = get_input(prompt);
-
-    if (buf)
-    {
-        lua_pushstring(lua, buf);
-        free(buf);
-        return 1;
-    }
-
-    return 0;
-}
-
-/* Save the current file on disk. Return 0 on success, 1 on error. */
-int save_lua(lua_State *L)
-{
-
-    /*
-     * If we were given a filename then use that.
-     */
-    char *path = (char *)lua_tostring(L, -1);
-
-    if (path != NULL)
-    {
-        free(E.file[E.current_file]->filename);
-        E.file[E.current_file]->filename = strdup(path);
-    }
-
-    /*
-     * If we don't have a filename we can't save
-     */
-    if (E.file[E.current_file]->filename == NULL)
-    {
-        editorSetStatusMessage(1, "No filename is set!");
-        return 0;
-    }
-
-    int len;
-    char *buf = editorRowsToString(&len);
-    int fd = open(E.file[E.current_file]->filename, O_RDWR | O_CREAT, 0644);
-
-    if (fd == -1) goto writeerr;
-
-    /* Use truncate + a single write(2) call in order to make saving
-     * a bit safer, under the limits of what we can do in a small editor. */
-    if (ftruncate(fd, len) == -1) goto writeerr;
-
-    if (write(fd, buf, len) != len) goto writeerr;
-
-    close(fd);
-    free(buf);
-    E.file[E.current_file]->dirty = 0;
-
-    editorSetStatusMessage(1, "%d bytes written to %s", len, E.file[E.current_file]->filename);
-
-    /* invoke our lua callback function */
-    call_lua("on_saved", E.file[E.current_file]->filename);
-
-#ifdef _UNDO
-    /* since we've saved - kill our undo stack */
-    us_clear(E.file[E.current_file]->undo);
-#endif
-
-    return 0;
-
-writeerr:
-    free(buf);
-
-    if (fd != -1) close(fd);
-
-    editorSetStatusMessage(1, "Can't save! I/O error: %s", strerror(errno));
-    return 1;
-}
-
-
-/* Search for the given string */
-int search_lua(lua_State *L)
-{
-    /*
-     * Get the search pattern.
-     */
-    char *term = (char *)lua_tostring(L, -1);
-
-    if (term == NULL)
-    {
-        editorSetStatusMessage(1, "No search term given!");
-        return 0;
-    }
-
-#ifdef _REGEXP
-    regex_t regex;
-
-    if (regcomp(&regex, term, REG_EXTENDED) != 0)
-    {
-        editorSetStatusMessage(1, "Failed to compile regular expression!");
-        return 0;
-    };
-
-#endif
-
-
-    /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
-
-    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
-
-    /*
-     * Move forward one character - to ensure that we
-     * are able to find the next match, not keep on the first
-     * one.
-     */
-    right_lua(L);
-
-    /*
-     * Current line;
-     */
-    int current = E.file[E.current_file]->cy + E.file[E.current_file]->rowoff;
-
-    /*
-     * Now for each line ..
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-    {
-        /*
-         * For each character in the current row .. do we match?
-         */
-        for (int x = E.file[E.current_file]->cx + E.file[E.current_file]->coloff; x < E.file[E.current_file]->row[current].rsize; x++)
-        {
-            int match     = 0;
-            int match_len = 0;
-
-#ifdef _REGEXP
-            regmatch_t result[1];
-
-            if (regexec(&regex, E.file[E.current_file]->row[current].render + x, 1, result, 0) == 0)
-            {
-                match = 1;
-                match_len = (result[0]).rm_eo - (result[0]).rm_so;
-
-                /*
-                 * Start of the match.
-                 */
-                x += (result[0]).rm_so;
-            }
-
-#else
-
-            if (strncmp(E.file[E.current_file]->row[current].render + x, term, strlen(term)) == 0)
-            {
-                match = 1;
-                match_len = strlen(term);
-            }
-
-#endif
-
-            if (match)
-            {
-                /*
-                 * The column in which we matched.
-                 */
-                E.file[E.current_file]->cx = x;
-                E.file[E.current_file]->coloff = 0;
-
-                /* The matching row will be at the top of the screen. */
-                E.file[E.current_file]->cy = 0;
-                E.file[E.current_file]->rowoff = current;
-
-                /* Scroll horizontally as needed. */
-                if (E.file[E.current_file]->cx > E.screencols)
-                {
-                    int diff = abs(E.file[E.current_file]->cx - E.screencols);
-                    E.file[E.current_file]->cx -= diff;
-                    E.file[E.current_file]->coloff += diff;
-                }
-
-                /* Return the length of the match */
-                lua_pushnumber(L, match_len);
-                return 1;
-            }
-        }
-
-        /*
-         * Current line.
-         */
-        current += 1;
-
-        /*
-         * Wrap around the end/start of the file.
-         */
-        if (current == E.file[E.current_file]->numrows)
-            current = 0;
-
-        /*
-         * We've moved forward a row, so we can now start at the
-         * beginning of the row.
-         */
-        E.file[E.current_file]->cx = 0;
-        E.file[E.current_file]->coloff = 0;
-    }
-
-    /*
-     * If we didn't find a match we need to restore the
-     * position to where where we were before.
-     */
-    editorSetStatusMessage(1, "No match found");
-    E.file[E.current_file]->cx = saved_cx;
-    E.file[E.current_file]->cy = saved_cy;
-    E.file[E.current_file]->coloff = saved_coloff;
-    E.file[E.current_file]->rowoff = saved_rowoff;
-    lua_pushnumber(L, 0);
-    return 1;
-}
-
-/* set the syntax keywords. */
-int set_syntax_keywords_lua(lua_State *L)
-{
-    if (! lua_istable(L, 1))
-        return 0;
-
-    if (E.file[E.current_file]->syntax == NULL)
-    {
-        struct editorSyntax *s = (struct editorSyntax*)malloc(sizeof(struct editorSyntax));
-        s->keywords                    = NULL;
-        s->singleline_comment_start[0] = '\0';
-        s->multiline_comment_start[0]  = '\0';
-        s->multiline_comment_end[0]    = '\0';
-        s->flags                       =  HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS;
-        E.file[E.current_file]->syntax = s;
-    }
-
-    size_t len = lua_rawlen(L, 1);
-    E.file[E.current_file]->syntax->keywords = malloc((1 + len) * sizeof(char*));
-
-    int i = 0;
-    lua_pushnil(L);
-
-    while (lua_next(L, -2) != 0)
-    {
-        const char *str = lua_tostring(L, -1);
-        E.file[E.current_file]->syntax->keywords[i] = strdup(str);
-        lua_pop(L, 1);
-        i += 1;
-    }
-
-    E.file[E.current_file]->syntax->keywords[i] = NULL;
-
-    /*
-     * Force re-render.
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
-
-    return 0;
-}
-
-/* Enable highlighting of numbers. */
-int syntax_highlight_numbers_lua(lua_State *L)
-{
-    int cond = lua_tonumber(L, -1);
-
-    if (E.file[E.current_file]->syntax)
-    {
-        if (cond == 1)
-            E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_NUMBERS;
-        else
-            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_NUMBERS;
-
-        /*
-         * Force re-render.
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
-    }
-
-    return 0;
-}
-
-/* Enable highlighting of strings. */
-int syntax_highlight_strings_lua(lua_State *L)
-{
-    int cond = lua_tonumber(L, -1);
-
-    if (E.file[E.current_file]->syntax)
-    {
-        if (cond == 1)
-            E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_STRINGS;
-        else
-            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
-
-        /*
-         * Force re-render.
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
-    }
-
-    return 0;
-}
-
-/* Set comment handling. */
-int set_syntax_comments_lua(lua_State *L)
-{
-    char *single = (char *)lua_tostring(L, -3);
-    char *multi_open = (char *)lua_tostring(L, -2);
-    char *multi_end = (char *)lua_tostring(L, -1);
-
-    if ((single == NULL) ||
-            (multi_open == NULL) ||
-            (multi_end == NULL))
-        return 0;
-
-    /*
-     * If we don't have syntax that's a bug.
-     */
-    if (E.file[E.current_file]->syntax == NULL)
-        return 0;
-
-    strcpy(E.file[E.current_file]->syntax->singleline_comment_start, single);
-    strcpy(E.file[E.current_file]->syntax->multiline_comment_start, multi_open);
-    strcpy(E.file[E.current_file]->syntax->multiline_comment_end, multi_end);
-
-    /*
-     * Force re-render.
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
-
-    return 0;
-}
-
-/* Switch to find-mode */
-int find_lua(lua_State *L)
-{
-    (void)L;
-    char query[KILO_QUERY_LEN + 1] = {0};
-    int qlen = 0;
-    int last_match = -1; /* Last line where a match was found. -1 for none. */
-    int find_next = 0; /* if 1 search next, if -1 search prev. */
-    int saved_hl_line = -1;  /* No saved HL */
-    char *saved_hl = NULL;
-
-#define FIND_RESTORE_HL do { \
-    if (saved_hl) { \
-        memcpy(E.file[E.current_file]->row[saved_hl_line].hl,saved_hl, E.file[E.current_file]->row[saved_hl_line].rsize); \
-        saved_hl = NULL; \
-    } \
-} while (0)
-
-    /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
-    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
-
-    while (1)
-    {
-        editorSetStatusMessage(1,
-                               "Search: %s (Use ESC/Arrows/Enter)", query);
-        editorRefreshScreen();
-
-        int c = editorReadKey(STDIN_FILENO);
-
-        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE)
-        {
-            if (qlen != 0) query[--qlen] = '\0';
-
-            last_match = -1;
-        }
-        else if (c == ESC || c == ENTER)
-        {
-            if (c == ESC)
-            {
-                E.file[E.current_file]->cx = saved_cx;
-                E.file[E.current_file]->cy = saved_cy;
-                E.file[E.current_file]->coloff = saved_coloff;
-                E.file[E.current_file]->rowoff = saved_rowoff;
-            }
-
-            FIND_RESTORE_HL;
-            editorSetStatusMessage(0, "");
-            return 0;
-        }
-        else if (c == ARROW_RIGHT || c == ARROW_DOWN)
-        {
-            find_next = 1;
-        }
-        else if (c == ARROW_LEFT || c == ARROW_UP)
-        {
-            find_next = -1;
-        }
-        else if (isprint(c))
-        {
-            if (qlen < KILO_QUERY_LEN)
-            {
-                query[qlen++] = c;
-                query[qlen] = '\0';
-                last_match = -1;
-            }
-        }
-
-        /* Search occurrence. */
-        if (last_match == -1) find_next = 1;
-
-        if (find_next)
-        {
-            char *match = NULL;
-            int match_offset = 0;
-            int i, current = last_match;
-
-            for (i = 0; i < E.file[E.current_file]->numrows; i++)
-            {
-                current += find_next;
-
-                if (current == -1)
-                    current = E.file[E.current_file]->numrows - 1;
-                else if (current == E.file[E.current_file]->numrows)
-                    current = 0;
-
-                match = strstr(E.file[E.current_file]->row[current].render, query);
-
-                if (match)
-                {
-                    match_offset = match - E.file[E.current_file]->row[current].render;
-                    break;
-                }
-            }
-
-            find_next = 0;
-
-            /* Highlight */
-            FIND_RESTORE_HL;
-
-            if (match)
-            {
-                erow *row = &E.file[E.current_file]->row[current];
-                last_match = current;
-
-                if (row->hl)
-                {
-                    saved_hl_line = current;
-                    saved_hl = malloc(row->rsize);
-                    memcpy(saved_hl, row->hl, row->rsize);
-                    memset(row->hl + match_offset, HL_MATCH, qlen);
-                }
-
-                /*
-                 * NOTE: This breaks our undo, by warping to a new
-                 * position that isn't tracked by our stack.
-                 */
-                E.file[E.current_file]->cy = 0;
-                E.file[E.current_file]->cx = match_offset;
-                E.file[E.current_file]->rowoff = current;
-                E.file[E.current_file]->coloff = 0;
-
-                /* Scroll horizontally as needed. */
-                if (E.file[E.current_file]->cx > E.screencols)
-                {
-                    int diff = E.file[E.current_file]->cx - E.screencols;
-                    E.file[E.current_file]->cx -= diff;
-                    E.file[E.current_file]->coloff += diff;
-                }
-            }
-        }
-    }
-}
-
-/* prompt for a string, and evaluate that as lua. */
-int eval_lua(lua_State *L)
-{
-    (void)L;
-
-    char *txt = get_input("Eval: ");
-
-    if (txt)
-    {
-        int res =  luaL_loadstring(lua, txt);
-
-        if (res == 0)
-        {
-            res = lua_pcall(lua, 0, LUA_MULTRET, 0);
-        }
-        else
-        {
-            const char *er = lua_tostring(lua, -1);
-
-            if (er)
-                editorSetStatusMessage(1, er);
-        }
-
-        free(txt);
-    }
-
-    return 0;
-}
-
-/* Prompt for a filename and open it. */
-int open_lua(lua_State *L)
-{
-    (void)L;
-    /*
-     * If we got a string then open it as a filename.
-     */
-    char *path = (char *)lua_tostring(L, -1);
-
-    if (path != NULL)
-    {
-        editorOpen(path);
-        return 0;
-    }
-
-    /*
-     * Prompt for a path.
-     */
-    path = get_input("Open: ");
-
-    if (path)
-    {
-        editorOpen(path);
-        free(path);
-    }
-
-    return 0;
-}
-
-
-
-
-
 /* ============================= Append Buffer ============================ */
 
 void abAppend(struct abuf *ab, const char *s, int len)
@@ -3141,6 +3144,7 @@ int load_lua(char *filename)
     return 0;
 }
 
+/* Init the editor. */
 void initEditor(void)
 {
     /* Get the size of our window, and remove room for status bar. */
@@ -3155,41 +3159,65 @@ void initEditor(void)
     luaL_openlibs(lua);
 
     /*
-     * Lua bindings.
+     * Accessors
      */
     lua_register(lua, "at", at_lua);
-    lua_register(lua, "delete", delete_lua);
     lua_register(lua, "dirty", dirty_lua);
+    lua_register(lua, "get_line", get_line_lua);
+
+    /*
+     * Movement
+     */
     lua_register(lua, "down", down_lua);
     lua_register(lua, "eol", eol_lua);
-    lua_register(lua, "eval", eval_lua);
-    lua_register(lua, "exit", exit_lua);
-    lua_register(lua, "find", find_lua);
-    lua_register(lua, "get_line", get_line_lua);
+    lua_register(lua, "left", left_lua);
+    lua_register(lua, "page_down", page_down_lua);
+    lua_register(lua, "page_up", page_up_lua);
+    lua_register(lua, "right", right_lua);
+    lua_register(lua, "sol", sol_lua);
+    lua_register(lua, "up", up_lua);
+
+    /*
+     * Selection
+     */
+    lua_register(lua, "cut_selection", cut_selection_lua);
+    lua_register(lua, "selection", selection_lua);
+
+    /*
+     * Removals
+     */
+    lua_register(lua, "delete", delete_lua);
     lua_register(lua, "kill", kill_line_lua);
     lua_register(lua, "key", key_lua);
     lua_register(lua, "insert", insert_lua);
-    lua_register(lua, "left", left_lua);
-    lua_register(lua, "right", right_lua);
+
+    /*
+     * Markers
+     */
     lua_register(lua, "mark", mark_lua);
     lua_register(lua, "point", point_lua);
-    lua_register(lua, "page_down", page_down_lua);
-    lua_register(lua, "page_up", page_up_lua);
+
+    /*
+     * Core
+     */
+    lua_register(lua, "eval", eval_lua);
+    lua_register(lua, "exit", exit_lua);
+    lua_register(lua, "find", find_lua);
     lua_register(lua, "open", open_lua);
     lua_register(lua, "prompt", prompt_lua);
     lua_register(lua, "save", save_lua);
-    lua_register(lua, "selection", selection_lua);
-    lua_register(lua, "cut_selection", cut_selection_lua);
     lua_register(lua, "search", search_lua);
-    lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
+    lua_register(lua, "status", status_lua);
+    lua_register(lua, "undo", undo_lua);
+
+    /*
+     * Syntax highlighting.
+     */
     lua_register(lua, "set_syntax_comments", set_syntax_comments_lua);
+    lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
     lua_register(lua, "syntax_highlight_numbers", syntax_highlight_numbers_lua);
     lua_register(lua, "syntax_highlight_strings", syntax_highlight_strings_lua);
-    lua_register(lua, "status", status_lua);
-    lua_register(lua, "sol", sol_lua);
     lua_register(lua, "tabsize", tabsize_lua);
-    lua_register(lua, "undo", undo_lua);
-    lua_register(lua, "up", up_lua);
 
 
     /*
@@ -3212,6 +3240,8 @@ void initEditor(void)
     E.file[0]->filename = strdup("*Messages*");
 }
 
+
+/* Entry point to our code */
 int main(int argc, char **argv)
 {
     fd_set rfds;
@@ -3318,7 +3348,6 @@ int main(int argc, char **argv)
          */
         create_buffer_lua(lua);
     }
-
 
 
     enableRawMode(STDIN_FILENO);

@@ -35,9 +35,18 @@
 
 #pragma once
 
-#ifdef _UNDO
-# include "undo_stack.h"
+#ifdef _REGEXP
+#include <regex.h>
 #endif
+
+#ifdef _UNDO
+#include "undo_stack.h"
+#endif
+
+/* Lua interface */
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 
 /* Syntax highlight types */
@@ -59,6 +68,26 @@
 /* Global lua handle */
 lua_State * lua;
 
+/**
+ *  Our startup banner.
+ */
+const char * welcome_msg[] =
+{
+    "kilua, version " _VERSION "\x1b[0K\r\n",
+    "\r\n",
+#ifdef _REGEXP
+    "Regular expression support enabled.\r\n",
+#else
+    "\r\n",
+#endif
+#ifdef _UNDO
+    "Undo-support enabled.\r\n",
+#else
+    "\r\n",
+#endif
+};
+
+const int welcome_len = (sizeof(welcome_msg) / sizeof(welcome_msg[0]));
 
 /**
  * This structure holds the details of the syntax-highlighting
@@ -202,29 +231,11 @@ struct abuf
  */
 #define ABUF_INIT {NULL,0}
 
-/**
- *  Our startup banner.
- */
-const char * welcome_msg[] =
-{
-    "kilua, version " _VERSION "\x1b[0K\r\n",
-    "\r\n",
-#ifdef _REGEXP
-    "Regular expression support enabled.\r\n",
-#else
-    "\r\n",
-#endif
-#ifdef _UNDO
-    "Undo-support enabled.\r\n",
-#else
-    "\r\n",
-#endif
-};
-const int welcome_len = (sizeof(welcome_msg) / sizeof(welcome_msg[0]));
 
 
 /* prototypes */
 void disableRawMode(int fd);
+int dirty();
 void editorAtExit(void);
 int enableRawMode(int fd);
 int editorReadKey(int fd);
@@ -249,36 +260,7 @@ void editorRowAppendString(erow *row, char *s, size_t len);
 void editorRowDelChar(erow *row, int at);
 void editorInsertChar(int c);
 void editorInsertNewline(void);
-int dirty_lua(lua_State *L);
-int get_line_lua(lua_State *L);
-int kill_line_lua(lua_State *L);
-int exit_lua(lua_State *L);
-int insert_lua(lua_State *L);
-int eol_lua(lua_State *L);
-int sol_lua(lua_State *L);
-int up_lua(lua_State *L);
-int down_lua(lua_State *L);
 void warp(int x, int y);
-int point_lua(lua_State *L);
-int mark_lua(lua_State *L);
-int selection_lua(lua_State *L);
-int cut_selection_lua(lua_State *L);
-int page_down_lua(lua_State *L);
-int page_up_lua(lua_State *L);
-int status_lua(lua_State *L);
-int left_lua(lua_State *L);
-int right_lua(lua_State *L);
-int at_lua(lua_State *L);
-int delete_lua(lua_State *L);
-int prompt_lua(lua_State *L);
-int save_lua(lua_State *L);
-int set_syntax_keywords_lua(lua_State *L);
-int syntax_highlight_numbers_lua(lua_State *L);
-int syntax_highlight_strings_lua(lua_State *L);
-int set_syntax_comments_lua(lua_State *L);
-int find_lua(lua_State *L);
-int eval_lua(lua_State *L);
-int open_lua(lua_State *L);
 void abAppend(struct abuf *ab, const char *s, int len);
 void abFree(struct abuf *ab);
 void editorRefreshScreen(void);
@@ -288,3 +270,63 @@ int load_lua(char *filename);
 void editorProcessKeypress(int fd);
 void initEditor(void);
 int main(int argc, char **argv);
+
+
+/* ========================= Lua Primitives  ======================== */
+
+/* Accessors */
+extern  int at_lua(lua_State *L);
+extern  int dirty_lua(lua_State *L);
+extern  int get_line_lua(lua_State *L);
+
+/* Movement */
+extern  int down_lua(lua_State *L);
+extern  int eol_lua(lua_State *L);
+extern  int left_lua(lua_State *L);
+extern  int page_down_lua(lua_State *L);
+extern  int page_up_lua(lua_State *L);
+extern  int right_lua(lua_State *L);
+extern  int sol_lua(lua_State *L);
+extern  int up_lua(lua_State *L);
+
+/* Selection */
+extern  int cut_selection_lua(lua_State *L);
+extern  int selection_lua(lua_State *L);
+
+/* Removals */
+extern  int delete_lua(lua_State *L);
+extern  int kill_line_lua(lua_State *L);
+extern  int key_lua(lua_State *L);
+extern  int insert_lua(lua_State *L);
+
+/* Markers */
+extern  int mark_lua(lua_State *L);
+extern  int point_lua(lua_State *L);
+
+/* Core */
+extern  int eval_lua(lua_State *L);
+extern  int exit_lua(lua_State *L);
+extern  int find_lua(lua_State *L);
+extern  int open_lua(lua_State *L);
+extern  int prompt_lua(lua_State *L);
+extern  int save_lua(lua_State *L);
+extern  int search_lua(lua_State *L);
+extern  int status_lua(lua_State *L);
+extern  int undo_lua(lua_State *L);
+
+/* Syntax highlighting */
+extern  int set_syntax_comments_lua(lua_State *L);
+extern  int set_syntax_keywords_lua(lua_State *L);
+extern  int syntax_highlight_numbers_lua(lua_State *L);
+extern  int syntax_highlight_strings_lua(lua_State *L);
+extern  int tabsize_lua(lua_State *L);
+
+/* Buffers */
+extern int choose_buffer_lua(lua_State *L);
+extern int count_buffers_lua(lua_State *L);
+extern int create_buffer_lua(lua_State *L);
+extern int current_buffer_lua(lua_State *L);
+extern int kill_buffer_lua(lua_State *L);
+extern int next_buffer_lua(lua_State *L);
+extern int prev_buffer_lua(lua_State *L);
+extern int select_buffer_lua(lua_State *L);
