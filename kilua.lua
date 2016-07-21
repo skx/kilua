@@ -142,10 +142,14 @@ keymap['^X']['^X'] = function() swap_point_mark() end
 
 
 --
--- Next/Previous Files
+-- Working with buffers.
 --
-keymap['M-RIGHT'] = next_file
-keymap['M-LEFT']  = prev_file
+keymap['^X']['c']  = create_buffer
+keymap['^X']['k']  = kill_buffer
+keymap['M-RIGHT']  = next_buffer
+keymap['^X']['n']  = next_buffer
+keymap['M-LEFT']   = prev_buffer
+keymap['^X']['p']  = prev_buffer
 
 
 --
@@ -433,6 +437,8 @@ end
 --
 function on_loaded( filename )
 
+   if ( not filename ) then return end
+
    -- Get the file-name + suffix.
    local file = filename:match("^.+/(.+)$") or filename
    local ext = file:match("^.+%.(.+)$") or file
@@ -636,7 +642,7 @@ quit_count = 2
 function quit()
    if ( dirty() ) then
       if ( quit_count > 0 ) then
-         status( "Buffer is dirty press Ctrl-q " .. quit_count .. " more times to exit")
+         status( "Buffer(s) are dirty press Ctrl-q " .. quit_count .. " more times to exit!")
          quit_count = quit_count - 1
       else
          exit()

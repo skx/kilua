@@ -89,25 +89,25 @@ void editorAtExit(void)
 {
 #ifdef _UNDO
     /* kill our undo stack, to prevent valgrind leaks */
-    us_clear(E.file[E.current_file].undo);
-    free(E.file[E.current_file].undo);
+    us_clear(E.file[E.current_file]->undo);
+    free(E.file[E.current_file]->undo);
 #endif
 
     /* free all our rows */
-    for (int i = 0; i < E.file[E.current_file].numrows; i++)
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
     {
-        editorFreeRow(&E.file[E.current_file].row[i]);
+        editorFreeRow(&E.file[E.current_file]->row[i]);
     }
 
-    free(E.file[E.current_file].row);
+    free(E.file[E.current_file]->row);
 
     /* close lua */
     lua_close(lua);
 
-    if (E.file[E.current_file].filename)
+    if (E.file[E.current_file]->filename)
     {
-        free(E.file[E.current_file].filename);
-        E.file[E.current_file].filename = NULL;
+        free(E.file[E.current_file]->filename);
+        E.file[E.current_file]->filename = NULL;
     }
 
     /* reset our input-mode and clear the screen. */
@@ -304,15 +304,15 @@ void strrev(char *p)
 /* Retrieve the single character at the current position. */
 char at()
 {
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     char tmp[2] = {'\n', '\0'};
 
     if (row)
     {
-        if (E.file[E.current_file].cx < row->rsize)
-            tmp[0] = row->render[E.file[E.current_file].cx];
+        if (E.file[E.current_file]->cx < row->rsize)
+            tmp[0] = row->render[E.file[E.current_file]->cx];
     }
 
     return (tmp[0]);
@@ -321,15 +321,15 @@ char at()
 /* Get the text which is currently selected - i.e. between mark & cursor */
 char *get_selection()
 {
-    int saved_cx = E.file[E.current_file].cx, saved_cy = E.file[E.current_file].cy;
-    int saved_coloff = E.file[E.current_file].coloff, saved_rowoff = E.file[E.current_file].rowoff;
+    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
+    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
 
 
     /*
      * Get the current X/Y
      */
-    int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-    int y = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
 
     /*
      * Append-buffer
@@ -346,7 +346,7 @@ char *get_selection()
     /*
      * The cursor is above the mark.
      */
-    if ((y > E.file[E.current_file].marky) || (x > E.file[E.current_file].markx && y == E.file[E.current_file].marky))
+    if ((y > E.file[E.current_file]->marky) || (x > E.file[E.current_file]->markx && y == E.file[E.current_file]->marky))
     {
         /*
          * Move left until we get there.
@@ -361,7 +361,7 @@ char *get_selection()
 
             editorMoveCursor(ARROW_LEFT);
 
-            if ((E.file[E.current_file].coloff + E.file[E.current_file].cx == E.file[E.current_file].markx) && (E.file[E.current_file].rowoff + E.file[E.current_file].cy == E.file[E.current_file].marky))
+            if ((E.file[E.current_file]->coloff + E.file[E.current_file]->cx == E.file[E.current_file]->markx) && (E.file[E.current_file]->rowoff + E.file[E.current_file]->cy == E.file[E.current_file]->marky))
                 break;
         }
 
@@ -395,7 +395,7 @@ char *get_selection()
 
             editorMoveCursor(ARROW_RIGHT);
 
-            if ((E.file[E.current_file].coloff + E.file[E.current_file].cx == E.file[E.current_file].markx) && (E.file[E.current_file].rowoff + E.file[E.current_file].cy == E.file[E.current_file].marky))
+            if ((E.file[E.current_file]->coloff + E.file[E.current_file]->cx == E.file[E.current_file]->markx) && (E.file[E.current_file]->rowoff + E.file[E.current_file]->cy == E.file[E.current_file]->marky))
                 break;
         }
 
@@ -414,10 +414,10 @@ char *get_selection()
 
     }
 
-    E.file[E.current_file].cx = saved_cx;
-    E.file[E.current_file].cy = saved_cy;
-    E.file[E.current_file].coloff = saved_coloff;
-    E.file[E.current_file].rowoff = saved_rowoff;
+    E.file[E.current_file]->cx = saved_cx;
+    E.file[E.current_file]->cy = saved_cy;
+    E.file[E.current_file]->coloff = saved_coloff;
+    E.file[E.current_file]->rowoff = saved_rowoff;
 
     abFree(&ab);
     return (result);
@@ -430,11 +430,11 @@ int editorOpen(char *filename)
     /*
      * Opened a file already?  Free the memory.
      */
-    if (E.file[E.current_file].numrows)
+    if (E.file[E.current_file]->numrows)
     {
-        for (int i = 0; i < E.file[E.current_file].numrows; i++)
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
         {
-            erow *row = &E.file[E.current_file].row[i];
+            erow *row = &E.file[E.current_file]->row[i];
             free(row->chars);
             row->chars = NULL;
             free(row->render);
@@ -443,31 +443,31 @@ int editorOpen(char *filename)
             row->hl = NULL;
         }
 
-        free(E.file[E.current_file].row);
-        E.file[E.current_file].row = NULL;
+        free(E.file[E.current_file]->row);
+        E.file[E.current_file]->row = NULL;
     }
 
     FILE *fp;
-    E.file[E.current_file].dirty = 0;
-    E.file[E.current_file].cx = 0;
-    E.file[E.current_file].cy = 0;
-    E.file[E.current_file].rowoff = 0;
-    E.file[E.current_file].coloff = 0;
-    E.file[E.current_file].markx = -1;
-    E.file[E.current_file].marky = -1;
-    E.file[E.current_file].numrows = 0;
+    E.file[E.current_file]->dirty = 0;
+    E.file[E.current_file]->cx = 0;
+    E.file[E.current_file]->cy = 0;
+    E.file[E.current_file]->rowoff = 0;
+    E.file[E.current_file]->coloff = 0;
+    E.file[E.current_file]->markx = -1;
+    E.file[E.current_file]->marky = -1;
+    E.file[E.current_file]->numrows = 0;
 
     if (filename)
-        free(E.file[E.current_file].filename);
+        free(E.file[E.current_file]->filename);
 
     if (filename)
-        E.file[E.current_file].filename = strdup(filename);
+        E.file[E.current_file]->filename = strdup(filename);
     else
-        E.file[E.current_file].filename = NULL;
+        E.file[E.current_file]->filename = NULL;
 
 #ifdef _UNDO
     /* kill our undo stack */
-    us_clear(E.file[E.current_file].undo);
+    us_clear(E.file[E.current_file]->undo);
 #endif
 
     if (filename != NULL)
@@ -483,7 +483,7 @@ int editorOpen(char *filename)
             }
 
             /* invoke our lua callback function, even if opening failed.*/
-            call_lua("on_loaded", E.file[E.current_file].filename);
+            call_lua("on_loaded", E.file[E.current_file]->filename);
 
             return 1;
         }
@@ -497,17 +497,17 @@ int editorOpen(char *filename)
             if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
                 line[--linelen] = '\0';
 
-            editorInsertRow(E.file[E.current_file].numrows, line, linelen);
+            editorInsertRow(E.file[E.current_file]->numrows, line, linelen);
         }
 
         free(line);
         fclose(fp);
     }
 
-    E.file[E.current_file].dirty = 0;
+    E.file[E.current_file]->dirty = 0;
 
     /* invoke our lua callback function */
-    call_lua("on_loaded", E.file[E.current_file].filename);
+    call_lua("on_loaded", E.file[E.current_file]->filename);
     return 0;
 }
 
@@ -533,7 +533,7 @@ int editorRowHasOpenComment(erow *row)
     if (row->rsize == 0)
     {
         if (row->idx > 0)
-            return (editorRowHasOpenComment(&E.file[E.current_file].row[row->idx - 1]));
+            return (editorRowHasOpenComment(&E.file[E.current_file]->row[row->idx - 1]));
         else
             return 0;
     }
@@ -549,8 +549,8 @@ int editorRowHasOpenComment(erow *row)
      * OK the line ends in a comment.  Are the closing characters
      * our closing tokens though?
      */
-    int len = (int)strlen(E.file[E.current_file].syntax->multiline_comment_end);
-    char *end = E.file[E.current_file].syntax->multiline_comment_end;
+    int len = (int)strlen(E.file[E.current_file]->syntax->multiline_comment_end);
+    char *end = E.file[E.current_file]->syntax->multiline_comment_end;
 
     if (len && strncmp(row->render + row->rsize - len, end, len) == 0)
         return 0;
@@ -568,12 +568,12 @@ void editorUpdateSyntax(erow *row)
     memset(row->hl, HL_NORMAL, row->rsize);
 
     /* No syntax, everything is HL_NORMAL. */
-    if (E.file[E.current_file].syntax == NULL)
+    if (E.file[E.current_file]->syntax == NULL)
         return;
 
     int i, prev_sep, in_string, in_comment;
     char *p;
-    char **keywords = E.file[E.current_file].syntax->keywords;
+    char **keywords = E.file[E.current_file]->syntax->keywords;
 
     /* Point to the first non-space char. */
     p = row->render;
@@ -591,7 +591,7 @@ void editorUpdateSyntax(erow *row)
 
     /* If the previous line has an open comment, this line starts
      * with an open comment state. */
-    if (row->idx > 0 && editorRowHasOpenComment(&E.file[E.current_file].row[row->idx - 1]))
+    if (row->idx > 0 && editorRowHasOpenComment(&E.file[E.current_file]->row[row->idx - 1]))
         in_comment = 1;
 
     while (*p)
@@ -602,17 +602,17 @@ void editorUpdateSyntax(erow *row)
         {
             row->hl[i] = HL_MLCOMMENT;
 
-            if (strncmp(p, E.file[E.current_file].syntax->multiline_comment_end,
-                        strlen(E.file[E.current_file].syntax->multiline_comment_end)) == 0)
+            if (strncmp(p, E.file[E.current_file]->syntax->multiline_comment_end,
+                        strlen(E.file[E.current_file]->syntax->multiline_comment_end)) == 0)
             {
 
-                for (int x = 0; x < (int)strlen(E.file[E.current_file].syntax->multiline_comment_end); x++)
+                for (int x = 0; x < (int)strlen(E.file[E.current_file]->syntax->multiline_comment_end); x++)
                 {
                     row->hl[i + x] = HL_MLCOMMENT;
                 }
 
-                p += strlen(E.file[E.current_file].syntax->multiline_comment_end) ;
-                i += strlen(E.file[E.current_file].syntax->multiline_comment_end) ;
+                p += strlen(E.file[E.current_file]->syntax->multiline_comment_end) ;
+                i += strlen(E.file[E.current_file]->syntax->multiline_comment_end) ;
                 in_comment = 0;
                 prev_sep = 1;
                 continue;
@@ -625,25 +625,25 @@ void editorUpdateSyntax(erow *row)
                 continue;
             }
         }
-        else if (strlen(E.file[E.current_file].syntax->multiline_comment_start) && strncmp(p, E.file[E.current_file].syntax->multiline_comment_start,
-                 strlen(E.file[E.current_file].syntax->multiline_comment_start)) == 0)
+        else if (strlen(E.file[E.current_file]->syntax->multiline_comment_start) && strncmp(p, E.file[E.current_file]->syntax->multiline_comment_start,
+                 strlen(E.file[E.current_file]->syntax->multiline_comment_start)) == 0)
         {
 
-            for (int  x = 0; x < (int)strlen(E.file[E.current_file].syntax->multiline_comment_start) ; x++)
+            for (int  x = 0; x < (int)strlen(E.file[E.current_file]->syntax->multiline_comment_start) ; x++)
             {
                 row->hl[i + x] = HL_MLCOMMENT;
             }
 
-            p += (int)strlen(E.file[E.current_file].syntax->multiline_comment_start) ;
-            i += (int)strlen(E.file[E.current_file].syntax->multiline_comment_start) ;
+            p += (int)strlen(E.file[E.current_file]->syntax->multiline_comment_start) ;
+            i += (int)strlen(E.file[E.current_file]->syntax->multiline_comment_start) ;
             in_comment = 1;
             prev_sep = 0;
             continue;
         }
 
         /* Handle // comments - colour the rest of the line and return. */
-        if (prev_sep && strlen(E.file[E.current_file].syntax->singleline_comment_start) > 0
-                && (strncmp(p, E.file[E.current_file].syntax->singleline_comment_start, strlen(E.file[E.current_file].syntax->singleline_comment_start)) == 0))
+        if (prev_sep && strlen(E.file[E.current_file]->syntax->singleline_comment_start) > 0
+                && (strncmp(p, E.file[E.current_file]->syntax->singleline_comment_start, strlen(E.file[E.current_file]->syntax->singleline_comment_start)) == 0))
         {
             /* From here to end is a comment */
             memset(row->hl + i, HL_COMMENT, row->rsize - i);
@@ -653,12 +653,12 @@ void editorUpdateSyntax(erow *row)
         /* Handle "" and '' */
         if (in_string)
         {
-            if (E.file[E.current_file].syntax->flags & HL_HIGHLIGHT_STRINGS)
+            if (E.file[E.current_file]->syntax->flags & HL_HIGHLIGHT_STRINGS)
                 row->hl[i] = HL_STRING;
 
             if (*p == '\\')
             {
-                if (E.file[E.current_file].syntax->flags & HL_HIGHLIGHT_STRINGS)
+                if (E.file[E.current_file]->syntax->flags & HL_HIGHLIGHT_STRINGS)
                     row->hl[i + 1] = HL_STRING;
 
                 p += 2;
@@ -680,7 +680,7 @@ void editorUpdateSyntax(erow *row)
             {
                 in_string = *p;
 
-                if (E.file[E.current_file].syntax->flags & HL_HIGHLIGHT_STRINGS)
+                if (E.file[E.current_file]->syntax->flags & HL_HIGHLIGHT_STRINGS)
                     row->hl[i] = HL_STRING;
 
                 p++;
@@ -694,7 +694,7 @@ void editorUpdateSyntax(erow *row)
         if ((isdigit(*p) && (prev_sep || row->hl[i - 1] == HL_NUMBER)) ||
                 (*p == '.' && i > 0 && row->hl[i - 1] == HL_NUMBER))
         {
-            if (E.file[E.current_file].syntax->flags & HL_HIGHLIGHT_NUMBERS)
+            if (E.file[E.current_file]->syntax->flags & HL_HIGHLIGHT_NUMBERS)
                 row->hl[i] = HL_NUMBER;
 
             p++;
@@ -811,8 +811,8 @@ void editorUpdateSyntax(erow *row)
      * in the file. */
     int oc = editorRowHasOpenComment(row);
 
-    if (row->hl_oc != oc && row->idx + 1 < E.file[E.current_file].numrows)
-        editorUpdateSyntax(&E.file[E.current_file].row[row->idx + 1]);
+    if (row->hl_oc != oc && row->idx + 1 < E.file[E.current_file]->numrows)
+        editorUpdateSyntax(&E.file[E.current_file]->row[row->idx + 1]);
 
     row->hl_oc = oc;
 }
@@ -862,8 +862,8 @@ char *get_input(char *prompt)
     int qlen = 0;
 
     /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.file[E.current_file].cx, saved_cy = E.file[E.current_file].cy;
-    int saved_coloff = E.file[E.current_file].coloff, saved_rowoff = E.file[E.current_file].rowoff;
+    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
+    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
 
     while (1)
     {
@@ -878,19 +878,19 @@ char *get_input(char *prompt)
         }
         else if (c == ESC)
         {
-            E.file[E.current_file].cx = saved_cx;
-            E.file[E.current_file].cy = saved_cy;
-            E.file[E.current_file].coloff = saved_coloff;
-            E.file[E.current_file].rowoff = saved_rowoff;
+            E.file[E.current_file]->cx = saved_cx;
+            E.file[E.current_file]->cy = saved_cy;
+            E.file[E.current_file]->coloff = saved_coloff;
+            E.file[E.current_file]->rowoff = saved_rowoff;
             editorSetStatusMessage("");
             return NULL;
         }
         else if (c == ENTER)
         {
-            E.file[E.current_file].cx = saved_cx;
-            E.file[E.current_file].cy = saved_cy;
-            E.file[E.current_file].coloff = saved_coloff;
-            E.file[E.current_file].rowoff = saved_rowoff;
+            E.file[E.current_file]->cx = saved_cx;
+            E.file[E.current_file]->cy = saved_cy;
+            E.file[E.current_file]->coloff = saved_coloff;
+            E.file[E.current_file]->rowoff = saved_rowoff;
             editorSetStatusMessage("");
             return (strdup(query));
         }
@@ -921,7 +921,7 @@ void editorUpdateRow(erow *row)
         if (row->chars[j] == TAB)
             tabs++;
 
-    row->render = malloc(row->size + (tabs * (E.file[E.current_file].tab_size)) + 1);
+    row->render = malloc(row->size + (tabs * (E.file[E.current_file]->tab_size)) + 1);
     idx = 0;
 
     for (j = 0; j < row->size; j++)
@@ -930,7 +930,7 @@ void editorUpdateRow(erow *row)
         {
             row->render[idx++] = ' ';
 
-            while ((idx + 1) % (E.file[E.current_file].tab_size) != 0)
+            while ((idx + 1) % (E.file[E.current_file]->tab_size) != 0)
                 row->render[idx++] = ' ';
         }
         else
@@ -950,28 +950,28 @@ void editorUpdateRow(erow *row)
  * if required. */
 void editorInsertRow(int at, char *s, size_t len)
 {
-    if (at > E.file[E.current_file].numrows) return;
+    if (at > E.file[E.current_file]->numrows) return;
 
-    E.file[E.current_file].row = realloc(E.file[E.current_file].row, sizeof(erow) * (E.file[E.current_file].numrows + 1));
+    E.file[E.current_file]->row = realloc(E.file[E.current_file]->row, sizeof(erow) * (E.file[E.current_file]->numrows + 1));
 
-    if (at != E.file[E.current_file].numrows)
+    if (at != E.file[E.current_file]->numrows)
     {
-        memmove(E.file[E.current_file].row + at + 1, E.file[E.current_file].row + at, sizeof(E.file[E.current_file].row[0]) * (E.file[E.current_file].numrows - at));
+        memmove(E.file[E.current_file]->row + at + 1, E.file[E.current_file]->row + at, sizeof(E.file[E.current_file]->row[0]) * (E.file[E.current_file]->numrows - at));
 
-        for (int j = at + 1; j <= E.file[E.current_file].numrows; j++) E.file[E.current_file].row[j].idx++;
+        for (int j = at + 1; j <= E.file[E.current_file]->numrows; j++) E.file[E.current_file]->row[j].idx++;
     }
 
-    E.file[E.current_file].row[at].size = len;
-    E.file[E.current_file].row[at].chars = malloc(len + 1);
-    memcpy(E.file[E.current_file].row[at].chars, s, len + 1);
-    E.file[E.current_file].row[at].hl = NULL;
-    E.file[E.current_file].row[at].hl_oc = 0;
-    E.file[E.current_file].row[at].render = NULL;
-    E.file[E.current_file].row[at].rsize = 0;
-    E.file[E.current_file].row[at].idx = at;
-    editorUpdateRow(E.file[E.current_file].row + at);
-    E.file[E.current_file].numrows++;
-    E.file[E.current_file].dirty++;
+    E.file[E.current_file]->row[at].size = len;
+    E.file[E.current_file]->row[at].chars = malloc(len + 1);
+    memcpy(E.file[E.current_file]->row[at].chars, s, len + 1);
+    E.file[E.current_file]->row[at].hl = NULL;
+    E.file[E.current_file]->row[at].hl_oc = 0;
+    E.file[E.current_file]->row[at].render = NULL;
+    E.file[E.current_file]->row[at].rsize = 0;
+    E.file[E.current_file]->row[at].idx = at;
+    editorUpdateRow(E.file[E.current_file]->row + at);
+    E.file[E.current_file]->numrows++;
+    E.file[E.current_file]->dirty++;
 }
 
 /* Free row's heap allocated stuff. */
@@ -995,17 +995,17 @@ void editorDelRow(int at)
 {
     erow *row;
 
-    if (at >= E.file[E.current_file].numrows) return;
+    if (at >= E.file[E.current_file]->numrows) return;
 
-    row = E.file[E.current_file].row + at;
+    row = E.file[E.current_file]->row + at;
     editorFreeRow(row);
-    memmove(E.file[E.current_file].row + at, E.file[E.current_file].row + at + 1, sizeof(E.file[E.current_file].row[0]) * (E.file[E.current_file].numrows - at - 1));
+    memmove(E.file[E.current_file]->row + at, E.file[E.current_file]->row + at + 1, sizeof(E.file[E.current_file]->row[0]) * (E.file[E.current_file]->numrows - at - 1));
 
-    for (int j = at; j < E.file[E.current_file].numrows - 1; j++)
-        E.file[E.current_file].row[j].idx--;
+    for (int j = at; j < E.file[E.current_file]->numrows - 1; j++)
+        E.file[E.current_file]->row[j].idx--;
 
-    E.file[E.current_file].numrows--;
-    E.file[E.current_file].dirty++;
+    E.file[E.current_file]->numrows--;
+    E.file[E.current_file]->dirty++;
 }
 
 /* Turn the editor rows into a single heap-allocated string.
@@ -1019,18 +1019,18 @@ char *editorRowsToString(int *buflen)
     int j;
 
     /* Compute count of bytes */
-    for (j = 0; j < E.file[E.current_file].numrows; j++)
-        totlen += E.file[E.current_file].row[j].size + 1; /* +1 is for "\n" at end of every row */
+    for (j = 0; j < E.file[E.current_file]->numrows; j++)
+        totlen += E.file[E.current_file]->row[j].size + 1; /* +1 is for "\n" at end of every row */
 
     *buflen = totlen;
     totlen++; /* Also make space for nulterm */
 
     p = buf = malloc(totlen);
 
-    for (j = 0; j < E.file[E.current_file].numrows; j++)
+    for (j = 0; j < E.file[E.current_file]->numrows; j++)
     {
-        memcpy(p, E.file[E.current_file].row[j].chars, E.file[E.current_file].row[j].size);
-        p += E.file[E.current_file].row[j].size;
+        memcpy(p, E.file[E.current_file]->row[j].chars, E.file[E.current_file]->row[j].size);
+        p += E.file[E.current_file]->row[j].size;
         *p = '\n';
         p++;
     }
@@ -1065,7 +1065,7 @@ void editorRowInsertChar(erow *row, int at, int c)
 
     row->chars[at] = c;
     editorUpdateRow(row);
-    E.file[E.current_file].dirty++;
+    E.file[E.current_file]->dirty++;
 }
 
 /* Append the string 's' at the end of a row */
@@ -1076,7 +1076,7 @@ void editorRowAppendString(erow *row, char *s, size_t len)
     row->size += len;
     row->chars[row->size] = '\0';
     editorUpdateRow(row);
-    E.file[E.current_file].dirty++;
+    E.file[E.current_file]->dirty++;
 }
 
 /* Delete the character at offset 'at' from the specified row. */
@@ -1093,19 +1093,19 @@ void editorRowDelChar(erow *row, int at)
      * before we deleted it.
      */
 #ifdef _UNDO
-    int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-    int y = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
 
 
     if (row->rsize >= at)
-        add_undo(E.file[E.current_file].undo, INSERT, row->render[at], x, y);
+        add_undo(E.file[E.current_file]->undo, INSERT, row->render[at], x, y);
 
 #endif
 
     memmove(row->chars + at, row->chars + at + 1, row->size - at);
     editorUpdateRow(row);
     row->size--;
-    E.file[E.current_file].dirty++;
+    E.file[E.current_file]->dirty++;
 }
 
 /* Insert the specified char at the current prompt position. */
@@ -1117,40 +1117,40 @@ void editorInsertChar(int c)
         return;
     }
 
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    int filecol = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    int filecol = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     /* If the row where the cursor is currently located does not exist in our
      * logical representation of the file, add enough empty rows as needed. */
     if (!row)
     {
-        while (E.file[E.current_file].numrows <= filerow)
-            editorInsertRow(E.file[E.current_file].numrows, "", 0);
+        while (E.file[E.current_file]->numrows <= filerow)
+            editorInsertRow(E.file[E.current_file]->numrows, "", 0);
     }
 
-    row = &E.file[E.current_file].row[filerow];
+    row = &E.file[E.current_file]->row[filerow];
     editorRowInsertChar(row, filecol, c);
 
-    if (E.file[E.current_file].cx == E.screencols - 1)
-        E.file[E.current_file].coloff++;
+    if (E.file[E.current_file]->cx == E.screencols - 1)
+        E.file[E.current_file]->coloff++;
     else
-        E.file[E.current_file].cx++;
+        E.file[E.current_file]->cx++;
 
-    E.file[E.current_file].dirty++;
+    E.file[E.current_file]->dirty++;
 }
 
 /* Inserting a newline is slightly complex as we have to handle inserting a
  * newline in the middle of a line, splitting the line as needed. */
 void editorInsertNewline(void)
 {
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    int filecol = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    int filecol = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     if (!row)
     {
-        if (filerow == E.file[E.current_file].numrows)
+        if (filerow == E.file[E.current_file]->numrows)
         {
             editorInsertRow(filerow, "", 0);
             goto fixcursor;
@@ -1171,7 +1171,7 @@ void editorInsertNewline(void)
     {
         /* We are in the middle of a line. Split it between two rows. */
         editorInsertRow(filerow + 1, row->chars + filecol, row->size - filecol);
-        row = &E.file[E.current_file].row[filerow];
+        row = &E.file[E.current_file]->row[filerow];
         row->chars[filecol] = '\0';
         row->size = filecol;
         editorUpdateRow(row);
@@ -1179,17 +1179,17 @@ void editorInsertNewline(void)
 
 fixcursor:
 
-    if (E.file[E.current_file].cy == E.screenrows - 1)
+    if (E.file[E.current_file]->cy == E.screenrows - 1)
     {
-        E.file[E.current_file].rowoff++;
+        E.file[E.current_file]->rowoff++;
     }
     else
     {
-        E.file[E.current_file].cy++;
+        E.file[E.current_file]->cy++;
     }
 
-    E.file[E.current_file].cx = 0;
-    E.file[E.current_file].coloff = 0;
+    E.file[E.current_file]->cx = 0;
+    E.file[E.current_file]->coloff = 0;
 }
 
 
@@ -1200,7 +1200,21 @@ fixcursor:
 /* is the buffer dirty? */
 int dirty_lua(lua_State *L)
 {
-    if (E.file[E.current_file].dirty != 0)
+    /*
+     * Buffers which have filename starting with "*" are never
+     * dirty.
+     */
+    if (E.file[E.current_file]->filename &&
+            E.file[E.current_file]->filename[0] == '*')
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+
+    /*
+     * Otherwise reflect the state of the current buffer.
+     */
+    if (E.file[E.current_file]->dirty != 0)
         lua_pushboolean(L, 1);
     else
         lua_pushboolean(L, 0);
@@ -1211,12 +1225,12 @@ int dirty_lua(lua_State *L)
 /* return the contents of the line from the point-onwards */
 int get_line_lua(lua_State *L)
 {
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     if (row)
     {
-        lua_pushstring(L, row->chars + E.file[E.current_file].cx);
+        lua_pushstring(L, row->chars + E.file[E.current_file]->cx);
         return 1;
     }
 
@@ -1244,8 +1258,8 @@ int kill_line_lua(lua_State *L)
     int len = 0;
 
     /* count the characters */
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     if (row)
         len = row->rsize;
@@ -1289,9 +1303,9 @@ int insert_lua(lua_State *L)
             /*
              * Add the undo-record.
              */
-            int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-            int y = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-            add_undo(E.file[E.current_file].undo, DELETE, ' ', x, y);
+            int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+            int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+            add_undo(E.file[E.current_file]->undo, DELETE, ' ', x, y);
 #endif
         }
     }
@@ -1304,8 +1318,8 @@ int eol_lua(lua_State *L)
 {
     (void)L;
 
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     if (row)
     {
@@ -1313,7 +1327,7 @@ int eol_lua(lua_State *L)
          * Row width.
          */
         int size = row->rsize;
-        int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
+        int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
 
         while (x < size)
         {
@@ -1330,7 +1344,7 @@ int sol_lua(lua_State *L)
 {
     (void)L;
 
-    int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
 
     while (x)
     {
@@ -1345,7 +1359,7 @@ int undo_lua(lua_State *L)
 {
     (void)L;
 #ifdef _UNDO
-    UndoAction *action = us_pop(E.file[E.current_file].undo);
+    UndoAction *action = us_pop(E.file[E.current_file]->undo);
 
     if (action == NULL)
     {
@@ -1374,7 +1388,7 @@ int undo_lua(lua_State *L)
      *
      * So we need to explicitly remove that faux addition here.
      */
-    us_pop(E.file[E.current_file].undo);
+    us_pop(E.file[E.current_file]->undo);
 #else
     editorSetStatusMessage("undo-support is not compiled in");
 #endif
@@ -1408,7 +1422,7 @@ void warp(int x, int y)
     /*
      * Move to top-left
      */
-    E.file[E.current_file].cx = E.file[E.current_file].coloff = E.file[E.current_file].cy = E.file[E.current_file].rowoff = 0;
+    E.file[E.current_file]->cx = E.file[E.current_file]->coloff = E.file[E.current_file]->cy = E.file[E.current_file]->rowoff = 0;
 
     /*
      * Is that where we wanted to go?
@@ -1436,8 +1450,8 @@ void warp(int x, int y)
 
 }
 
-/* Move to the next file.*/
-int next_file_lua(lua_State *L)
+/* Move to the next buffer.*/
+int next_buffer_lua(lua_State *L)
 {
     (void)L;
 
@@ -1453,14 +1467,132 @@ int next_file_lua(lua_State *L)
     /*
      * Force re-render
      */
-    for (int i = 0; i < E.file[E.current_file].numrows; i++)
-        editorUpdateRow(E.file[E.current_file].row + i);
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
 
     return 0;
 }
 
-/* Move to the previous file.*/
-int prev_file_lua(lua_State *L)
+
+/* Create a new buffer */
+int create_buffer_lua(lua_State *L)
+{
+    (void)L;
+
+    /*
+     * Reallocate our buffer-list to be one larger.
+     */
+    E.file = realloc(E.file, (sizeof(struct fileState *) * E.max_files + 1));
+
+    /*
+     * Bump the max-files.
+     */
+    E.max_files += 1;
+    E.current_file = E.max_files - 1;
+
+
+    /*
+     * Create a new buffer to populate our list.
+     */
+    int i = E.current_file;
+    E.file[i] = malloc(sizeof(struct fileState));
+    E.file[i]->markx = -1;
+    E.file[i]->marky = -1;
+    E.file[i]->tab_size = 8;
+    E.file[i]->cx = 0;
+    E.file[i]->cy = 0;
+    E.file[i]->rowoff = 0;
+    E.file[i]->coloff = 0;
+    E.file[i]->numrows = 0;
+    E.file[i]->row = NULL;
+    E.file[i]->dirty = 0;
+    E.file[i]->filename = NULL;
+    E.file[i]->syntax = NULL;
+
+#ifdef _UNDO
+    E.file[i]->undo = us_create();
+#endif
+
+    return 0;
+}
+
+
+/* Kill the current buffer. */
+int kill_buffer_lua(lua_State *L)
+{
+    (void)L;
+
+    if (E.max_files > 1)
+    {
+
+        /*
+         * Free the current buffer.
+         */
+        struct fileState *cur = E.file[E.current_file];
+        free(cur->syntax);
+        cur->syntax = NULL;
+        free(cur->filename);
+        cur->filename = NULL;
+        free(cur->row);
+        cur->row = NULL;
+        free(cur);
+        E.file[E.current_file] = NULL;
+
+
+        /*
+         * Create a new set of buffers.
+         */
+        struct fileState **tmp = malloc((sizeof(struct fileState *) * E.max_files - 1));
+
+        /**
+         * Copy all non-free buffers over to the new structure.
+         */
+        int copied = 0;
+
+        for (int i = 0; i < E.max_files; i++)
+        {
+            if (E.file[i] != NULL)
+            {
+                tmp[copied] = E.file[i];
+                copied ++;
+            }
+        }
+
+        /* Swap them in */
+        free(E.file);
+        E.file = tmp;
+
+        E.max_files -= 1;
+
+        /*
+         * Change to the previous buffer.
+         */
+        if (E.current_file > 0)
+        {
+            E.current_file -= 1;
+        }
+        else
+        {
+            E.current_file = E.max_files - 1;
+        }
+
+        /*
+         * Force re-render
+         */
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
+    }
+    else
+    {
+        exit_lua(L);
+    }
+
+
+    return 0;
+}
+
+/* Move to the previous buffer.*/
+int prev_buffer_lua(lua_State *L)
 {
     (void)L;
 
@@ -1476,8 +1608,8 @@ int prev_file_lua(lua_State *L)
     /*
      * Force re-render
      */
-    for (int i = 0; i < E.file[E.current_file].numrows; i++)
-        editorUpdateRow(E.file[E.current_file].row + i);
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
 
     return 0;
 }
@@ -1495,8 +1627,8 @@ int point_lua(lua_State *L)
         warp(x, y);
     }
 
-    lua_pushnumber(L, E.file[E.current_file].cx + E.file[E.current_file].coloff);
-    lua_pushnumber(L, E.file[E.current_file].cy + E.file[E.current_file].rowoff);
+    lua_pushnumber(L, E.file[E.current_file]->cx + E.file[E.current_file]->coloff);
+    lua_pushnumber(L, E.file[E.current_file]->cy + E.file[E.current_file]->rowoff);
     return 2;
 }
 
@@ -1507,17 +1639,17 @@ int tabsize_lua(lua_State *L)
     if (lua_isnumber(L, -1))
     {
         int width = lua_tonumber(L, -1);
-        E.file[E.current_file].tab_size = width;
+        E.file[E.current_file]->tab_size = width;
 
         /*
          * Force a re-render
          */
-        for (int i = 0; i < E.file[E.current_file].numrows; i++)
-            editorUpdateRow(E.file[E.current_file].row + i);
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
 
     }
 
-    lua_pushnumber(L, E.file[E.current_file].tab_size);
+    lua_pushnumber(L, E.file[E.current_file]->tab_size);
     return 1;
 }
 
@@ -1533,14 +1665,14 @@ int mark_lua(lua_State *L)
         if ((x >= 0 || x == -1) &&
                 (y >= 0 || y == -1))
         {
-            E.file[E.current_file].markx = x ;
-            E.file[E.current_file].marky = y ;
+            E.file[E.current_file]->markx = x ;
+            E.file[E.current_file]->marky = y ;
         }
 
     }
 
-    lua_pushnumber(L, E.file[E.current_file].markx);
-    lua_pushnumber(L, E.file[E.current_file].marky);
+    lua_pushnumber(L, E.file[E.current_file]->markx);
+    lua_pushnumber(L, E.file[E.current_file]->marky);
     return 2;
 }
 
@@ -1548,20 +1680,20 @@ int mark_lua(lua_State *L)
 /* Get the text between the point and the mark */
 int selection_lua(lua_State *L)
 {
-    int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-    int y = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
 
     /*
      * No selection - either because the mark is not set, and
      * the cursor is in the mark.
      */
-    if ((E.file[E.current_file].markx == -1) && (E.file[E.current_file].marky == -1))
+    if ((E.file[E.current_file]->markx == -1) && (E.file[E.current_file]->marky == -1))
     {
         lua_pushnil(L);
         return 1;
     }
 
-    if ((E.file[E.current_file].markx == x) && (E.file[E.current_file].marky == y))
+    if ((E.file[E.current_file]->markx == x) && (E.file[E.current_file]->marky == y))
     {
         lua_pushnil(L);
         return 1;
@@ -1578,20 +1710,20 @@ int selection_lua(lua_State *L)
 /* Delete the text between the point and the mark */
 int cut_selection_lua(lua_State *L)
 {
-    int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-    int y = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
+    int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
 
     /* There is no mark. */
-    if ((E.file[E.current_file].markx == -1) && (E.file[E.current_file].marky == -1))
+    if ((E.file[E.current_file]->markx == -1) && (E.file[E.current_file]->marky == -1))
         return 0;
 
     /* The cursor is at the mark. */
-    if ((E.file[E.current_file].markx == x) && (E.file[E.current_file].marky == y))
+    if ((E.file[E.current_file]->markx == x) && (E.file[E.current_file]->marky == y))
         return 0;
 
     int left = 0;
 
-    if ((y > E.file[E.current_file].marky) || (x > E.file[E.current_file].markx && y == E.file[E.current_file].marky))
+    if ((y > E.file[E.current_file]->marky) || (x > E.file[E.current_file]->markx && y == E.file[E.current_file]->marky))
         left = 1;
 
     /* Get the selection text */
@@ -1620,8 +1752,8 @@ int cut_selection_lua(lua_State *L)
 
     /* Cleanup & remove the mark. */
     free(sel);
-    E.file[E.current_file].markx = -1;
-    E.file[E.current_file].marky = -1;
+    E.file[E.current_file]->markx = -1;
+    E.file[E.current_file]->marky = -1;
     return 0;
 }
 
@@ -1689,10 +1821,10 @@ int delete_lua(lua_State *L)
 {
     (void)L;
 
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    int filecol = E.file[E.current_file].coloff + E.file[E.current_file].cx;
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    int filecol = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
 
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     if (!row || (filecol == 0 && filerow == 0))
         return 0;
@@ -1701,40 +1833,40 @@ int delete_lua(lua_State *L)
     if (filecol == 0)
     {
 #ifdef _UNDO
-        int x = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-        int y = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-        add_undo(E.file[E.current_file].undo, INSERT, '\n', x, y);
+        int x = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+        int y = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+        add_undo(E.file[E.current_file]->undo, INSERT, '\n', x, y);
 #endif
 
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
-        filecol = E.file[E.current_file].row[filerow - 1].size;
-        editorRowAppendString(&E.file[E.current_file].row[filerow - 1], row->chars, row->size);
+        filecol = E.file[E.current_file]->row[filerow - 1].size;
+        editorRowAppendString(&E.file[E.current_file]->row[filerow - 1], row->chars, row->size);
         editorDelRow(filerow);
         row = NULL;
 
-        if (E.file[E.current_file].cy == 0)
-            E.file[E.current_file].rowoff--;
+        if (E.file[E.current_file]->cy == 0)
+            E.file[E.current_file]->rowoff--;
         else
-            E.file[E.current_file].cy--;
+            E.file[E.current_file]->cy--;
 
-        E.file[E.current_file].cx = filecol;
+        E.file[E.current_file]->cx = filecol;
 
-        if (E.file[E.current_file].cx >= E.screencols)
+        if (E.file[E.current_file]->cx >= E.screencols)
         {
-            int shift = (E.screencols - E.file[E.current_file].cx) + 1;
-            E.file[E.current_file].cx -= shift;
-            E.file[E.current_file].coloff += shift;
+            int shift = (E.screencols - E.file[E.current_file]->cx) + 1;
+            E.file[E.current_file]->cx -= shift;
+            E.file[E.current_file]->coloff += shift;
         }
     }
     else
     {
         editorRowDelChar(row, filecol - 1);
 
-        if (E.file[E.current_file].cx == 0 && E.file[E.current_file].coloff)
-            E.file[E.current_file].coloff--;
+        if (E.file[E.current_file]->cx == 0 && E.file[E.current_file]->coloff)
+            E.file[E.current_file]->coloff--;
         else
-            E.file[E.current_file].cx--;
+            E.file[E.current_file]->cx--;
     }
 
     /*
@@ -1742,15 +1874,15 @@ int delete_lua(lua_State *L)
      *
      * This seems to happen when `shift` becomes negative above.
      */
-    if (E.file[E.current_file].coloff < 0)
-        E.file[E.current_file].coloff = 0;
+    if (E.file[E.current_file]->coloff < 0)
+        E.file[E.current_file]->coloff = 0;
 
-    if (E.file[E.current_file].rowoff < 0)
-        E.file[E.current_file].rowoff = 0;
+    if (E.file[E.current_file]->rowoff < 0)
+        E.file[E.current_file]->rowoff = 0;
 
     if (row) editorUpdateRow(row);
 
-    E.file[E.current_file].dirty++;
+    E.file[E.current_file]->dirty++;
     return 0;
 }
 
@@ -1782,14 +1914,14 @@ int save_lua(lua_State *L)
 
     if (path != NULL)
     {
-        free(E.file[E.current_file].filename);
-        E.file[E.current_file].filename = strdup(path);
+        free(E.file[E.current_file]->filename);
+        E.file[E.current_file]->filename = strdup(path);
     }
 
     /*
      * If we don't have a filename we can't save
      */
-    if (E.file[E.current_file].filename == NULL)
+    if (E.file[E.current_file]->filename == NULL)
     {
         editorSetStatusMessage("No filename is set!");
         return 0;
@@ -1797,7 +1929,7 @@ int save_lua(lua_State *L)
 
     int len;
     char *buf = editorRowsToString(&len);
-    int fd = open(E.file[E.current_file].filename, O_RDWR | O_CREAT, 0644);
+    int fd = open(E.file[E.current_file]->filename, O_RDWR | O_CREAT, 0644);
 
     if (fd == -1) goto writeerr;
 
@@ -1809,16 +1941,16 @@ int save_lua(lua_State *L)
 
     close(fd);
     free(buf);
-    E.file[E.current_file].dirty = 0;
+    E.file[E.current_file]->dirty = 0;
 
-    editorSetStatusMessage("%d bytes written to %s", len, E.file[E.current_file].filename);
+    editorSetStatusMessage("%d bytes written to %s", len, E.file[E.current_file]->filename);
 
     /* invoke our lua callback function */
-    call_lua("on_saved", E.file[E.current_file].filename);
+    call_lua("on_saved", E.file[E.current_file]->filename);
 
 #ifdef _UNDO
     /* since we've saved - kill our undo stack */
-    us_clear(E.file[E.current_file].undo);
+    us_clear(E.file[E.current_file]->undo);
 #endif
 
     return 0;
@@ -1860,9 +1992,9 @@ int search_lua(lua_State *L)
 
 
     /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.file[E.current_file].cx, saved_cy = E.file[E.current_file].cy;
+    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
 
-    int saved_coloff = E.file[E.current_file].coloff, saved_rowoff = E.file[E.current_file].rowoff;
+    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
 
     /*
      * Move forward one character - to ensure that we
@@ -1874,17 +2006,17 @@ int search_lua(lua_State *L)
     /*
      * Current line;
      */
-    int current = E.file[E.current_file].cy + E.file[E.current_file].rowoff;
+    int current = E.file[E.current_file]->cy + E.file[E.current_file]->rowoff;
 
     /*
      * Now for each line ..
      */
-    for (int i = 0; i < E.file[E.current_file].numrows; i++)
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
     {
         /*
          * For each character in the current row .. do we match?
          */
-        for (int x = E.file[E.current_file].cx + E.file[E.current_file].coloff; x < E.file[E.current_file].row[current].rsize; x++)
+        for (int x = E.file[E.current_file]->cx + E.file[E.current_file]->coloff; x < E.file[E.current_file]->row[current].rsize; x++)
         {
             int match     = 0;
             int match_len = 0;
@@ -1892,7 +2024,7 @@ int search_lua(lua_State *L)
 #ifdef _REGEXP
             regmatch_t result[1];
 
-            if (regexec(&regex, E.file[E.current_file].row[current].render + x, 1, result, 0) == 0)
+            if (regexec(&regex, E.file[E.current_file]->row[current].render + x, 1, result, 0) == 0)
             {
                 match = 1;
                 match_len = (result[0]).rm_eo - (result[0]).rm_so;
@@ -1905,7 +2037,7 @@ int search_lua(lua_State *L)
 
 #else
 
-            if (strncmp(E.file[E.current_file].row[current].render + x, term, strlen(term)) == 0)
+            if (strncmp(E.file[E.current_file]->row[current].render + x, term, strlen(term)) == 0)
             {
                 match = 1;
                 match_len = strlen(term);
@@ -1918,19 +2050,19 @@ int search_lua(lua_State *L)
                 /*
                  * The column in which we matched.
                  */
-                E.file[E.current_file].cx = x;
-                E.file[E.current_file].coloff = 0;
+                E.file[E.current_file]->cx = x;
+                E.file[E.current_file]->coloff = 0;
 
                 /* The matching row will be at the top of the screen. */
-                E.file[E.current_file].cy = 0;
-                E.file[E.current_file].rowoff = current;
+                E.file[E.current_file]->cy = 0;
+                E.file[E.current_file]->rowoff = current;
 
                 /* Scroll horizontally as needed. */
-                if (E.file[E.current_file].cx > E.screencols)
+                if (E.file[E.current_file]->cx > E.screencols)
                 {
-                    int diff = abs(E.file[E.current_file].cx - E.screencols);
-                    E.file[E.current_file].cx -= diff;
-                    E.file[E.current_file].coloff += diff;
+                    int diff = abs(E.file[E.current_file]->cx - E.screencols);
+                    E.file[E.current_file]->cx -= diff;
+                    E.file[E.current_file]->coloff += diff;
                 }
 
                 /* Return the length of the match */
@@ -1947,15 +2079,15 @@ int search_lua(lua_State *L)
         /*
          * Wrap around the end/start of the file.
          */
-        if (current == E.file[E.current_file].numrows)
+        if (current == E.file[E.current_file]->numrows)
             current = 0;
 
         /*
          * We've moved forward a row, so we can now start at the
          * beginning of the row.
          */
-        E.file[E.current_file].cx = 0;
-        E.file[E.current_file].coloff = 0;
+        E.file[E.current_file]->cx = 0;
+        E.file[E.current_file]->coloff = 0;
     }
 
     /*
@@ -1963,10 +2095,10 @@ int search_lua(lua_State *L)
      * position to where where we were before.
      */
     editorSetStatusMessage("No match found");
-    E.file[E.current_file].cx = saved_cx;
-    E.file[E.current_file].cy = saved_cy;
-    E.file[E.current_file].coloff = saved_coloff;
-    E.file[E.current_file].rowoff = saved_rowoff;
+    E.file[E.current_file]->cx = saved_cx;
+    E.file[E.current_file]->cy = saved_cy;
+    E.file[E.current_file]->coloff = saved_coloff;
+    E.file[E.current_file]->rowoff = saved_rowoff;
     lua_pushnumber(L, 0);
     return 1;
 }
@@ -1977,7 +2109,7 @@ int set_syntax_keywords_lua(lua_State *L)
     if (! lua_istable(L, 1))
         return 0;
 
-    if (E.file[E.current_file].syntax == NULL)
+    if (E.file[E.current_file]->syntax == NULL)
     {
         struct editorSyntax *s = (struct editorSyntax*)malloc(sizeof(struct editorSyntax));
         s->keywords                    = NULL;
@@ -1985,11 +2117,11 @@ int set_syntax_keywords_lua(lua_State *L)
         s->multiline_comment_start[0]  = '\0';
         s->multiline_comment_end[0]    = '\0';
         s->flags                       =  HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS;
-        E.file[E.current_file].syntax = s;
+        E.file[E.current_file]->syntax = s;
     }
 
     size_t len = lua_rawlen(L, 1);
-    E.file[E.current_file].syntax->keywords = malloc((1 + len) * sizeof(char*));
+    E.file[E.current_file]->syntax->keywords = malloc((1 + len) * sizeof(char*));
 
     int i = 0;
     lua_pushnil(L);
@@ -1997,18 +2129,18 @@ int set_syntax_keywords_lua(lua_State *L)
     while (lua_next(L, -2) != 0)
     {
         const char *str = lua_tostring(L, -1);
-        E.file[E.current_file].syntax->keywords[i] = strdup(str);
+        E.file[E.current_file]->syntax->keywords[i] = strdup(str);
         lua_pop(L, 1);
         i += 1;
     }
 
-    E.file[E.current_file].syntax->keywords[i] = NULL;
+    E.file[E.current_file]->syntax->keywords[i] = NULL;
 
     /*
      * Force re-render.
      */
-    for (int i = 0; i < E.file[E.current_file].numrows; i++)
-        editorUpdateRow(E.file[E.current_file].row + i);
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
 
     return 0;
 }
@@ -2018,18 +2150,18 @@ int syntax_highlight_numbers_lua(lua_State *L)
 {
     int cond = lua_tonumber(L, -1);
 
-    if (E.file[E.current_file].syntax)
+    if (E.file[E.current_file]->syntax)
     {
         if (cond == 1)
-            E.file[E.current_file].syntax->flags |= HL_HIGHLIGHT_NUMBERS;
+            E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_NUMBERS;
         else
-            E.file[E.current_file].syntax->flags &= ~HL_HIGHLIGHT_NUMBERS;
+            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_NUMBERS;
 
         /*
          * Force re-render.
          */
-        for (int i = 0; i < E.file[E.current_file].numrows; i++)
-            editorUpdateRow(E.file[E.current_file].row + i);
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
     }
 
     return 0;
@@ -2040,18 +2172,18 @@ int syntax_highlight_strings_lua(lua_State *L)
 {
     int cond = lua_tonumber(L, -1);
 
-    if (E.file[E.current_file].syntax)
+    if (E.file[E.current_file]->syntax)
     {
         if (cond == 1)
-            E.file[E.current_file].syntax->flags |= HL_HIGHLIGHT_STRINGS;
+            E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_STRINGS;
         else
-            E.file[E.current_file].syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
+            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
 
         /*
          * Force re-render.
          */
-        for (int i = 0; i < E.file[E.current_file].numrows; i++)
-            editorUpdateRow(E.file[E.current_file].row + i);
+        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+            editorUpdateRow(E.file[E.current_file]->row + i);
     }
 
     return 0;
@@ -2072,18 +2204,18 @@ int set_syntax_comments_lua(lua_State *L)
     /*
      * If we don't have syntax that's a bug.
      */
-    if (E.file[E.current_file].syntax == NULL)
+    if (E.file[E.current_file]->syntax == NULL)
         return 0;
 
-    strcpy(E.file[E.current_file].syntax->singleline_comment_start, single);
-    strcpy(E.file[E.current_file].syntax->multiline_comment_start, multi_open);
-    strcpy(E.file[E.current_file].syntax->multiline_comment_end, multi_end);
+    strcpy(E.file[E.current_file]->syntax->singleline_comment_start, single);
+    strcpy(E.file[E.current_file]->syntax->multiline_comment_start, multi_open);
+    strcpy(E.file[E.current_file]->syntax->multiline_comment_end, multi_end);
 
     /*
      * Force re-render.
      */
-    for (int i = 0; i < E.file[E.current_file].numrows; i++)
-        editorUpdateRow(E.file[E.current_file].row + i);
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
+        editorUpdateRow(E.file[E.current_file]->row + i);
 
     return 0;
 }
@@ -2101,14 +2233,14 @@ int find_lua(lua_State *L)
 
 #define FIND_RESTORE_HL do { \
     if (saved_hl) { \
-        memcpy(E.file[E.current_file].row[saved_hl_line].hl,saved_hl, E.file[E.current_file].row[saved_hl_line].rsize); \
+        memcpy(E.file[E.current_file]->row[saved_hl_line].hl,saved_hl, E.file[E.current_file]->row[saved_hl_line].rsize); \
         saved_hl = NULL; \
     } \
 } while (0)
 
     /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.file[E.current_file].cx, saved_cy = E.file[E.current_file].cy;
-    int saved_coloff = E.file[E.current_file].coloff, saved_rowoff = E.file[E.current_file].rowoff;
+    int saved_cx = E.file[E.current_file]->cx, saved_cy = E.file[E.current_file]->cy;
+    int saved_coloff = E.file[E.current_file]->coloff, saved_rowoff = E.file[E.current_file]->rowoff;
 
     while (1)
     {
@@ -2128,10 +2260,10 @@ int find_lua(lua_State *L)
         {
             if (c == ESC)
             {
-                E.file[E.current_file].cx = saved_cx;
-                E.file[E.current_file].cy = saved_cy;
-                E.file[E.current_file].coloff = saved_coloff;
-                E.file[E.current_file].rowoff = saved_rowoff;
+                E.file[E.current_file]->cx = saved_cx;
+                E.file[E.current_file]->cy = saved_cy;
+                E.file[E.current_file]->coloff = saved_coloff;
+                E.file[E.current_file]->rowoff = saved_rowoff;
             }
 
             FIND_RESTORE_HL;
@@ -2165,20 +2297,20 @@ int find_lua(lua_State *L)
             int match_offset = 0;
             int i, current = last_match;
 
-            for (i = 0; i < E.file[E.current_file].numrows; i++)
+            for (i = 0; i < E.file[E.current_file]->numrows; i++)
             {
                 current += find_next;
 
                 if (current == -1)
-                    current = E.file[E.current_file].numrows - 1;
-                else if (current == E.file[E.current_file].numrows)
+                    current = E.file[E.current_file]->numrows - 1;
+                else if (current == E.file[E.current_file]->numrows)
                     current = 0;
 
-                match = strstr(E.file[E.current_file].row[current].render, query);
+                match = strstr(E.file[E.current_file]->row[current].render, query);
 
                 if (match)
                 {
-                    match_offset = match - E.file[E.current_file].row[current].render;
+                    match_offset = match - E.file[E.current_file]->row[current].render;
                     break;
                 }
             }
@@ -2190,7 +2322,7 @@ int find_lua(lua_State *L)
 
             if (match)
             {
-                erow *row = &E.file[E.current_file].row[current];
+                erow *row = &E.file[E.current_file]->row[current];
                 last_match = current;
 
                 if (row->hl)
@@ -2205,17 +2337,17 @@ int find_lua(lua_State *L)
                  * NOTE: This breaks our undo, by warping to a new
                  * position that isn't tracked by our stack.
                  */
-                E.file[E.current_file].cy = 0;
-                E.file[E.current_file].cx = match_offset;
-                E.file[E.current_file].rowoff = current;
-                E.file[E.current_file].coloff = 0;
+                E.file[E.current_file]->cy = 0;
+                E.file[E.current_file]->cx = match_offset;
+                E.file[E.current_file]->rowoff = current;
+                E.file[E.current_file]->coloff = 0;
 
                 /* Scroll horizontally as needed. */
-                if (E.file[E.current_file].cx > E.screencols)
+                if (E.file[E.current_file]->cx > E.screencols)
                 {
-                    int diff = E.file[E.current_file].cx - E.screencols;
-                    E.file[E.current_file].cx -= diff;
-                    E.file[E.current_file].coloff += diff;
+                    int diff = E.file[E.current_file]->cx - E.screencols;
+                    E.file[E.current_file]->cx -= diff;
+                    E.file[E.current_file]->coloff += diff;
                 }
             }
         }
@@ -2325,16 +2457,16 @@ void editorRefreshScreen(void)
 
     for (y = 0; y < E.screenrows; y++)
     {
-        int filerow = E.file[E.current_file].rowoff + y;
+        int filerow = E.file[E.current_file]->rowoff + y;
 
-        if (filerow >= E.file[E.current_file].numrows)
+        if (filerow >= E.file[E.current_file]->numrows)
         {
             /*
              * If the contents are empty, and we're above the top
              * third of the screen .. draw the Nth line of the startup
              * banner.
              */
-            if (E.file[E.current_file].numrows == 0 && (y == (E.screenrows / 3) + drawn) &&
+            if (E.file[E.current_file]->numrows == 0 && (y == (E.screenrows / 3) + drawn) &&
                     (drawn < welcome_len))
             {
                 /* open the line, as usual. */
@@ -2353,17 +2485,17 @@ void editorRefreshScreen(void)
             continue;
         }
 
-        r = &E.file[E.current_file].row[filerow];
+        r = &E.file[E.current_file]->row[filerow];
 
-        int len = r->rsize - E.file[E.current_file].coloff;
+        int len = r->rsize - E.file[E.current_file]->coloff;
         int current_color = -1;
 
         if (len > 0)
         {
             if (len > E.screencols) len = E.screencols;
 
-            char *c = r->render + E.file[E.current_file].coloff;
-            unsigned char *hl = r->hl + E.file[E.current_file].coloff;
+            char *c = r->render + E.file[E.current_file]->coloff;
+            unsigned char *hl = r->hl + E.file[E.current_file]->coloff;
             int j;
 
             for (j = 0; j < len; j++)
@@ -2377,13 +2509,13 @@ void editorRefreshScreen(void)
                  * filerow = y;
                  *  j      = x;
                  */
-                if ((E.file[E.current_file].markx != -1) && (E.file[E.current_file].marky != -1))
+                if ((E.file[E.current_file]->markx != -1) && (E.file[E.current_file]->marky != -1))
                 {
-                    int mx = E.file[E.current_file].markx;
-                    int my = E.file[E.current_file].marky;
+                    int mx = E.file[E.current_file]->markx;
+                    int my = E.file[E.current_file]->marky;
 
-                    int cx = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-                    int cy = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
+                    int cx = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+                    int cy = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
 
                     /* is the cursor above the mark? */
                     if ((cy > my) || (cx > mx && cy == my))
@@ -2543,10 +2675,10 @@ void editorRefreshScreen(void)
     abAppend(&ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
     int len = snprintf(status, sizeof(status), "File %d/%d: %.32s %s",
-                       E.current_file+1, E.max_files,
-                       E.file[E.current_file].filename ? E.file[E.current_file].filename : "<NONE>", E.file[E.current_file].dirty ? "(modified)" : "");
+                       E.current_file + 1, E.max_files,
+                       E.file[E.current_file]->filename ? E.file[E.current_file]->filename : "<NONE>", E.file[E.current_file]->dirty ? "(modified)" : "");
     int rlen = snprintf(rstatus, sizeof(rstatus),
-                        "Col:%d Row:%d/%d", E.file[E.current_file].coloff + E.file[E.current_file].cx + 1, E.file[E.current_file].rowoff + E.file[E.current_file].cy + 1, E.file[E.current_file].numrows);
+                        "Col:%d Row:%d/%d", E.file[E.current_file]->coloff + E.file[E.current_file]->cx + 1, E.file[E.current_file]->rowoff + E.file[E.current_file]->cy + 1, E.file[E.current_file]->numrows);
 
     if (len > E.screencols) len = E.screencols;
 
@@ -2605,25 +2737,25 @@ void editorRefreshScreen(void)
     }
 
     /* Put cursor at its current position. Note that the horizontal position
-     * at which the cursor is displayed may be different compared to 'E.file[E.current_file].cx'
+     * at which the cursor is displayed may be different compared to 'E.file[E.current_file]->cx'
      * because of TABs. */
     int j;
     int cx = 1;
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     if (row)
     {
-        for (j = E.file[E.current_file].coloff; j < (E.file[E.current_file].cx + E.file[E.current_file].coloff); j++)
+        for (j = E.file[E.current_file]->coloff; j < (E.file[E.current_file]->cx + E.file[E.current_file]->coloff); j++)
         {
             if (j < row->size && row->chars[j] == TAB)
-                cx += (E.file[E.current_file].tab_size - 1) - ((cx) % (E.file[E.current_file].tab_size));
+                cx += (E.file[E.current_file]->tab_size - 1) - ((cx) % (E.file[E.current_file]->tab_size));
 
             cx++;
         }
     }
 
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.file[E.current_file].cy + 1, cx);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.file[E.current_file]->cy + 1, cx);
     abAppend(&ab, buf, strlen(buf));
     abAppend(&ab, "\x1b[?25h", 6); /* Show cursor. */
     write(STDOUT_FILENO, ab.b, ab.len);
@@ -2638,6 +2770,44 @@ void editorSetStatusMessage(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(E.statusmsg, sizeof(E.statusmsg), fmt, ap);
     va_end(ap);
+
+    /*
+     * Find the *Messages* buffer if we can.
+     */
+    for (int i = 0; i < E.max_files; i++)
+    {
+
+        /*
+         * Get the entry.
+         */
+        struct fileState *tmp = E.file[i];
+
+        /*
+         * Is it `*messages*` ?
+         */
+        if (tmp->filename && (strcmp(tmp->filename, "*Messages*") == 0))
+        {
+            /* switch to it */
+            int old = E.current_file;
+            E.current_file = i;
+
+            /*
+             * Insert the status-message
+             */
+            for (unsigned int i = 0; i < strlen(E.statusmsg); i++)
+            {
+                editorInsertChar(E.statusmsg[i]);
+            }
+
+            editorInsertChar('\n');
+
+            /*
+             * Restore
+             */
+            E.current_file = old;
+            break;
+        }
+    }
 }
 
 
@@ -2646,38 +2816,38 @@ void editorSetStatusMessage(const char *fmt, ...)
 /* Handle cursor position change because arrow keys were pressed. */
 void editorMoveCursor(int key)
 {
-    int filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    int filecol = E.file[E.current_file].coloff + E.file[E.current_file].cx;
+    int filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    int filecol = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
     int rowlen;
-    erow *row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    erow *row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
 
     switch (key)
     {
     case ARROW_LEFT:
-        if (E.file[E.current_file].cx == 0)
+        if (E.file[E.current_file]->cx == 0)
         {
-            if (E.file[E.current_file].coloff)
+            if (E.file[E.current_file]->coloff)
             {
-                E.file[E.current_file].coloff--;
+                E.file[E.current_file]->coloff--;
             }
             else
             {
                 if (filerow > 0)
                 {
-                    E.file[E.current_file].cy--;
-                    E.file[E.current_file].cx = E.file[E.current_file].row[filerow - 1].size;
+                    E.file[E.current_file]->cy--;
+                    E.file[E.current_file]->cx = E.file[E.current_file]->row[filerow - 1].size;
 
-                    if (E.file[E.current_file].cx > E.screencols - 1)
+                    if (E.file[E.current_file]->cx > E.screencols - 1)
                     {
-                        E.file[E.current_file].coloff = E.file[E.current_file].cx - E.screencols + 1;
-                        E.file[E.current_file].cx = E.screencols - 1;
+                        E.file[E.current_file]->coloff = E.file[E.current_file]->cx - E.screencols + 1;
+                        E.file[E.current_file]->cx = E.screencols - 1;
                     }
                 }
             }
         }
         else
         {
-            E.file[E.current_file].cx -= 1;
+            E.file[E.current_file]->cx -= 1;
         }
 
         break;
@@ -2685,32 +2855,32 @@ void editorMoveCursor(int key)
     case ARROW_RIGHT:
         if (row && filecol < row->size)
         {
-            if (E.file[E.current_file].cx == E.screencols - 1)
+            if (E.file[E.current_file]->cx == E.screencols - 1)
             {
-                E.file[E.current_file].coloff++;
+                E.file[E.current_file]->coloff++;
             }
             else
             {
-                E.file[E.current_file].cx += 1;
+                E.file[E.current_file]->cx += 1;
             }
         }
         else if (row && filecol == row->size)
         {
-            if (E.file[E.current_file].cy == E.screenrows - 1)
+            if (E.file[E.current_file]->cy == E.screenrows - 1)
             {
-                E.file[E.current_file].cx = 0;
-                E.file[E.current_file].coloff = 0;
+                E.file[E.current_file]->cx = 0;
+                E.file[E.current_file]->coloff = 0;
 
-                E.file[E.current_file].rowoff++;
+                E.file[E.current_file]->rowoff++;
             }
             else
             {
-                if (filerow < (E.file[E.current_file].numrows - 1))
+                if (filerow < (E.file[E.current_file]->numrows - 1))
                 {
-                    E.file[E.current_file].cx = 0;
-                    E.file[E.current_file].coloff = 0;
+                    E.file[E.current_file]->cx = 0;
+                    E.file[E.current_file]->coloff = 0;
 
-                    E.file[E.current_file].cy += 1;
+                    E.file[E.current_file]->cy += 1;
                 }
             }
         }
@@ -2718,27 +2888,27 @@ void editorMoveCursor(int key)
         break;
 
     case ARROW_UP:
-        if (E.file[E.current_file].cy == 0)
+        if (E.file[E.current_file]->cy == 0)
         {
-            if (E.file[E.current_file].rowoff) E.file[E.current_file].rowoff--;
+            if (E.file[E.current_file]->rowoff) E.file[E.current_file]->rowoff--;
         }
         else
         {
-            E.file[E.current_file].cy -= 1;
+            E.file[E.current_file]->cy -= 1;
         }
 
         break;
 
     case ARROW_DOWN:
-        if (filerow < (E.file[E.current_file].numrows - 1))
+        if (filerow < (E.file[E.current_file]->numrows - 1))
         {
-            if (E.file[E.current_file].cy == E.screenrows - 1)
+            if (E.file[E.current_file]->cy == E.screenrows - 1)
             {
-                E.file[E.current_file].rowoff++;
+                E.file[E.current_file]->rowoff++;
             }
             else
             {
-                E.file[E.current_file].cy += 1;
+                E.file[E.current_file]->cy += 1;
             }
         }
 
@@ -2746,19 +2916,19 @@ void editorMoveCursor(int key)
     }
 
     /* Fix cx if the current line has not enough chars. */
-    filerow = E.file[E.current_file].rowoff + E.file[E.current_file].cy;
-    filecol = E.file[E.current_file].coloff + E.file[E.current_file].cx;
-    row = (filerow >= E.file[E.current_file].numrows) ? NULL : &E.file[E.current_file].row[filerow];
+    filerow = E.file[E.current_file]->rowoff + E.file[E.current_file]->cy;
+    filecol = E.file[E.current_file]->coloff + E.file[E.current_file]->cx;
+    row = (filerow >= E.file[E.current_file]->numrows) ? NULL : &E.file[E.current_file]->row[filerow];
     rowlen = row ? row->size : 0;
 
     if (filecol > rowlen)
     {
-        E.file[E.current_file].cx -= filecol - rowlen;
+        E.file[E.current_file]->cx -= filecol - rowlen;
 
-        if (E.file[E.current_file].cx < 0)
+        if (E.file[E.current_file]->cx < 0)
         {
-            E.file[E.current_file].coloff += E.file[E.current_file].cx;
-            E.file[E.current_file].cx = 0;
+            E.file[E.current_file]->coloff += E.file[E.current_file]->cx;
+            E.file[E.current_file]->cx = 0;
         }
     }
 }
@@ -2796,44 +2966,9 @@ int load_lua(char *filename)
 
 void initEditor(void)
 {
-    /*
-     * We're on the first file.
-     */
-    E.current_file = 0;
-
-    /*
-     * Two files open by default.
-     */
-    E.max_files = 2;
-    E.file = malloc(sizeof(struct fileState) * 2);
-
-    /*
-     * Init
-     */
-    for (int i = 0 ; i < E.max_files; i++)
-    {
-
-        E.file[i].markx = -1;
-        E.file[i].marky = -1;
-        E.file[i].tab_size = 8;
-        E.file[i].cx = 0;
-        E.file[i].cy = 0;
-        E.file[i].rowoff = 0;
-        E.file[i].coloff = 0;
-        E.file[i].numrows = 0;
-        E.file[i].row = NULL;
-        E.file[i].dirty = 0;
-        E.file[i].filename = NULL;
-        E.file[i].syntax = NULL;
-
-
-#ifdef _UNDO
-        E.file[i].undo = us_create();
-#endif
-    }
-
+    /* Get the size of our window, and remove room for status bar. */
     getWindowSize();
-    E.screenrows -= 2; /* Get room for status bar. */
+    E.screenrows -= 2;
 
     /*
      * Setup lua.
@@ -2860,8 +2995,10 @@ void initEditor(void)
     lua_register(lua, "left", left_lua);
     lua_register(lua, "right", right_lua);
     lua_register(lua, "mark", mark_lua);
-    lua_register(lua, "next_file", next_file_lua);
-    lua_register(lua, "prev_file", prev_file_lua);
+    lua_register(lua, "create_buffer", create_buffer_lua);
+    lua_register(lua, "kill_buffer", kill_buffer_lua);
+    lua_register(lua, "next_buffer", next_buffer_lua);
+    lua_register(lua, "prev_buffer", prev_buffer_lua);
     lua_register(lua, "point", point_lua);
     lua_register(lua, "page_down", page_down_lua);
     lua_register(lua, "page_up", page_up_lua);
@@ -2880,6 +3017,17 @@ void initEditor(void)
     lua_register(lua, "tabsize", tabsize_lua);
     lua_register(lua, "undo", undo_lua);
     lua_register(lua, "up", up_lua);
+
+    /*
+     * Create a new `Messages` buffer.
+     */
+    create_buffer_lua(lua);
+    E.file[0]->filename = strdup("*Messages*");
+
+    /*
+     * Create a new buffer for working with.
+     */
+    create_buffer_lua(lua);
 }
 
 int main(int argc, char **argv)

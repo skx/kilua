@@ -131,6 +131,28 @@ but right now there are only these:
     * Can be used to make files executable, etc.
 
 
+
+## Buffers
+
+`kilua` allows multiple files to be opened, via the use of buffers.
+
+When `kilua` starts there are two buffers:
+
+* `*Messages*`
+    * This receives copies of the status-message.
+* The buffer containing the file from the command-line.
+    * Or an unnamed buffer for working with.
+
+To move to the previous buffer use `M-left`, or `C-x p`.
+
+To move to the next buffer use `M-right`, or `C-x n`.
+
+To kill the current buffer use `C-x k`, and to create a new one use `C-x c`.
+
+At the moment it isn't possible to iterate over open buffers via Lua,
+but that will arrive shortly.
+
+
 ## Copy & Paste
 
 We've added a notion of a `mark`.  A mark is set by pressing `Ctrl+space`,

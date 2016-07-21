@@ -146,9 +146,9 @@ struct editorState
     char statusmsg[KILO_QUERY_LEN + 1]; /* The status-message */
 
     /*
-     * The file(s) we have open.  At the moment just one.
+     * The file(s) we have open.
      */
-    struct fileState *file;
+    struct fileState **file;
     int current_file ;
     int max_files;
 };
