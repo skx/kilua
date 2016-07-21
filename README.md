@@ -11,13 +11,13 @@ The project is built upon the minimal [kilo editor](https://github.com/antirez/k
 * The ability to open/edit/view multiple files
    * This is done [via buffers](#buffers).
 * The addition of undo-support.
-   * Documented later [in this file](#undo).
+   * Documented later [in this file](#undo-support).
 * The addition of an embedded Lua instance.
    * You can define functions in your [init-files](#lua-support), and invoke them via `M-x function()`.
 * The addition of regular expression support for searching.
 * The addition of regular-expressions for [syntax-highlighting](#syntax-highlighting).
 * The addition of [copy and paste](#copy--paste).
-* The notion of a [named mark](#mark).
+* The notion of [named marks](#marks).
 * Several bugfixes.
 
 Launching `kilua` works as you would expect:
