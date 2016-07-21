@@ -185,6 +185,10 @@ undo-stack.  Specifically difficult functions are:
 * `cut_selection`.
 
 
+## Discussion on Hacker News
+
+https://news.ycombinator.com/item?id=12137698
+
 ## The Future
 
 There are no obvious future plans, but [bug reports](https://github.com/skx/kilua/issues) may be made if you have a feature to suggest (or bug to report)!
@@ -193,6 +197,6 @@ One thing that might be useful is a split-display, to view two files
 side by side, or one above the other.  This is not yet planned, but
 I think it could be done reasonably cleanly.
 
-Steve
---
+Steve  
+\--  
 https://steve.kemp.fi/
