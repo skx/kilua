@@ -102,32 +102,3 @@ Functions relating to the selection.
 * `syntax_highlight_strings()`
 * `tabsize()`
     * Get/Set the width of TAB-stops (eight characters by default).
-
-
-* at()
-    * Return the single character under the cursor.
-* cut_selection()
-    * Remove the text between curser and mark.
-* dirty()
-    * Returns `true` if the buffer is dirty/modified, `false` otherwise.
-* eol()
-    * Move the cursor to the end of the current line.
-* exit()
-    * Terminate the editor.
-* eval()
-    * Prompt for lua code, and execute it.
-* find()
-    * Invoke the find-handler.
-* open( [filename] )
-    * Open the named file for reading.
-    * If the filename is not given, prompt for one.
-* save([filename])
-    * Save the file we're operating upon.
-    * If you give a new name that will be used thereafter.
-* search( "string" )
-    * Search forward for the given text.
-    * Returns the length of the match on success, zero on failure.
-* selection()
-    * Return the text between cursor and mark.
-* status("text-message")
-    * Show the given message in the status-area.
