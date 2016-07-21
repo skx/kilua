@@ -1482,6 +1482,111 @@ int next_buffer_lua(lua_State *L)
 }
 
 
+/* Choose a buffer, interatively */
+int choose_buffer_lua(lua_State *L)
+{
+    (void)L;
+
+    int offset = 0;
+
+    while (1)
+    {
+        struct abuf ab = ABUF_INIT;
+        abAppend(&ab, "\x1b[?25l", 6); /* Hide cursor. */
+        abAppend(&ab, "\x1b[H", 3); /* Go home. */
+
+        /*
+         * Draw the list of buffers.
+         */
+        for (int i = 0; i < E.max_files ; i ++)
+        {
+            int selected = (i == offset);
+
+            char *filename = E.file[i]->filename;
+            int dirty = 0;
+
+            if (E.file[i]->dirty != 0)
+                dirty = 1;
+
+            if (filename && filename[0] == '*')
+                dirty = 0;
+
+            if (selected)
+            {
+                abAppend(&ab, "\x1b[47m", 5);
+            }
+            else
+            {
+                abAppend(&ab, "\x1b[49m", 5);
+            }
+
+            char line[255];
+            snprintf(line, sizeof(line) - 1, "%d - %s%s", i + 1,
+                     filename == NULL ? "UNSET" : filename,
+                     dirty ? " (modified)" : "");
+
+            while ((int)strlen(line) < E.screencols)
+            {
+                strcat(line, " ");
+            }
+
+            strcat(line, "\r\n");
+            abAppend(&ab, line, strlen(line));
+        }
+
+        /*
+         * Reset the inverse selection.
+         */
+        abAppend(&ab, "\x1b[49m", 5);
+
+        /*
+         * Pad to the bottom of the screen in empty lines.
+         */
+        for (int i = E.max_files ; i < E.screenrows; i++)
+        {
+            abAppend(&ab, "\x1b[2K~\r\n", 7);
+        }
+
+        abAppend(&ab, "\x1b[D0", 3); /* clear screen */
+        write(STDOUT_FILENO, ab.b, ab.len);
+        abFree(&ab);
+
+        /*
+         * Get a keypress
+         */
+        int c = editorReadKey(STDIN_FILENO);
+
+        if (c == ENTER)
+        {
+            /* Select the buffer.*/
+            E.current_file = offset;
+            return 0;
+        }
+
+        if (c == ESC)
+        {
+            /* Cancel */
+            return 0;
+        }
+
+        if (c == ARROW_UP)
+        {
+            if (offset > 0)
+                offset = 0;
+        }
+
+        if (c == ARROW_DOWN)
+        {
+            if (offset < (E.max_files - 1))
+            {
+                offset += 1;
+            }
+        }
+    }
+}
+
+
+
 /* count the buffers */
 int count_buffers_lua(lua_State *L)
 {
@@ -3090,9 +3195,10 @@ void initEditor(void)
     /*
      * Buffers.
      */
+    lua_register(lua, "buffers", count_buffers_lua);
+    lua_register(lua, "choose_buffer", choose_buffer_lua);
     lua_register(lua, "create_buffer", create_buffer_lua);
     lua_register(lua, "current_buffer", current_buffer_lua);
-    lua_register(lua, "buffers", count_buffers_lua);
     lua_register(lua, "kill_buffer", kill_buffer_lua);
     lua_register(lua, "next_buffer", next_buffer_lua);
     lua_register(lua, "prev_buffer", prev_buffer_lua);

@@ -144,6 +144,8 @@ keymap['^X']['^X'] = function() swap_point_mark() end
 --
 -- Working with buffers.
 --
+keymap['^X']['b']  = choose_buffer
+keymap['^X']['B']  = choose_buffer
 keymap['^X']['c']  = create_buffer
 keymap['^X']['k']  = function() confirm_kill_buffer() end
 keymap['^X']['K']  = kill_buffer

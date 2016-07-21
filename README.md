@@ -144,13 +144,14 @@ but right now there are only these:
 There are a number of key-bindings available for working with
 buffers:
 
-Action                         | Binding
------------------------------- | --------------
-create buffer                  | `Ctrl-x c`
-kill current buffer            | `Ctrl-x k`
-kill current buffer, forcibly  | `Ctrl-x K`
-next buffer                    | `Ctrl-x n` or `M-right`
-previous buffer                | `Ctrl-x p` or `M-left`
+Action                             | Binding
+---------------------------------- | --------------
+Create a new buffer.               | `Ctrl-x c`
+kill the current buffer.           | `Ctrl-x k`
+kill the current buffer, forcibly. | `Ctrl-x K`
+Select the next buffer.            | `Ctrl-x n` or `M-right`
+Select the previous buffer.        | `Ctrl-x p` or `M-left`
+Choose a buffer, via menu.         | `Ctrl-x b` or `Ctrl-x B`
 
 You can also create buffers dynamically, via lua.   For example the
 following function can be called by `M-x uptime()`.  It will run `uptime`, and
