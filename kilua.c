@@ -423,6 +423,28 @@ char *get_selection()
     return (result);
 }
 
+/* Is the current buffer dirty? */
+int dirty()
+{
+    /*
+     * If the filename starts with a "*" it is never dirty
+     */
+    if (E.file[E.current_file]->filename &&
+            E.file[E.current_file]->filename[0] == '*')
+    {
+        return 0;
+    }
+
+    /*
+     * Otherwise use the dirty-count.
+     */
+    if (E.file[E.current_file]->dirty != 0)
+        return 1;
+    else
+        return 0;
+}
+
+
 /* Load the specified program in the editor memory and returns 0 on success
  * or 1 on error. */
 int editorOpen(char *filename)
@@ -1200,21 +1222,7 @@ fixcursor:
 /* is the buffer dirty? */
 int dirty_lua(lua_State *L)
 {
-    /*
-     * Buffers which have filename starting with "*" are never
-     * dirty.
-     */
-    if (E.file[E.current_file]->filename &&
-            E.file[E.current_file]->filename[0] == '*')
-    {
-        lua_pushboolean(L, 0);
-        return 1;
-    }
-
-    /*
-     * Otherwise reflect the state of the current buffer.
-     */
-    if (E.file[E.current_file]->dirty != 0)
+    if (dirty())
         lua_pushboolean(L, 1);
     else
         lua_pushboolean(L, 0);
@@ -1536,7 +1544,7 @@ int create_buffer_lua(lua_State *L)
     /*
      * Is there a name for the new buffer?
      */
-    const char *name = lua_tostring(L,-1);
+    const char *name = lua_tostring(L, -1);
 
     /*
      * Reallocate our buffer-list to be one larger.
@@ -1572,7 +1580,7 @@ int create_buffer_lua(lua_State *L)
     E.file[i]->undo = us_create();
 #endif
 
-    if ( name != NULL )
+    if (name != NULL)
         E.file[i]->filename = strdup(name);
 
     return 0;
@@ -2744,7 +2752,7 @@ void editorRefreshScreen(void)
     char status[80], rstatus[80];
     int len = snprintf(status, sizeof(status), "File %d/%d: %.32s %s",
                        E.current_file + 1, E.max_files,
-                       E.file[E.current_file]->filename ? E.file[E.current_file]->filename : "<NONE>", E.file[E.current_file]->dirty ? "(modified)" : "");
+                       E.file[E.current_file]->filename ? E.file[E.current_file]->filename : "<NONE>", dirty() ? "(modified)" : "");
     int rlen = snprintf(rstatus, sizeof(rstatus),
                         "Col:%d Row:%d/%d", E.file[E.current_file]->coloff + E.file[E.current_file]->cx + 1, E.file[E.current_file]->rowoff + E.file[E.current_file]->cy + 1, E.file[E.current_file]->numrows);
 
