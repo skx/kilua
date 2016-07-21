@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/skx/kilua.png)](https://travis-ci.org/skx/kilua)
 [![license](https://img.shields.io/github/license/skx/kilua.svg)]()
 
+
 # Kilua
 
 Kilua is a Lua-powered text editor written in around 2K lines of code, which
@@ -134,15 +135,18 @@ but right now there are only these:
 
 ## Buffers
 
-`kilua` allows multiple files to be opened, via the use of buffers. When `kilua` starts there are two buffers:
+`kilua` allows multiple files to be opened, via the use of buffers.  If `kilua` is launched without any filename parameters there will be two buffers:
 
 * `*Messages*`
     * This receives copies of the status-message.
-* The buffer containing the file from the command-line.
-    * Or an unnamed buffer for working with.
+* An unnamed buffer for working with.
+    * Enter your text here, then use `M-x save("name")` to save it.
 
-There are a number of key-bindings available for working with
-buffers:
+Otherwise there will be one buffer for each file named upon the command-line,
+as well as the `*Messages*` buffer.  (You can kill the `*Messages*` buffer
+if you wish, but it's a handy thing to have around.)
+
+The default key-bindings for working with buffers are:
 
 Action                             | Binding
 ---------------------------------- | --------------
@@ -153,11 +157,17 @@ Select the next buffer.            | `Ctrl-x n` or `M-right`
 Select the previous buffer.        | `Ctrl-x p` or `M-left`
 Choose a buffer, via menu.         | `Ctrl-x b` or `Ctrl-x B`
 
-You can also create buffers dynamically, via lua.   For example the
-following function can be called by `M-x uptime()`.  It will run `uptime`, and
-show the output:
+It's worth noting that you can easily create buffers dynamically, via lua, for
+example the following function can be called by `M-x uptime()`, and does
+what you expect:
+
+* Select the buffer with the name `*uptime*`.
+     * If that buffer doesn't exist then create it.
+* Move to the end of the buffer.
+     * Insert the output of runing `/usr/bin/uptime` into the buffer.
 
 
+      -- Run `uptime`, and show the result in a dedicated buffer.
       function uptime()
           local result = select_buffer( "*uptime*" )
           if ( result == 0 ) then create_buffer( "*uptime*" )   end
