@@ -20,7 +20,7 @@ to learn are:
     CTRL-q: Quit
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
 
-Currently supported options are:
+Currently supported command-line options are:
 
 * `--config file`
     * Load the named (lua) configuration file, in addition to the defaults.
@@ -143,14 +143,27 @@ When `kilua` starts there are two buffers:
 * The buffer containing the file from the command-line.
     * Or an unnamed buffer for working with.
 
-To move to the previous buffer use `M-left`, or `C-x p`.
+There are a number of key-bindings available for working with
+buffers:
 
-To move to the next buffer use `M-right`, or `C-x n`.
+Action               | Binding
+-------------------- | --------------
+create buffer        | `Ctrl-x c`
+kill current buffer  | `Ctrl-x k`
+next buffer          | `Ctrl-x n` or `M-right`
+previous buffer      | `Ctrl-x p` or `M-left`
 
-To kill the current buffer use `C-x k`, and to create a new one use `C-x c`.
+You can also create buffers dynamically, via lua.   For example the
+following function can be called by `M-x uptime()`.  It will run `uptime`, and
+show the output:
 
-At the moment it isn't possible to iterate over open buffers via Lua,
-but that will arrive shortly.
+
+      function uptime()
+          local result = select_buffer( "*uptime*" )
+          if ( result == 0 ) then create_buffer( "*uptime*" )   end
+          end_of_file()
+          insert(cmd_output( "uptime" ) )
+      end
 
 
 ## Copy & Paste
