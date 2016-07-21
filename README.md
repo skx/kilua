@@ -4,7 +4,7 @@
 
 # Kilua
 
-Kilua is a Lua-powered text editor written in around 2K lines of code.
+Kilua is an extensible, small, portable, and Lua-powered text editor.
 
 The project is built upon the minimal [kilo editor](https://github.com/antirez/kilo) originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108).  This derived work was put together by [Steve Kemp](https://steve.kemp.fi/) and features many updates and additions compared to the original project:
 
@@ -53,78 +53,13 @@ The following command-line options are recognized and understood:
     * `~/.kilua.lua`.
     * `./kilua.lua`.
     * If zero startup files are loaded this is a fatal error.
-* Input is processed via the `on_key()` function.
-     * We use a global keymap to bind control-keys to lua functions.
-* There is a notion of a MARK.  A mark can be made by pressing `Ctrl-space`.
-    * The region between mark and cursor is known as the "selection", and will be shown with a white-background.
 
-The following primitives are exported to lua:
+It is assumes you'll edit the [supplied startup](kilua.lua) file, to
+change the bindings to suit your needs, and add functionality via
+the [supplied lua primitives](PRIMITIVES.md).
 
-* at()
-    * Return the single character under the cursor.
-* cut_selection()
-    * Remove the text between curser and mark.
-* delete()
-    * Delete a single character (backwards).
-* dirty()
-    * Returns `true` if the buffer is dirty/modified, `false` otherwise.
-* eol()
-    * Move the cursor to the end of the current line.
-* exit()
-    * Terminate the editor.
-* eval()
-    * Prompt for lua code, and execute it.
-* find()
-    * Invoke the find-handler.
-* kill()
-    * Kill the current line, deleting it from display.
-* key()
-    * Read a single key from the keyboard (blocking).
-    * Used to implement setting of marks.
-* insert("string")
-    * Inserts the given string at the current cursor position.
-    * (Newlines work as expected.)
-* mark()
-   * get the position of the mark.
-   * A return value of (-1,-1) means there is no mark set.
-* mark(x,y)
-   * Set the position of the mark - set `-1,-1` to remove the mark.
-* open( [filename] )
-    * Open the named file for reading.
-    * If the filename is not given, prompt for one.
-* page_up()
-    * Scroll the screen up one page, if possible.
-* page_down()
-    * Scroll the screen down one page, if possible.
-* point()
-    * Return the current position of the cursor.
-* point(x,y)
-    * Move the cursor to the given position.
-    * This is used to return to named marks.
-* prompt( "prompt" )
-    * Prompt the user for input, and return it to lua.
-* save([filename])
-    * Save the file we're operating upon.
-    * If you give a new name that will be used thereafter.
-* search( "string" )
-    * Search forward for the given text.
-    * Returns the length of the match on success, zero on failure.
-* selection()
-    * Return the text between cursor and mark.
-* set_syntax_comments()
-    * Setup comment-handling for syntax-highlighting.
-* set_syntax_keywords()
-    * Setup keyword-handling for syntax-highlighting.
-* sol()
-    * Move the cursor to the start of the current line.
-* status("text-message")
-    * Show the given message in the status-area.
-* tabsize()
-    * Get the width of TAB characters (default 8).
-* tabsize(N)
-    * Set the width of TAB characters.
-
-In addition to those functions there are also the obvious movement-related primitives: `up()`, `down()`, `left()`, and `right()`.
+Pull-requests implementing useful functionality will be recieved with things,
+even if just to add syntax-highlighting for additional languages.
 
 
 ## Callbacks
@@ -132,7 +67,7 @@ In addition to those functions there are also the obvious movement-related primi
 In the future more callbacks might be implemented, which are functions the
 C-core calls at various points.
 
-Right now the following callbacks exist:
+Right now the following callbacks exist and are invoked via the C-core:
 
 * `on_idle()`
     * Called roughly once a second, can be used to run background things.
