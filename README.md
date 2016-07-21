@@ -4,13 +4,25 @@
 
 # Kilua
 
-Kilua is a Lua-powered text editor written in around 2K lines of code, which
-was forked from the minimal [kilo editor](https://github.com/antirez/kilo)
-originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108).
+Kilua is a Lua-powered text editor written in around 2K lines of code.
 
-You can launch the editor via :
+The project is built upon the minimal [kilo editor](https://github.com/antirez/kilo) originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108).  This derived work was put together by [Steve Kemp](https://steve.kemp.fi/) and features many updates and additions compared to the original project:
 
-    $ kilua [options] /path/to/file
+* The ability to open/edit/view multiple files
+   * This is done [via buffers](#buffers).
+* The addition of undo-support.
+   * Documented later [in this file](#undo).
+* The addition of an embedded Lua instance.
+   * You can define functions in your [init-files](#lua-support), and invoke them via `M-x function()`.
+* The addition of regular expression support for searching.
+* The addition of regular-expressions for [syntax-highlighting](#syntax-highlighting).
+* The addition of [copy and paste](#copy--paste).
+* The notion of a [named mark](#mark).
+* Several bugfixes.
+
+Launching `kilua` works as you would expect:
+
+    $ kilua [options] [file1] [file2] ... [fileN]
 
 Once launched the arrow keys will move you around, and the main keybindings
 to learn are:
@@ -21,7 +33,11 @@ to learn are:
     CTRL-q: Quit
     CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
 
-Currently supported command-line options are:
+
+
+## Command Line Options
+
+The following command-line options are recognized and understood:
 
 * `--config file`
     * Load the named (lua) configuration file, in addition to the defaults.
@@ -33,15 +49,11 @@ Currently supported command-line options are:
 
 ## Lua Support
 
-This project was updated by [Steve Kemp](https://steve.kemp.fi/)
-to include a lua intepreter, and delegate as much as possible of the operation
-to that lua instance.
-
 * On startup our initialization files are read:
     * `~/.kilua.lua`.
     * `./kilua.lua`.
     * If zero startup files are loaded this is a fatal error.
-* Input is processed via the `on_key()` function defined in that file.
+* Input is processed via the `on_key()` function.
      * We use a global keymap to bind control-keys to lua functions.
 * There is a notion of a MARK.  A mark can be made by pressing `Ctrl-space`.
     * The region between mark and cursor is known as the "selection", and will be shown with a white-background.
@@ -117,8 +129,10 @@ In addition to those functions there are also the obvious movement-related primi
 
 ## Callbacks
 
-There is room for lots more functionality to be delegated to callbacks,
-but right now there are only these:
+In the future more callbacks might be implemented, which are functions the
+C-core calls at various points.
+
+Right now the following callbacks exist:
 
 * `on_idle()`
     * Called roughly once a second, can be used to run background things.
@@ -166,7 +180,6 @@ what you expect:
 * Move to the end of the buffer.
      * Insert the output of runing `/usr/bin/uptime` into the buffer.
 
-
       -- Run `uptime`, and show the result in a dedicated buffer.
       function uptime()
           local result = select_buffer( "*uptime*" )
@@ -211,11 +224,12 @@ Syntax highlighting is defined in lua, and configured by calling:
     syntax_highlight_numbers( 0 | 1 )
     syntax_highlight_strings( 0 | 1 )
 
+The `on_loaded()` function has code currently for highlighting C, C++,
+and Lua files, as well as `Makefiles` and some simple highlighting for
+both Markdown and plain-text files.
 
-The `on_loaded()` function has an example covering both C/C++ and Lua.
-
-If you wish to change the syntax-highlighting, once a file is loaded,
-you can do that by entering `Ctrl-l` to open the Lua-prompt then
+If you wish to change the syntax-highlighting once a file is loaded,
+you can do that by entering `M-x` to open the Lua-prompt then
 typing (for example):
 
     set_syntax( "pl" )
@@ -235,10 +249,14 @@ undo-stack.  Specifically difficult functions are:
 * `kill`.
 * `cut_selection`.
 
+
 ## The Future
 
 There are no obvious future plans, but [bug reports](https://github.com/skx/kilua/issues) may be made if you have a feature to suggest (or bug to report)!
 
+One thing that might be useful is a split-display, to view two files
+side by side, or one above the other.  This is not yet planned, but
+I think it could be done reasonably cleanly.
 
 Steve
 --
