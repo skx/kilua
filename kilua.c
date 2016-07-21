@@ -1863,6 +1863,7 @@ int status_lua(lua_State *L)
 {
     const char *str = lua_tostring(L, -1);
     editorSetStatusMessage(1, str);
+    editorRefreshScreen();
     return 0;
 }
 

@@ -145,7 +145,7 @@ keymap['^X']['^X'] = function() swap_point_mark() end
 -- Working with buffers.
 --
 keymap['^X']['c']  = create_buffer
-keymap['^X']['k']  = kill_buffer
+keymap['^X']['k']  = function() confirm_kill_buffer() end
 keymap['M-RIGHT']  = next_buffer
 keymap['^X']['n']  = next_buffer
 keymap['M-LEFT']   = prev_buffer
@@ -620,7 +620,31 @@ end
 
 
 
+--
+-- Kill the current buffer
+--
+function confirm_kill_buffer()
+   if ( not dirty() ) then
+      kill_buffer()
+      return;
+   end
 
+   -- Buffer is dirty.
+   status( "Buffer is dirty.  Really kill (y/n)?" )
+
+   while( true ) do
+      k = key()
+      if ( k == "y" or k == "Y" ) then
+         kill_buffer()
+         status("Killed")
+         return
+      end
+      if ( k == "n" or k == "N" ) then
+         status("Cancelled")
+         return
+      end
+   end
+end
 
 
 --
@@ -757,7 +781,9 @@ end
 -- Test function just to prove `on_idle` is called every second, or so.
 --
 function on_idle()
-   status(  os.date() )
+   --
+   -- status( os.date() )
+   --
 end
 
 
