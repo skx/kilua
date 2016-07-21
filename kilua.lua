@@ -229,6 +229,27 @@ syn['lua'] = { keywords =
 }
 
 
+
+--
+-- Markdown
+--
+syn['md'] = { keywords = {
+                 "\\[.*\\]|",   -- Link-titles
+                  "(ftp|http|https):\\/([a-zA-Z_.0-9\\/#-]+)", -- Hyperlinks
+                         },
+               single      = "",
+               multi_open  = "",
+               multi_close = ""
+}
+syn['txt'] = { keywords = {
+                  "(ftp|http|https):\\/([a-zA-Z_.0-9\\/#-]+)", -- Hyperlinks
+                         },
+               single      = "",
+               multi_open  = "",
+               multi_close = ""
+}
+
+
 --
 -- Makefile: This is very naive, but surprisingly effective.
 --
