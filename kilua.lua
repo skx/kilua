@@ -395,13 +395,13 @@ do
 
          if ( type(result) == 'function' ) then
             result()
-            pending_input = {}
+            pending_char  = nil
             return
          end
          if ( type(result) == 'table' ) then
+
             --
-            -- This is a pending multi-part key - record this part
-            -- away.
+            -- This is a pending multi-part key - record this part away.
             --
             pending_char = k
             return
@@ -416,17 +416,13 @@ do
          status("Ignoring special-character which isn't bound : '" .. k  .. "'")
          return
       end
-      --
+
       --
       -- Otherwise just insert the character.
       --
       insert(k)
       pending_char = nil
-      --
-      -- If we reached here the previous character was not Ctrl-q
-      -- so we reset the global-quit-count
-      --
-      quit_count = 2
+      quit_count   = 2
    end
 end
 
@@ -640,9 +636,44 @@ quit_count = 2
 --     * Although this is odd to me, this is how kilua worked in pure C.
 --
 function quit()
-   if ( dirty() ) then
+   --
+   -- Count of dirty-buffers.
+   --
+   local dirty_count = 0
+
+   --
+   -- The current-buffer
+   --
+   local old_buffer = current_buffer()
+
+   --
+   -- For each buffer
+   --
+   for i=0,(buffers()-1) do
+      --
+      -- Select the buffer
+      --
+      select_buffer( i )
+
+      --
+      -- Is it dirty?
+      --
+      if ( dirty() ) then
+         dirty_count = dirty_count + 1
+      end
+   end
+
+   --
+   -- Restore the old-current buffer
+   --
+   select_buffer( old_buffer )
+
+   --
+   -- Show the dirty/total buffers.
+   --
+   if ( dirty_count > 0 ) then
       if ( quit_count > 0 ) then
-         status( "Buffer(s) are dirty press Ctrl-q " .. quit_count .. " more times to exit!")
+         status( dirty_count .. "/" .. buffers() .. " buffers are dirty, repeat " .. quit_count .. " more times to exit!")
          quit_count = quit_count - 1
       else
          exit()
