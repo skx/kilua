@@ -134,9 +134,7 @@ but right now there are only these:
 
 ## Buffers
 
-`kilua` allows multiple files to be opened, via the use of buffers.
-
-When `kilua` starts there are two buffers:
+`kilua` allows multiple files to be opened, via the use of buffers. When `kilua` starts there are two buffers:
 
 * `*Messages*`
     * This receives copies of the status-message.
