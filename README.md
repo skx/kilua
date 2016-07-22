@@ -41,6 +41,8 @@ The following command-line options are recognized and understood:
 
 * `--config file`
     * Load the named (lua) configuration file, in addition to the defaults.
+* `--dump-config`
+    * Display the (embedded) default configuration file.
 * `--eval`
     * Evaluate the given lua, post-load.
 * `--version`

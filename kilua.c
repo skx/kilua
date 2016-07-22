@@ -3549,6 +3549,7 @@ int main(int argc, char **argv)
         static struct option long_options[] =
         {
             {"config", required_argument, 0, 'c'},
+            {"dump-config", no_argument, 0, 'd'},
             {"eval", required_argument, 0, 'e'},
             {"version", no_argument, 0, 'v'},
             {0, 0, 0, 0}
@@ -3557,7 +3558,7 @@ int main(int argc, char **argv)
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        char c = getopt_long(argc, argv, "e:c:v", long_options, &option_index);
+        char c = getopt_long(argc, argv, "e:c:vd", long_options, &option_index);
 
         /* Detect the end of the options. */
         if (c == -1)
@@ -3565,17 +3566,22 @@ int main(int argc, char **argv)
 
         switch (c)
         {
-        case 'v':
-            fprintf(stderr, "kilua v%s\n", _VERSION);
-            exit(0);
-            break;
-
         case 'c':
             loaded += load_lua(optarg);
             break;
 
+        case 'd':
+            printf("%s\n", kilua_lua);
+            exit(0);
+            break;
+
         case 'e':
             eval = strdup(optarg);
+            break;
+
+        case 'v':
+            fprintf(stderr, "kilua v%s\n", _VERSION);
+            exit(0);
             break;
         }
     }
