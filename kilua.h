@@ -228,7 +228,7 @@ int load_lua(char *filename);
 int main(int argc, char **argv);
 void abAppend(struct abuf *ab, const char *s, int len);
 void abFree(struct abuf *ab);
-void call_lua(char *function, char *arg);
+void call_lua(const char *func, const char *sig, ...);
 void disableRawMode(int fd);
 void editorAtExit(void);
 void editorDelRow(int at);

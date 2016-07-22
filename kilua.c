@@ -260,24 +260,141 @@ void getWindowSize()
 /* ======================= Utility Functions ====================== */
 
 
-/* Call a lua function which accepts a single string argument
- * and returns no result. */
-void call_lua(char *function, char *arg)
+/*
+ * Call a lua function with varargs for the input/output.
+ *
+ * The format-string will define input parameters then ">"
+ * as a separator, followed by output parameters.
+ *
+ * e.g. A funcion that takes a string and returns no output:
+ *
+ *     "function", "s>", "string"
+ *
+ * A function that takes a string and returns an int:
+ *
+ *    "function", "s>i", "string", &int
+ *
+ * A function that takes no args and returns a string:
+ *
+ *    "function_name", ">s", &txt;
+ *
+ * Finally a function that takes no parameters and returns
+ * nothing:
+ *
+ *    "function," ">"
+ *
+ *  Source: Programming in Lua: 25.3 - A Generic Call Function
+ *
+ */
+void call_lua(const char *func, const char *sig, ...)
 {
-    lua_getglobal(lua, function);
+    va_list vl;
+    int narg, nres;
+
+    va_start(vl, sig);
+
+    lua_getglobal(lua, func);
 
     if (lua_isnil(lua, -1))
+        return;
+
+    /* push arguments */
+    narg = 0;
+
+    while (*sig)
     {
-        editorSetStatusMessage(1, "Failed to find function %s", function);
+        /* push arguments */
+        switch (*sig++)
+        {
+
+        case 'd':  /* double argument */
+            lua_pushnumber(lua, va_arg(vl, double));
+            break;
+
+        case 'i':  /* int argument */
+            lua_pushnumber(lua, va_arg(vl, int));
+            break;
+
+        case 's':  /* string argument */
+            lua_pushstring(lua, va_arg(vl, char *));
+            break;
+
+        case '>':
+            goto endwhile;
+
+        default:
+        {
+            editorSetStatusMessage(1, "invalid option (%c)", *(sig - 1));
+            return;
+        }
+        }
+
+        narg++;
+    }
+
+endwhile:
+
+
+    /* do the call */
+    nres = strlen(sig);  /* number of expected results */
+
+    if (lua_pcall(lua, narg, nres, 0) != 0)   /* do the call */
+    {
+        editorSetStatusMessage(1, "error running function `%s': %s", func, lua_tostring(lua, -1));
         return;
     }
 
-    lua_pushstring(lua, arg);
+    /* retrieve results */
+    nres = -nres;  /* stack index of first result */
 
-    if (lua_pcall(lua, 1, 0, 0) != 0)
+    while (*sig)
     {
-        editorSetStatusMessage(1, "%s failed %s", function, lua_tostring(lua, -1));
+        /* get results */
+        switch (*sig++)
+        {
+
+        case 'd':  /* double result */
+            if (!lua_isnumber(lua, nres))
+            {
+
+                editorSetStatusMessage(1, "wrong result type: expected number");
+                return;
+            }
+
+            *va_arg(vl, double *) = lua_tonumber(lua, nres);
+            break;
+
+        case 'i':  /* int result */
+            if (!lua_isnumber(lua, nres))
+            {
+                editorSetStatusMessage(1, "wrong result type: expected number");
+                return;
+            }
+
+            *va_arg(vl, int *) = (int)lua_tonumber(lua, nres);
+            break;
+
+        case 's':  /* string result */
+            if (!lua_isstring(lua, nres))
+            {
+                editorSetStatusMessage(1, "wrong result type: expected string");
+                return;
+            }
+
+            *va_arg(vl, const char **) = lua_tostring(lua, nres);
+            break;
+
+        default:
+        {
+            editorSetStatusMessage(1, "invalid result-type");
+            return;
+        }
+        }
+
+        nres++;
     }
+
+    va_end(vl);
 }
 
 /* Reverse a C-string, in-place */
@@ -583,7 +700,7 @@ int editorOpen(char *filename)
             }
 
             /* invoke our lua callback function, even if opening failed.*/
-            call_lua("on_loaded", E.file[E.current_file]->filename);
+            call_lua("on_loaded", "s>", E.file[E.current_file]->filename);
 
             return 1;
         }
@@ -607,7 +724,7 @@ int editorOpen(char *filename)
     E.file[E.current_file]->dirty = 0;
 
     /* invoke our lua callback function */
-    call_lua("on_loaded", E.file[E.current_file]->filename);
+    call_lua("on_loaded", "s>", E.file[E.current_file]->filename);
     return 0;
 }
 
@@ -1333,7 +1450,7 @@ int save_lua(lua_State *L)
     editorSetStatusMessage(1, "%d bytes written to %s", len, E.file[E.current_file]->filename);
 
     /* invoke our lua callback function */
-    call_lua("on_saved", E.file[E.current_file]->filename);
+    call_lua("on_saved", "s>", E.file[E.current_file]->filename);
 
 #ifdef _UNDO
     /* since we've saved - kill our undo stack */
@@ -3259,7 +3376,7 @@ void editorProcessKeypress(int fd)
 {
     char tmp[2] = {'\0', '\0'};
     tmp[0] = editorReadKey(fd);
-    call_lua("on_key", tmp);
+    call_lua("on_key", "s>", tmp);
 }
 
 /* Load and evaluate a Lua file - if it exists */
@@ -3530,7 +3647,7 @@ int main(int argc, char **argv)
          */
         if (eval != NULL)
         {
-            call_lua(eval, "");
+            call_lua(eval, "s>");
             free(eval);
             eval = NULL;
         }
@@ -3553,7 +3670,7 @@ int main(int argc, char **argv)
             editorProcessKeypress(STDIN_FILENO);
         else
         {
-            call_lua("on_idle", "");
+            call_lua("on_idle", ">");
         }
     }
 
