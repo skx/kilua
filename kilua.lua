@@ -142,7 +142,7 @@ keymap['^X'] = {}
 keymap['^X']['^C'] = function() quit() end
 keymap['^X']['^S'] = save
 keymap['^X']['^X'] = function() swap_point_mark() end
-
+keymap['^X']['i']  = function() insert_contents() end
 
 --
 -- Working with buffers.
@@ -538,6 +538,7 @@ function set_syntax( name )
    end
 end
 
+
 --
 -- Run a command and return the output, if any.
 --
@@ -747,6 +748,37 @@ function eval_lua()
       end
    else
       status( "Evaluation cancelled" )
+   end
+end
+
+
+--
+--  Insert the contents of a file/command at the point.
+-----------------------------------------------------------------------------
+
+--
+-- NOTE: M-! will also insert the contents of a commands' output.
+--
+function insert_contents()
+
+   local file = prompt( "Insert? " )
+
+   if ( file == nil  or file == "" ) then
+      status( "Cancelled" )
+      return
+   end
+
+   --
+   -- Is this a command?
+   --
+   if ( file:sub( 1, 1 ) == "|" ) then
+      insert( cmd_output( file:sub(2) ) )
+      return
+   else
+      -- File
+      for line in io.lines(file) do
+         insert( line .. "\n")
+      end
    end
 end
 
