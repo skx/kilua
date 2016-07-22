@@ -40,9 +40,8 @@
 /*
  * Each undo operations we support.
  *
- * Moving the cursor - undo for moving in opposite direction.
  * Inserting a character - undo for `delete`.
- * Deleting a character - undor for inserting a character.
+ * Deleting a character - undo for inserting a character.
  */
 typedef enum {INSERT, DELETE} undo_type;
 

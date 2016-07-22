@@ -1478,6 +1478,32 @@ int undo_lua(lua_State *L)
     {
         warp(action->x, action->y);
 
+        /*
+         * If the position isn't that we wanted
+         * then we need to repeat - inserting a character
+         * until we can find it.
+         */
+        int found = 1;
+        while( found ) {
+
+            int x = E.file[E.current_file]->cx + E.file[E.current_file]->coloff;
+            int y = E.file[E.current_file]->cy + E.file[E.current_file]->rowoff;
+
+            if ( ( action->x == x ) && ( action->y == y ) )
+            {
+                found = 0;
+            }
+            else
+            {
+                editorInsertChar(' ');
+                us_pop(E.file[E.current_file]->undo);
+                warp(action->x, action->y);
+            }
+        }
+
+        /*
+         * Build up the string to insert, of one character.
+         */
         char str[2] = { '\0', '\0' };
         str[0] = action->data;
         lua_pushstring(L, str);
@@ -2543,7 +2569,7 @@ void editorRowDelChar(erow *row, int at)
 
 
     if (row->rsize >= at)
-        add_undo(E.file[E.current_file]->undo, INSERT, row->render[at], x, y);
+        add_undo(E.file[E.current_file]->undo, INSERT, row->render[at], x-1, y);
 
 #endif
 
