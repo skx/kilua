@@ -18,7 +18,7 @@ The project is built upon the minimal [kilo editor](https://github.com/antirez/k
 * The addition of regular-expressions for [syntax-highlighting](#syntax-highlighting).
 * The addition of [copy and paste](#copy--paste).
 * The notion of [named marks](#marks).
-* The [status bar](#status-bar] is configured via Lua.
+* The [status bar](#status-bar) is configured via Lua.
 * Several bugfixes.
 
 Launching `kilua` works as you would expect:
@@ -194,6 +194,8 @@ Name             | Meaning
 `${words}`       | The count of words in the buffer.
 `${x}`           | The X-coordinate of the cursor.
 `${y}`           | The Y-coordinate of the cursor.
+
+> **Pull-requests** adding more options here would be most welcome.
 
 
 ## Syntax Highlighting
