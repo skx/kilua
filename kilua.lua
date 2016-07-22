@@ -2,15 +2,17 @@
 --
 -- This is the configuration file for kilua.
 --
---  When kilua starts it will look for its configuration-file in two
--- locations:
+--  When kilua starts it will look for two default configuration-files:
 --
---   ~/.kilua.lua
---   ./kilua.lua
+--   ~/.kilua/init.lua
+--   ~/.kilua/$(hostname).lua
 --
--- If neither location exists this is a fatal error.
+-- If neither file is present then _this_ file will be loaded, as it is
+-- embedded into the generated binary, via the file `config.h`, as part
+-- of the build-process.
 --
--- There are three callback functions that kilua invokes at various times:
+-- There are several functions that kilua invokes at various times, without
+-- which you'll have no functionality, so a configuration file is required:
 --
 --  * on_idle(key)
 --     Called when things are idle, to allow actions to be carried out.
