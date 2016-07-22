@@ -27,21 +27,21 @@ FLAGS=-D_VERSION=\"0.4\"
 #
 # Generate our embedded welcome-message
 #
-welcome: util/embed welcome.txt
+welcome.h: util/embed welcome.txt
 	perl util/embed --version=0.4 --array welcome.txt > welcome.h
 
 
 #
 # Generate our embedded default configuration-file
 #
-config: util/xxd kilua.lua
+config.h: util/xxd kilua.lua
 	perl util/xxd kilua.lua  > config.h
 
 
 #
 # Build the main binary.
 #
-kilua: Makefile $(wildcard *.c *.h) config welcome
+kilua: Makefile $(wildcard *.c *.h) config.h welcome.h
 	$(CC) ${FEATURES} ${FLAGS} -o kilua -ggdb $(wildcard *.c) -Wall -Wextra -Werror -W -pedantic -std=c99 $(shell pkg-config --cflags --libs lua5.2)
 
 
