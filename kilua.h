@@ -226,6 +226,7 @@ char *get_selection(void);
 int editorOpen(char *filename);
 int is_separator(int c);
 int editorRowHasOpenComment(erow *row);
+void rerender();
 void editorUpdateSyntax(erow *row);
 int editorSyntaxToColor(int hl);
 char *get_input(char *prompt);

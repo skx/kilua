@@ -1523,12 +1523,7 @@ int set_syntax_comments_lua(lua_State *L)
     strcpy(E.file[E.current_file]->syntax->multiline_comment_start, multi_open);
     strcpy(E.file[E.current_file]->syntax->multiline_comment_end, multi_end);
 
-    /*
-     * Force re-render.
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
-
+    rerender();
     return 0;
 }
 
@@ -1549,7 +1544,7 @@ int set_syntax_keywords_lua(lua_State *L)
         E.file[E.current_file]->syntax = s;
     }
 
-    #if LUA_VERSION_NUM >= 502 
+    #if LUA_VERSION_NUM >= 502
     size_t len = lua_rawlen(L, 1);
     #else
     size_t len = lua_objlen(L, 1);
@@ -1569,11 +1564,7 @@ int set_syntax_keywords_lua(lua_State *L)
 
     E.file[E.current_file]->syntax->keywords[i] = NULL;
 
-    /*
-     * Force re-render.
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
+    rerender();
 
     return 0;
 }
@@ -1590,11 +1581,7 @@ int syntax_highlight_numbers_lua(lua_State *L)
         else
             E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_NUMBERS;
 
-        /*
-         * Force re-render.
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
+        rerender();
     }
 
     return 0;
@@ -1612,11 +1599,7 @@ int syntax_highlight_strings_lua(lua_State *L)
         else
             E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
 
-        /*
-         * Force re-render.
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
+        rerender();
     }
 
     return 0;
@@ -1630,11 +1613,7 @@ int tabsize_lua(lua_State *L)
         int width = lua_tonumber(L, -1);
         E.file[E.current_file]->tab_size = width;
 
-        /*
-         * Force a re-render
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
+        rerender();
 
     }
 
@@ -1870,11 +1849,7 @@ int kill_buffer_lua(lua_State *L)
             E.current_file = E.max_files - 1;
         }
 
-        /*
-         * Force re-render
-         */
-        for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-            editorUpdateRow(E.file[E.current_file]->row + i);
+        rerender();
     }
     else
     {
@@ -1899,11 +1874,8 @@ int next_buffer_lua(lua_State *L)
         E.current_file = 0;
     }
 
-    /*
-     * Force re-render
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
+
+    rerender();
 
     return 0;
 }
@@ -1922,11 +1894,7 @@ int prev_buffer_lua(lua_State *L)
         E.current_file = E.max_files - 1;
     }
 
-    /*
-     * Force re-render
-     */
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
-        editorUpdateRow(E.file[E.current_file]->row + i);
+    rerender();
 
     return 0;
 }
@@ -2026,6 +1994,16 @@ int editorRowHasOpenComment(erow *row)
 
 
 }
+
+/* Force a re-render of the buffer. */
+void rerender()
+{
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++ )
+    {
+        editorUpdateRow(E.file[E.current_file]->row + i);
+    }
+}
+
 
 /* Set every byte of row->hl (that corresponds to every character in the line)
  * to the right syntax highlight type (HL_* defines). */
