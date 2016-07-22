@@ -2738,6 +2738,51 @@ void abFree(struct abuf *ab)
 
 /* ============================= Terminal update ============================ */
 
+/* TODO : Check this for buffer-overflowing. */
+char * status_bar()
+{
+    char left[80];
+    char middle[80];
+    char right[80];
+
+    /*
+     * Populate the left-side of the status-bar.
+     */
+    snprintf(left, sizeof(left), "Buffer %d/%d: %.32s %s",
+             E.current_file + 1, E.max_files,
+             E.file[E.current_file]->filename ? E.file[E.current_file]->filename : "<NONE>", dirty() ? "(modified)" : "");
+
+    /*
+     * Populate the right-side of the status-bar.
+     */
+    snprintf(right, sizeof(right),
+             "Col:%d Row:%d/%d", E.file[E.current_file]->coloff + E.file[E.current_file]->cx + 1, E.file[E.current_file]->rowoff + E.file[E.current_file]->cy + 1, E.file[E.current_file]->numrows);
+
+    /*
+     * The middle portion of the status-display.
+     */
+    int missing = E.screencols - strlen(left) - strlen(right);
+    memset(middle, '\0', sizeof(middle));
+
+    while (missing--)
+    {
+        /*
+         * Fill the middle region with spaces until it's the right
+         * size to pad the display to the width of the console.
+         */
+        middle[missing] = ' ';
+    }
+
+    /*
+     * Now join the three pieces.
+     */
+    char *memory = malloc(E.screencols + 2);
+    memset(memory, '\0', E.screencols + 2);
+    snprintf(memory, E.screencols + 1, "%s%s%s", left, middle, right);
+
+    return (memory);
+}
+
 /* This function writes the whole screen using VT100 escape characters
  * starting from the logical state of the editor in the global state 'E'. */
 void editorRefreshScreen(void)
@@ -2973,31 +3018,11 @@ void editorRefreshScreen(void)
     /* Create a two rows status. First row: */
     abAppend(&ab, "\x1b[0K", 4);
     abAppend(&ab, "\x1b[7m", 4);
-    char status[80], rstatus[80];
-    int len = snprintf(status, sizeof(status), "File %d/%d: %.32s %s",
-                       E.current_file + 1, E.max_files,
-                       E.file[E.current_file]->filename ? E.file[E.current_file]->filename : "<NONE>", dirty() ? "(modified)" : "");
-    int rlen = snprintf(rstatus, sizeof(rstatus),
-                        "Col:%d Row:%d/%d", E.file[E.current_file]->coloff + E.file[E.current_file]->cx + 1, E.file[E.current_file]->rowoff + E.file[E.current_file]->cy + 1, E.file[E.current_file]->numrows);
 
-    if (len > E.screencols) len = E.screencols;
-
-    abAppend(&ab, status, len);
-
-    while (len < E.screencols)
-    {
-        if (E.screencols - len == rlen)
-        {
-            abAppend(&ab, rstatus, rlen);
-            break;
-        }
-        else
-        {
-            abAppend(&ab, " ", 1);
-            len++;
-        }
-    }
-
+    /* Show the status-bar */
+    char *status = status_bar();
+    abAppend(&ab, status, strlen(status));
+    free(status);
     abAppend(&ab, "\x1b[0m\r\n", 6);
 
     /* Second row depends on E.statusmsg and the status message update time. */
