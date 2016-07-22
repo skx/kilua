@@ -82,7 +82,8 @@ which are implemented in the editor.
 * `insert("string")`
     * Inserts the given string at the current cursor position.
     * (Newlines work as expected.)
-
+* `text()`
+    * Return the text in the buffer.
 
 ## Marks
 
