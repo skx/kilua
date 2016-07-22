@@ -49,10 +49,15 @@ The following command-line options are recognized and understood:
 
 ## Lua Support
 
-On startup our initialization files are read if they exist:
+We build with Lua 5.2 by default, but if you edit the `Makefile` you
+should also be able to build successfully with Lua 5.1.
+
+On startup the following configuration-files are read if present:
 
 * `~/.kilua/init.lua`.
 * `./.kilua/$hostname.lua`.
+   * This is useful for those who store their dotfiles under revision control and share them across hosts.
+   * You can use the `*Messages*` buffer to see which was found, if any.
 
 If neither file is read then the embedded copy of `kilua.lua` which
 was generated at build-time will be executed - this ensures that there
@@ -60,12 +65,13 @@ is some minimal functionality and key-bindings.
 
 It is assumed you'll edit the [supplied startup](kilua.lua) file, to
 change the bindings to suit your needs, and add functionality via
-the [supplied lua primitives](PRIMITIVES.md), and copy into place at
-`~/.kilua`.  But without any changes you'll get a functional editor
-which follows my particular preferences.
+the [supplied lua primitives](PRIMITIVES.md), and copy into a suitable
+location.
 
-Pull-requests implementing useful functionality will be recieved with things,
-even if just to add syntax-highlighting for additional languages.
+But without any changes you'll get a functional editor which follows my
+particular preferences.
+
+> **Pull-requests** implementing useful functionality will be recieved with thanks, even if just to add syntax-highlighting for additional languages.
 
 
 ## Callbacks
