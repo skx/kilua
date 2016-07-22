@@ -2863,6 +2863,15 @@ char * status_bar()
     char right[80];
 
     /*
+     * If there is a Lua function to do the necessary, then use it.
+     */
+    char* result = NULL;;
+    call_lua("get_status_bar", ">s",  &result);
+
+    if (result)
+        return (strdup(result));
+
+    /*
      * Populate the left-side of the status-bar.
      */
     snprintf(left, sizeof(left), "Buffer %d/%d: %.32s %s",
