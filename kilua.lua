@@ -835,50 +835,55 @@ end
 
 
 --
--- If this function is defined it will be invoked to draw the
--- status-bar.
+-- String interopolation function, taken from the Lua wiki:
+--
+--   http://lua-users.org/wiki/StringInterpolation
+--
+-- Usage:
+--
+--   print( string.interp( "Hello ${name}", { name = "World" } )
+--
+function string.interp(s, tab)
+   return (s:gsub('($%b{})', function(w) return tab[w:sub(3, -2)] or w end))
+end
+
+
+--
+-- If this function is defined it will be invoked to draw the status-bar.
 --
 -- Comment it out, or remove it, to fall-back to the C-based implementation.
 --
 function get_status_bar()
-   --
-   -- Buffer Counts
-   --
-   local buffer  = current_buffer() + 1
-   local buffers = buffers()
 
    --
-   -- Filename
+   -- Format String of what we show.
    --
-   local file = filename() or ""
-   if ( dirty() )  then
-      file = file .. " <modified>"
-   end
-
-   --
-   -- The left-side
-   --
-   local left = "Buffer " .. buffer .. "/" .. buffers .. " " .. file
+   local fmt = "${buffer}/${buffers} - ${file} ${modified} #BLANK# Chars:${chars} Words:${words} Col:${x} Row:${y}"
 
 
-   local right = ""
-
    --
-   -- Get the point and the text in the buffer, if any
+   -- Things we use.
    --
    local x,y = point()
    local txt = text()
 
-   if ( txt ) then
-      right = "Chars:" .. #txt
+   --
+   -- Table holding values we can interpolate.
+   --
+   local t = {}
+   t['buffer']          = current_buffer() + 1
+   t['buffers']         = buffers()
+   t['file']            = filename() or ""
+   t['x']               = x
+   t['y']               = y + 1
+   t['chars']           = #txt
+   t['nil'], t['words'] = txt:gsub("%S+","")
 
-      -- http://stackoverflow.com/questions/29133416/how-to-count-the-amount-of-words-in-a-text-file-in-lua
-      local _,n = txt:gsub("%S+","")
-      right = right .. " Words:" .. n
+   if ( dirty() )  then
+      t['modified'] = "<modified>"
+   else
+      t['modified'] = ""
    end
-
-   right = right .. " Col:" .. x .. " Row:" .. y + 1
-
 
    --
    -- Width of console
@@ -886,25 +891,31 @@ function get_status_bar()
    local w = width()
 
    --
-   -- Too big?
+   -- Interpolate our output
    --
-   if ( #left + #right > w ) then
-      -- Combine and truncate
-      local t = left .. " " .. right
-      t = t:sub(0, w )
-      return t
+   local out = string.interp( fmt, t )
+
+   --
+   -- Too large?
+   --
+   if ( #out > w ) then
+      return( out:sub(0,w) )
    end
 
    --
-   -- If the combined left+right sections are too small then
-   -- fill the middle with spaces.
+   -- Too small?
    --
-   while( #left + #right < w ) do
-      left = left .. " "
+   local pad = w - #out + ( 7 )   -- 7 == length of '#BLANK#'
+   local spc = ""
+   while( pad > 0 ) do
+      spc = spc .. " "
+      pad = pad - 1
    end
 
    --
-   -- Return the joined pair.
+   -- Replace the #BLANK# string with our new spc-string containing the
+   -- correct amount of padding.
    --
-   return( left .. right )
+   out = out:gsub( "#BLANK#", spc )
+   return( out )
 end
