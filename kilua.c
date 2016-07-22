@@ -44,7 +44,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+
+#if !defined(__MACH__)
 #include <malloc.h>
+#endif
+
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>

@@ -44,7 +44,7 @@ indent:
 #
 .PHONY: indent
 clean:
-	rm -f kilua *.orig core valgrind.out
+	rm -rf kilua *.orig core valgrind.out kilua.dSYM
 
 #
 #  Run our binary under valgrind.
