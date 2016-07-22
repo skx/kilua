@@ -17,14 +17,18 @@ which are implemented in the editor.
 
 ## Core Functions
 
-* dirty()
+* `dirty()`
     * Is the current buffer modified & unsaved?
 * `eval()`
     * Prompt the user for input, then evaluate that as Lua.
 * `exit()`
     * Exit the editor.
+* `filename()`
+    * Get/Set the filename of the current buffer.
 * `find()`
     * Open and interactive find mode, for performing forward/backward searches.
+* `height()`
+    * Return the height of the terminal we're running in.
 * `open([filename])`
     * Open a file, and insert the text into the current buffer.
 * `save([filename])`
@@ -36,6 +40,8 @@ which are implemented in the editor.
     * Set the contents of the status-bar.
 * `undo()`
     * Undo the previous action(s).
+* `width()`
+    * Return the width of the terminal we're running in.
 
 
 ## Movement
@@ -86,12 +92,15 @@ which are implemented in the editor.
 * `point()`
     * Get/Set the X,Y coordinate of the cursor.
 
+
 ## Selection
 
 Functions relating to the selection.
 
 * `cut_selection()`
+   * Remove the selected text from the buffer.
 * `selection()`
+   * Retrieve the contents of the selected region.
 
 
 ## Syntax Highlighting.

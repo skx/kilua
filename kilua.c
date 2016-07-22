@@ -1060,6 +1060,33 @@ int exit_lua(lua_State *L)
     return 0;
 }
 
+/* Get/Set the name of the filename */
+int filename_lua(lua_State *L)
+{
+    const char *str = lua_tostring(L, -1);
+
+    /*
+     * Updating?
+     */
+    if (str != NULL)
+    {
+        if (E.file[E.current_file]->filename)
+            free(E.file[E.current_file]->filename);
+
+        E.file[E.current_file]->filename = strdup(str);
+    }
+
+    /*
+     * Return the value.
+     */
+    if (E.file[E.current_file]->filename )
+        lua_pushstring(L, E.file[E.current_file]->filename );
+    else
+        lua_pushnil(L);
+
+    return 1;
+}
+
 /* Switch to find-mode */
 int find_lua(lua_State *L)
 {
@@ -1194,6 +1221,12 @@ int find_lua(lua_State *L)
     }
 }
 
+/* Return the height of the terminal */
+int height_lua(lua_State *L)
+{
+    lua_pushnumber(L, E.screenrows);
+    return 1;
+}
 
 /* Prompt for a filename and open it. */
 int open_lua(lua_State *L)
@@ -1477,12 +1510,14 @@ int undo_lua(lua_State *L)
          * until we can find it.
          */
         int found = 1;
-        while( found ) {
+
+        while (found)
+        {
 
             int x = E.file[E.current_file]->cx + E.file[E.current_file]->coloff;
             int y = E.file[E.current_file]->cy + E.file[E.current_file]->rowoff;
 
-            if ( ( action->x == x ) && ( action->y == y ) )
+            if ((action->x == x) && (action->y == y))
             {
                 found = 0;
             }
@@ -1516,6 +1551,12 @@ int undo_lua(lua_State *L)
     return 0;
 }
 
+/* Return the widht of the terminal */
+int width_lua(lua_State *L)
+{
+    lua_pushnumber(L, E.screencols);
+    return 1;
+}
 
 
 /* Syntax highlighting */
@@ -1563,11 +1604,11 @@ int set_syntax_keywords_lua(lua_State *L)
         E.file[E.current_file]->syntax = s;
     }
 
-    #if LUA_VERSION_NUM >= 502
+#if LUA_VERSION_NUM >= 502
     size_t len = lua_rawlen(L, 1);
-    #else
+#else
     size_t len = lua_objlen(L, 1);
-    #endif
+#endif
     E.file[E.current_file]->syntax->keywords = malloc((1 + len) * sizeof(char*));
 
     int i = 0;
@@ -2017,7 +2058,7 @@ int editorRowHasOpenComment(erow *row)
 /* Force a re-render of the buffer. */
 void rerender()
 {
-    for (int i = 0; i < E.file[E.current_file]->numrows; i++ )
+    for (int i = 0; i < E.file[E.current_file]->numrows; i++)
     {
         editorUpdateRow(E.file[E.current_file]->row + i);
     }
@@ -2562,7 +2603,7 @@ void editorRowDelChar(erow *row, int at)
 
 
     if (row->rsize >= at)
-        add_undo(E.file[E.current_file]->undo, INSERT, row->render[at], x-1, y);
+        add_undo(E.file[E.current_file]->undo, INSERT, row->render[at], x - 1, y);
 
 #endif
 
@@ -3266,13 +3307,16 @@ void initEditor(void)
      */
     lua_register(lua, "eval", eval_lua);
     lua_register(lua, "exit", exit_lua);
+    lua_register(lua, "filename", filename_lua);
     lua_register(lua, "find", find_lua);
+    lua_register(lua, "height", height_lua);
     lua_register(lua, "open", open_lua);
     lua_register(lua, "prompt", prompt_lua);
     lua_register(lua, "save", save_lua);
     lua_register(lua, "search", search_lua);
     lua_register(lua, "status", status_lua);
     lua_register(lua, "undo", undo_lua);
+    lua_register(lua, "width", width_lua);
 
     /*
      * Syntax highlighting.

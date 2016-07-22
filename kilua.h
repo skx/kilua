@@ -285,13 +285,16 @@ extern  int point_lua(lua_State *L);
 /* Core */
 extern  int eval_lua(lua_State *L);
 extern  int exit_lua(lua_State *L);
+extern  int filename_lua(lua_State *L);
 extern  int find_lua(lua_State *L);
+extern  int height_lua(lua_State *L);
 extern  int open_lua(lua_State *L);
 extern  int prompt_lua(lua_State *L);
 extern  int save_lua(lua_State *L);
 extern  int search_lua(lua_State *L);
 extern  int status_lua(lua_State *L);
 extern  int undo_lua(lua_State *L);
+extern  int width_lua(lua_State *L);
 
 /* Syntax highlighting */
 extern  int set_syntax_comments_lua(lua_State *L);
