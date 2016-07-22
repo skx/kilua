@@ -919,6 +919,13 @@ function get_status_bar()
    local t = {}
    t['buffer']          = current_buffer() + 1
    t['buffers']         = buffers()
+
+   --
+   -- See https://www.lua.org/pil/22.1.html
+   --
+   t['date']            = os.date("%A %d %B %Y")
+   t['time']            = os.date("%X")
+
    t['file']            = filename() or ""
    t['x']               = x
    t['y']               = y + 1
