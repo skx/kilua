@@ -18,6 +18,7 @@ The project is built upon the minimal [kilo editor](https://github.com/antirez/k
 * The addition of regular-expressions for [syntax-highlighting](#syntax-highlighting).
 * The addition of [copy and paste](#copy--paste).
 * The notion of [named marks](#marks).
+* The [status bar](#status-bar] is configured via Lua.
 * Several bugfixes.
 
 Launching `kilua` works as you would expect:
@@ -166,6 +167,33 @@ later jump to it, just like in `vi`.
 To record the current position use `M-SPACE`, and press the key
 you wish to use.  To return to it use `M-m XX` where XX was the
 key you chose.
+
+
+## Status Bar
+
+The status-bar, shown as the penultimate line in the display, contains
+the name of the current file/buffer, as well as the cursor position, etc.
+
+The contents of the status-bar are generated via Lua, so it is simple
+to modify.  The default display shows:
+
+     "${buffer}/${buffers} - ${file} ${modified} #BLANK# Chars:${chars} Words:${words} Col:${x} Row:${y}"
+
+Values inside "`${...}`" are expanded via substitutions and the following
+are provided by default:
+
+Name             | Meaning
+---------------- | --------------
+`${buffers}`     | The count of open buffers.
+`${buffer}`      | The number of the current buffer.
+`${chars}`       | the number of characters in the buffer.
+`${date}`        | The current date.
+`${file}`        | The name of the file/buffer.
+`${modified}`    | A string that reports whether the buffer is modified.
+`${time}`        | The current time.
+`${words}`       | The count of words in the buffer.
+`${x}`           | The X-coordinate of the cursor.
+`${y}`           | The Y-coordinate of the cursor.
 
 
 ## Syntax Highlighting
