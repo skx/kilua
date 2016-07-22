@@ -285,7 +285,6 @@ extern  int mark_lua(lua_State *L);
 extern  int point_lua(lua_State *L);
 
 /* Core */
-extern  int eval_lua(lua_State *L);
 extern  int exit_lua(lua_State *L);
 extern  int filename_lua(lua_State *L);
 extern  int find_lua(lua_State *L);

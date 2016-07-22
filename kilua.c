@@ -1151,35 +1151,6 @@ int point_lua(lua_State *L)
 
 /* Core */
 
-/* prompt for a string, and evaluate that as lua. */
-int eval_lua(lua_State *L)
-{
-    (void)L;
-
-    char *txt = get_input("Eval: ");
-
-    if (txt)
-    {
-        int res =  luaL_loadstring(lua, txt);
-
-        if (res == 0)
-        {
-            res = lua_pcall(lua, 0, LUA_MULTRET, 0);
-        }
-        else
-        {
-            const char *er = lua_tostring(lua, -1);
-
-            if (er)
-                editorSetStatusMessage(1, er);
-        }
-
-        free(txt);
-    }
-
-    return 0;
-}
-
 /* exit the editor */
 int exit_lua(lua_State *L)
 {
@@ -3485,7 +3456,6 @@ void initEditor(void)
     /*
      * Core
      */
-    lua_register(lua, "eval", eval_lua);
     lua_register(lua, "exit", exit_lua);
     lua_register(lua, "filename", filename_lua);
     lua_register(lua, "find", find_lua);
@@ -3655,8 +3625,7 @@ int main(int argc, char **argv)
 
 
     enableRawMode(STDIN_FILENO);
-    editorSetStatusMessage(1,
-                           "HELP: ^o = open | ^s = save | ^q = quit | ^f = find | ^l = eval");
+    editorSetStatusMessage(1, "HELP: ^o = open | ^s = save | ^q = quit | ^f = find | ^l = eval");
 
     /*
      * Run our event loop.

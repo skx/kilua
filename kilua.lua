@@ -74,11 +74,11 @@ keymap['^D']        = function() insert( os.date() ) end
 keymap['^E']        = eol
 keymap['^F']        = find
 keymap['^H']        = delete
+keymap['^L']        = function() eval_lua() end
 keymap['^_']        = undo
 keymap['^G']        = function() search( prompt( "Search:" ) ) end
 keymap['^J']        = function() goto_mark() end
 keymap['^K']        = function() kill_line() end
-keymap['^L']        = eval
 keymap['^M']        = function() insert("\n" ) end
 keymap['^N']        = function() record_mark() end
 keymap['^Q']        = function() quit() end
@@ -110,7 +110,7 @@ keymap['M-END']     = function() end_of_file() end
 --
 -- M-x -> eval, just like emacs.
 --
-keymap['M-x'] = eval
+keymap['M-x'] = function() eval_lua() end
 
 --
 -- M-! ("Escape", then "!") will run a command and insert the output
@@ -413,7 +413,6 @@ do
       -- Lookup the key in our key-map.
       --
       local result = keymap[k]
-
 
       --
       -- Was there a result?
@@ -735,6 +734,21 @@ function quit()
 end
 
 
+--
+--  Interactive evaluation
+-----------------------------------------------------------------------------
+
+function eval_lua()
+   local txt = prompt( "Eval:" )
+   if ( txt ) then
+      local err, result = loadstring( txt )()
+      if ( err ) then
+         status( result )
+      end
+   else
+      status( "Evaluation cancelled" )
+   end
+end
 
 --
 --  Implementation of setting/jumping to (named) marks.

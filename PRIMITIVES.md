@@ -19,8 +19,6 @@ which are implemented in the editor.
 
 * `dirty()`
     * Is the current buffer modified & unsaved?
-* `eval()`
-    * Prompt the user for input, then evaluate that as Lua.
 * `exit()`
     * Exit the editor.
 * `filename()`
