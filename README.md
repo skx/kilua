@@ -49,14 +49,20 @@ The following command-line options are recognized and understood:
 
 ## Lua Support
 
-* On startup our initialization files are read:
-    * `~/.kilua.lua`.
-    * `./kilua.lua`.
-    * If zero startup files are loaded this is a fatal error.
+On startup our initialization files are read if they exist:
 
-It is assumes you'll edit the [supplied startup](kilua.lua) file, to
+* `~/.kilua/init.lua`.
+* `./.kilua/$hostname.lua`.
+
+If neither file is read then the embedded copy of `kilua.lua` which
+was generated at build-time will be executed - this ensures that there
+is some minimal functionality and key-bindings.
+
+It is assumed you'll edit the [supplied startup](kilua.lua) file, to
 change the bindings to suit your needs, and add functionality via
-the [supplied lua primitives](PRIMITIVES.md).
+the [supplied lua primitives](PRIMITIVES.md), and copy into place at
+`~/.kilua`.  But without any changes you'll get a functional editor
+which follows my particular preferences.
 
 Pull-requests implementing useful functionality will be recieved with things,
 even if just to add syntax-highlighting for additional languages.
@@ -197,6 +203,6 @@ One thing that might be useful is a split-display, to view two files
 side by side, or one above the other.  This is not yet planned, but
 I think it could be done reasonably cleanly.
 
-Steve  
-\--  
+Steve
+\--
 https://steve.kemp.fi/

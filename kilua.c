@@ -58,6 +58,8 @@
 #include <time.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <netdb.h>
+#include <sys/socket.h>
 
 
 #include "kilua.h"
@@ -316,6 +318,52 @@ char at()
     return (tmp[0]);
 }
 
+/* Get the hostname of the local system */
+char * get_hostname()
+{
+    /**
+     * If the environmental varaible HOSTNAME
+     * is set, use that, otherwise use the standard networking
+     * functions to determine our FQDN.
+     */
+    const char *env = getenv("HOSTNAME");
+
+    if (env != NULL)
+    {
+        return (strdup(env));
+    }
+
+    /*
+     * Get the short version.
+     */
+    char res[1024];
+    res[sizeof(res) - 1] = '\0';
+    gethostname(res, sizeof(res) - 1);
+
+    /*
+     * Attempt to get the full vrsion.
+     */
+    struct hostent *hstnm;
+    hstnm = gethostbyname(res);
+
+    if (hstnm)
+    {
+        /*
+         * Success.
+         */
+        return (strdup(hstnm->h_name));
+    }
+    else
+    {
+        /*
+         * Failure: Return the short-version.
+         */
+        return (strdup(res));
+    }
+}
+
+
+/* Move the cursor to the given point on the screen - if it is non-empty */
 void warp(int x, int y)
 {
     if (y < 0)
@@ -3135,6 +3183,8 @@ int load_lua(char *filename)
 {
     if (access(filename, 0) == 0)
     {
+        editorSetStatusMessage(1, "Loading %s", filename);
+
         int erred = luaL_dofile(lua, filename);
 
         if (erred)
@@ -3147,6 +3197,11 @@ int load_lua(char *filename)
         }
 
         return 1;
+    }
+    else
+    {
+        editorSetStatusMessage(1, "Skipping %s - not present", filename);
+
     }
 
     return 0;
@@ -3270,13 +3325,21 @@ int main(int argc, char **argv)
     int loaded = 0;
 
     /*
-     * Load our default configuration files: ~/.kilua.lua + ./kilua.lua.
+     * Load our default configuration files ~/.kilua/init.lua
      */
     char init_buf[1024] = {'\0'};
     snprintf(init_buf, sizeof(init_buf) - 1, "%s%s",
-             getenv("HOME"), "/.kilua.lua");
+             getenv("HOME"), "/.kilua/init.lua");
     loaded += load_lua(init_buf);
-    loaded += load_lua("kilua.lua");
+
+    /*
+     * Load our default configuration files ~/.kilua/$hostname.lua
+     */
+    char *hostname = get_hostname();
+    snprintf(init_buf, sizeof(init_buf) - 1, "%s/.kilua/%s.lua",
+             getenv("HOME"), hostname);
+    loaded += load_lua(init_buf);
+    free(hostname);
 
     /*
      * An init-function to call, if any.
