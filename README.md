@@ -81,16 +81,23 @@ C-core calls at various points.
 
 Right now the following callbacks exist and are invoked via the C-core:
 
+* `get_status_bar()`
+    * This function is called to populate the status-bar in the footer.
+    * If this function isn't found then a default C-implementation will be used.
 * `on_idle()`
     * Called roughly once a second, can be used to run background things.
+    * If this function isn't defined it will not be invoked.
 * `on_key(key)`
     * Called to process a single key input.
+    * If this function isn't defined then input will not work, it is required.
 * `on_loaded(filename)`
     * Called when a file is loaded.
     * This sets up syntax highlighting in our default implementation for C and Lua files.
+    * If this function is not defined then it will not be invoked.
 * `on_saved(filename)`
     * Called __after__ a file is saved.
     * Can be used to make files executable, etc.
+    * If this function is not defined then it will not be invoked.
 
 
 

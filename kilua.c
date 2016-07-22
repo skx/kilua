@@ -756,6 +756,7 @@ int dirty_lua(lua_State *L)
 
     return 1;
 }
+
 /* return the contents of the line from the point-onwards */
 int get_line_lua(lua_State *L)
 {
@@ -769,6 +770,16 @@ int get_line_lua(lua_State *L)
     }
 
     return 0;
+}
+
+/* get the text from the buffer */
+int text_lua(lua_State *L)
+{
+    int len;
+    char *buf = editorRowsToString(&len);
+    lua_pushstring(L, buf);
+    free(buf);
+    return 1;
 }
 
 
@@ -3435,6 +3446,7 @@ void initEditor(void)
      * Accessors
      */
     lua_register(lua, "at", at_lua);
+    lua_register(lua, "text", text_lua);
     lua_register(lua, "dirty", dirty_lua);
     lua_register(lua, "get_line", get_line_lua);
 

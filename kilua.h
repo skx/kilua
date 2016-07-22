@@ -258,6 +258,7 @@ void warp(int x, int y);
 extern  int at_lua(lua_State *L);
 extern  int dirty_lua(lua_State *L);
 extern  int get_line_lua(lua_State *L);
+extern  int text(lua_State *L);
 
 /* Movement */
 extern  int down_lua(lua_State *L);
