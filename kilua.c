@@ -1079,8 +1079,8 @@ int filename_lua(lua_State *L)
     /*
      * Return the value.
      */
-    if (E.file[E.current_file]->filename )
-        lua_pushstring(L, E.file[E.current_file]->filename );
+    if (E.file[E.current_file]->filename)
+        lua_pushstring(L, E.file[E.current_file]->filename);
     else
         lua_pushnil(L);
 
@@ -1289,12 +1289,29 @@ int save_lua(lua_State *L)
     }
 
     /*
-     * If we don't have a filename we can't save
+     * If we don't have a filename set, or this is a buffer.
      */
-    if (E.file[E.current_file]->filename == NULL)
+    if ((E.file[E.current_file]->filename == NULL) ||
+            (E.file[E.current_file]->filename != NULL  && E.file[E.current_file]->filename[0] == '*'))
+
     {
-        editorSetStatusMessage(1, "No filename is set!");
-        return 0;
+        /*
+         * Prompt for a filename.
+         */
+        char *buf = get_input("Filename? ");
+
+        if (buf == NULL)
+        {
+            editorSetStatusMessage(1, "Save operation cancelled!");
+            return 0;
+        }
+
+        /*
+         * Copy the filanem
+         */
+        E.file[E.current_file]->filename = strdup(buf);
+        free(buf);
+
     }
 
     int len;
