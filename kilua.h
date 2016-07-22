@@ -212,43 +212,44 @@ struct abuf
 
 
 /* prototypes */
-void disableRawMode(int fd);
-int dirty();
-void editorAtExit(void);
-int enableRawMode(int fd);
-int editorReadKey(int fd);
-void getWindowSize();
-void call_lua(char *function, char *arg);
-void strrev(char *p);
-char at(void);
-char *get_selection(void);
-int editorOpen(char *filename);
-int is_separator(int c);
-int editorRowHasOpenComment(erow *row);
-void rerender();
-void editorUpdateSyntax(erow *row);
-int editorSyntaxToColor(int hl);
-char *get_input(char *prompt);
-void editorUpdateRow(erow *row);
-void editorInsertRow(int at, char *s, size_t len);
-void editorFreeRow(erow *row);
-void editorDelRow(int at);
+char * status_bar();
 char *editorRowsToString(int *buflen);
-void editorRowInsertChar(erow *row, int at, int c);
-void editorRowAppendString(erow *row, char *s, size_t len);
-void editorRowDelChar(erow *row, int at);
-void editorInsertChar(int c);
-void editorInsertNewline(void);
-void warp(int x, int y);
+char *get_input(char *prompt);
+char *get_selection(void);
+char at(void);
+int dirty();
+int editorOpen(char *filename);
+int editorReadKey(int fd);
+int editorRowHasOpenComment(erow *row);
+int editorSyntaxToColor(int hl);
+int enableRawMode(int fd);
+int is_separator(int c);
+int load_lua(char *filename);
+int main(int argc, char **argv);
 void abAppend(struct abuf *ab, const char *s, int len);
 void abFree(struct abuf *ab);
-void editorRefreshScreen(void);
-void editorSetStatusMessage(int log, const char *fmt, ...);
+void call_lua(char *function, char *arg);
+void disableRawMode(int fd);
+void editorAtExit(void);
+void editorDelRow(int at);
+void editorFreeRow(erow *row);
+void editorInsertChar(int c);
+void editorInsertNewline(void);
+void editorInsertRow(int at, char *s, size_t len);
 void editorMoveCursor(int key);
-int load_lua(char *filename);
 void editorProcessKeypress(int fd);
+void editorRefreshScreen(void);
+void editorRowAppendString(erow *row, char *s, size_t len);
+void editorRowDelChar(erow *row, int at);
+void editorRowInsertChar(erow *row, int at, int c);
+void editorSetStatusMessage(int log, const char *fmt, ...);
+void editorUpdateRow(erow *row);
+void editorUpdateSyntax(erow *row);
+void getWindowSize();
 void initEditor(void);
-int main(int argc, char **argv);
+void rerender();
+void strrev(char *p);
+void warp(int x, int y);
 
 
 /* ========================= Lua Primitives  ======================== */
