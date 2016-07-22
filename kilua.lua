@@ -14,6 +14,9 @@
 -- There are several functions that kilua invokes at various times, without
 -- which you'll have no functionality, so a configuration file is required:
 --
+--  * get_status_bar()
+--     This function is called to populate the status-bar in the footer.
+--
 --  * on_idle(key)
 --     Called when things are idle, to allow actions to be carried out.
 --
@@ -336,7 +339,7 @@ function expand_key(k)
    if ( b == 240 )  then return "PAGE_DOWN" end
 
    -- Expand for debugging
-   k = "NON-ASCII: " .. k .. " " .. string.byte(k) .. " ";
+   k = "NON-ASCII: " .. k .. " " .. string.byte(k) .. " "
    return( k )
 end
 
@@ -578,7 +581,7 @@ end
 -- cut easily.
 --
 function set_mark()
-   x,y = point();
+   x,y = point()
    mark( x,y)
 
    m_x, m_y = mark()
@@ -650,7 +653,7 @@ end
 function confirm_kill_buffer()
    if ( not dirty() ) then
       kill_buffer()
-      return;
+      return
    end
 
    -- Buffer is dirty.
@@ -828,4 +831,80 @@ function make()
 
    -- completed
    insert("completed\n")
+end
+
+
+--
+-- If this function is defined it will be invoked to draw the
+-- status-bar.
+--
+-- Comment it out, or remove it, to fall-back to the C-based implementation.
+--
+function get_status_bar()
+   --
+   -- Buffer Counts
+   --
+   local buffer  = current_buffer() + 1
+   local buffers = buffers()
+
+   --
+   -- Filename
+   --
+   local file = filename() or ""
+   if ( dirty() )  then
+      file = file .. " <modified>"
+   end
+
+   --
+   -- The left-side
+   --
+   local left = "Buffer " .. buffer .. "/" .. buffers .. " " .. file
+
+
+   local right = ""
+
+   --
+   -- Get the point and the text in the buffer, if any
+   --
+   local x,y = point()
+   local txt = text()
+
+   if ( txt ) then
+      right = "Chars:" .. #txt
+
+      -- http://stackoverflow.com/questions/29133416/how-to-count-the-amount-of-words-in-a-text-file-in-lua
+      local _,n = txt:gsub("%S+","")
+      right = right .. " Words:" .. n
+   end
+
+   right = right .. " Col:" .. x .. " Row:" .. y + 1
+
+
+   --
+   -- Width of console
+   --
+   local w = width()
+
+   --
+   -- Too big?
+   --
+   if ( #left + #right > w ) then
+      -- Combine and truncate
+      local t = left .. " " .. right
+      t = t:sub(0, w )
+      return t
+   end
+
+   --
+   -- If the combined left+right sections are too small then
+   -- fill the middle with spaces.
+   --
+   while( #left + #right < w ) do
+      left = left .. " "
+   end
+
+   --
+   -- Return the joined pair.
+   --
+   return( left .. right )
 end
