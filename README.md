@@ -127,6 +127,7 @@ what you expect:
 * Move to the end of the buffer.
      * Insert the output of runing `/usr/bin/uptime` into the buffer.
 
+
       -- Run `uptime`, and show the result in a dedicated buffer.
       function uptime()
           local result = select_buffer( "*uptime*" )
