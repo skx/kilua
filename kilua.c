@@ -1549,7 +1549,11 @@ int set_syntax_keywords_lua(lua_State *L)
         E.file[E.current_file]->syntax = s;
     }
 
+    #if LUA_VERSION_NUM >= 502 
     size_t len = lua_rawlen(L, 1);
+    #else
+    size_t len = lua_objlen(L, 1);
+    #endif
     E.file[E.current_file]->syntax->keywords = malloc((1 + len) * sizeof(char*));
 
     int i = 0;
