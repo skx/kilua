@@ -77,11 +77,7 @@ static struct termios orig_termios; /* In order to restore at exit.*/
 void disableRawMode(int fd)
 {
     /* Don't even check the return value as it's too late. */
-    if (E.rawmode)
-    {
-        tcsetattr(fd, TCSAFLUSH, &orig_termios);
-        E.rawmode = 0;
-    }
+    tcsetattr(fd, TCSAFLUSH, &orig_termios);
 }
 
 /* Called at exit to avoid remaining in raw mode, and clear the screen */
@@ -121,8 +117,6 @@ int enableRawMode(int fd)
 {
     struct termios raw;
 
-    if (E.rawmode) return 0; /* Already enabled. */
-
     if (!isatty(STDIN_FILENO)) goto fatal;
 
     atexit(editorAtExit);
@@ -147,7 +141,6 @@ int enableRawMode(int fd)
     /* put terminal in raw mode after flushing */
     if (tcsetattr(fd, TCSAFLUSH, &raw) < 0) goto fatal;
 
-    E.rawmode = 1;
     return 0;
 
 fatal:

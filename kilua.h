@@ -150,7 +150,6 @@ struct editorState
 {
     int screenrows; /* Number of rows that we can show */
     int screencols; /* Number of cols that we can show */
-    int rawmode;    /* Is terminal raw mode enabled? */
     char statusmsg[KILO_QUERY_LEN + 1]; /* The status-message */
 
     /*
