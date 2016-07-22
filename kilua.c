@@ -59,8 +59,12 @@
 #include <fcntl.h>
 #include <getopt.h>
 
+
 #include "kilua.h"
 
+/* Generated as part of the build process from `welcome.txt`. */
+#include "config.h"
+#include "welcome.h"
 
 
 /* ======================= Low level terminal handling ====================== */
@@ -2655,7 +2659,7 @@ void editorRefreshScreen(void)
              * third of the screen .. draw the Nth line of the startup
              * banner.
              */
-            if (E.file[E.current_file]->numrows == 0 && (y == (E.screenrows / 3) + drawn) &&
+            if (E.file[E.current_file]->numrows == 0 && (y == 1 + drawn) &&
                     (drawn < welcome_len))
             {
                 /* open the line, as usual. */
@@ -3323,12 +3327,20 @@ int main(int argc, char **argv)
      * we will have no `on_key` defined, which means the editor
      * will be broken.
      *
-     * On that basis we immediately exit.
+     * We will load our default embedded config file instead.
      */
     if (loaded == 0)
     {
-        fprintf(stderr, "Neither ./kilua.lua nor ~/.kilua.lua could be loaded\n");
-        exit(1);
+        int erred = luaL_dostring(lua, (char *) kilua_lua);
+
+        if (erred)
+        {
+            if (lua_isstring(lua, -1))
+                fprintf(stderr, "%s\n", lua_tostring(lua, -1));
+
+            fprintf(stderr, "Failed to load embedded config - bug?\n");
+            exit(1);
+        }
     }
 
     if (argc - optind)

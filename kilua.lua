@@ -1,39 +1,37 @@
---[[
-
- This is the configuration file for kilua.
-
- When kilua starts it will look for its configuration-file in two
- locations:
-
-   ~/.kilua.lua
-   ./kilua.lua
-
- If neither location exists this is a fatal error.
-
- There are three callback functions that kilua invokes at various times:
-
-  * on_idle(key)
-     Called when things are idle, to allow actions to be carried out.
-
-  * on_key(key)
-     Called when input is received.
-
-  * on_loaded(filename)
-     Called after a file is loaded.
-
-  * on_saved(filename)
-     Called after a file is saved.
-
- Otherwise the only magic here is the `keymap` table.  Kilua will lookup
- every keypress in this table, and if there is a matching function defined
- it will be invoked, otherwise the literal character will be inserted.
-
-Steve
 --
-https://steve.kemp.fi/
+--
+-- This is the configuration file for kilua.
+--
+--  When kilua starts it will look for its configuration-file in two
+-- locations:
+--
+--   ~/.kilua.lua
+--   ./kilua.lua
+--
+-- If neither location exists this is a fatal error.
+--
+-- There are three callback functions that kilua invokes at various times:
+--
+--  * on_idle(key)
+--     Called when things are idle, to allow actions to be carried out.
+--
+--  * on_key(key)
+--     Called when input is received.
+--
+--  * on_loaded(filename)
+--     Called after a file is loaded.
+--
+--  * on_saved(filename)
+--     Called after a file is saved.
+--
+-- Otherwise the only magic here is the `keymap` table.  Kilua will lookup
+-- every keypress in this table, and if there is a matching function defined
+-- it will be invoked, otherwise the literal character will be inserted.
+--
+-- Steve
+--
+-- https://steve.kemp.fi/
 
-
---]]
 
 
 --

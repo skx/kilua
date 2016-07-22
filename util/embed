@@ -1,0 +1,141 @@
+#!/usr/bin/perl
+#
+#  This is a simple script which is designed to output
+# a file which can be used as an embedded header.
+#
+#  In an ideal world we'd just tell people to use `xxd -i`
+# but we want to be slightly portable.
+#
+# Steve
+# --
+#
+
+
+use strict;
+use warnings;
+use Getopt::Long;
+
+
+my %CONFIG;
+
+exit
+  if (
+       !Getopt::Long::GetOptions( "--array",    \$CONFIG{ 'array' },
+                                  "-version=s", \$CONFIG{ 'version' } ) );
+
+
+#
+#  For each file we'll open it and process it.
+#
+while ( my $file = shift )
+{
+    if ( $CONFIG{ 'array' } )
+    {
+        processFileArray($file);
+    }
+    else
+    {
+        processFileSimple($file);
+    }
+}
+exit 0;
+
+
+
+sub processFileArray
+{
+    my ($file) = (@_);
+
+    open( my $handle, "<", $file ) or
+      die "Failed to open $file - $!";
+
+    # The name of the thing we'll write
+    my $name = $file;
+    $name = $1 if ( $name =~ /^(.*)\.(.*)$/ );
+
+    #
+    #  Print the header
+    #
+    print <<EOH;
+const char * $name\_msg\[\] =
+{
+EOH
+
+    while ( my $line = <$handle> )
+    {
+        chomp($line);
+
+        # Version expansion
+        $line =~ s/_VERSION/$CONFIG{'version'}/;
+
+        # Escape
+        $line =~ s/"/\\\"/g;
+
+        # Newline
+        $line .= "\\r\\n";
+        print '"' . $line . '",' . "\n";
+    }
+    close($handle);
+
+    #
+    #  The footer
+    #
+    print <<EOF;
+};
+
+const int $name\_len = (sizeof($name\_msg) / sizeof($name\_msg\[0\]));
+
+EOF
+}
+
+
+
+sub processFileSimple
+{
+    my ($file) = (@_);
+
+    open( my $handle, "<", $file ) or
+      die "Failed to open $file - $!";
+
+    # The name of the thing we'll write
+    my $name = $file;
+    $name = $1 if ( $name =~ /^(.*)\.(.*)$/ );
+
+    #
+    #  Print the header
+    #
+    print <<EOH;
+const char $name\_msg\[\] =
+{
+EOH
+
+    while ( my $line = <$handle> )
+    {
+        next if ( $line =~ /^--/ );
+
+        print "// " . $line . "\n";
+
+        foreach my $char ( split( //, $line ) )
+        {
+            my $hex = sprintf( "0x%X", ord($char) );
+
+            if ( $hex eq "0xA" )
+            {
+                print "'\\n', ";
+            }
+            else
+            {
+                print "$hex, ";
+            }
+        }
+        print "\n";
+    }
+    close($handle);
+
+    #
+    #  The footer
+    #
+    print <<EOF;
+};
+EOF
+}
