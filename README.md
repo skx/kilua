@@ -209,10 +209,10 @@ Syntax highlighting is defined in lua, and configured by calling:
     set_syntax_comments( "//", "/*", "*/" )
 
     -- Enable highlighting of numbers/strings
-    set_syntax_optoins( "numbers", "strings" )
+    set_syntax_options( "numbers", "strings" )
 
     -- You can also highlight trailing whitespace:
-    set_syntax_optoins( "numbers", "strings", "trailing_whitespace" )
+    set_syntax_options( "numbers", "strings", "trailing_whitespace" )
 
 The `on_loaded()` function has code currently for highlighting C, C++,
 and Lua files, as well as `Makefiles` and some simple highlighting for
