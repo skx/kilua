@@ -228,7 +228,8 @@ syn['lua'] = { keywords =
                  "while" },
                single      = "--",
                multi_open  = "--[[",
-               multi_close = "--]]"
+               multi_close = "--]]",
+               options = { "numbers" , "strings" , "trailing_whitespace" },
 }
 
 
@@ -238,18 +239,24 @@ syn['lua'] = { keywords =
 --
 syn['md'] = { keywords = {
                  "\\[.*\\]|",   -- Link-titles
-                  "(ftp|http|https):\\/([a-zA-Z_.0-9\\/#-]+)", -- Hyperlinks
+                 "(ftp|http|https):\\/([a-zA-Z_.0-9\\/#-]+)", -- Hyperlinks
                          },
-               single      = "",
-               multi_open  = "",
-               multi_close = ""
+              single      = "",
+              multi_open  = "",
+              multi_close = "",
+              options = { "numbers" , "strings" , "trailing_whitespace" },
 }
+
+--
+-- Text
+--
 syn['txt'] = { keywords = {
                   "(ftp|http|https):\\/([a-zA-Z_.0-9\\/#-]+)", -- Hyperlinks
-                         },
+                          },
                single      = "",
                multi_open  = "",
-               multi_close = ""
+               multi_close = "",
+               options = { "trailing_whitespace" },
 }
 
 
@@ -265,6 +272,7 @@ syn['Makefile'] = {
    single = "#",
    multi_open = "",
    multi_close = "",
+   options = { "numbers" , "strings" , "trailing_whitespace" },
 }
 
 
@@ -275,7 +283,8 @@ syn['pl'] = { keywords =
               { "continue", "foreach", "require", "package", "scalar", "format", "unless", "local", "until", "while", "elsif", "next", "last", "goto", "else", "redo", "our", "sub", "for", "use", "no", "if",  "my" },
               single      = "# ",
               multi_open  = "",
-              multi_close = ""
+              multi_close = "",
+              options = { "numbers" , "strings" , "trailing_whitespace" },
 }
 
 
@@ -286,9 +295,10 @@ syn['sh'] = { keywords =
               {
                  "case", "do", "done", "else", "env", "esac", "exit","export","fi","for","function","getopts","hash","if","import","in","let","local","read","select","set","shift","source","then","trap","true","type", "until", "while",
               },
-                            single      = "# ",
-                            multi_open  = "",
-                            multi_close = ""
+              single      = "# ",
+              multi_open  = "",
+              multi_close = "",
+              options = { "numbers" , "strings" , "trailing_whitespace" },
 }
 
 
@@ -480,7 +490,11 @@ function on_loaded( filename )
            syntax['multi_close'] ) then
          set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
       end
+   end
 
+   -- Set any options, if we found them.
+   if (syntax and syntax['options'] ) then
+      set_syntax_options( syntax['options'] )
    end
 
 end

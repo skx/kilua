@@ -1716,7 +1716,7 @@ int set_syntax_keywords_lua(lua_State *L)
         s->singleline_comment_start[0] = '\0';
         s->multiline_comment_start[0]  = '\0';
         s->multiline_comment_end[0]    = '\0';
-        s->flags                       =  HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_TRAILING;
+        s->flags                       = 0;
         E.file[E.current_file]->syntax = s;
     }
 
@@ -1745,56 +1745,53 @@ int set_syntax_keywords_lua(lua_State *L)
     return 0;
 }
 
-/* Enable highlighting of numbers. */
-int syntax_highlight_numbers_lua(lua_State *L)
-{
-    int cond = lua_tonumber(L, -1);
 
-    if (E.file[E.current_file]->syntax)
+/* set the syntax options. */
+int set_syntax_options_lua(lua_State *L)
+{
+    if (! lua_istable(L, 1))
+        return 0;
+
+    /*
+     * If we have no syntax then create one.
+     */
+    if (E.file[E.current_file]->syntax == NULL)
     {
-        if (cond == 1)
+        struct editorSyntax *s = (struct editorSyntax*)malloc(sizeof(struct editorSyntax));
+        s->keywords                    = NULL;
+        s->singleline_comment_start[0] = '\0';
+        s->multiline_comment_start[0]  = '\0';
+        s->multiline_comment_end[0]    = '\0';
+        s->flags                       =  0;
+        E.file[E.current_file]->syntax = s;
+    }
+
+    /*
+     * We'll reset our flags to zero.
+     */
+    E.file[E.current_file]->syntax->flags = 0;
+
+    int i = 0;
+    lua_pushnil(L);
+
+    while (lua_next(L, -2) != 0)
+    {
+        const char *str = lua_tostring(L, -1);
+
+        if (strcmp(str, "numbers") == 0)
             E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_NUMBERS;
-        else
-            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_NUMBERS;
-
-        rerender();
-    }
-
-    return 0;
-}
-
-/* Enable highlighting of strings. */
-int syntax_highlight_strings_lua(lua_State *L)
-{
-    int cond = lua_tonumber(L, -1);
-
-    if (E.file[E.current_file]->syntax)
-    {
-        if (cond == 1)
+        else if (strcmp(str, "strings") == 0)
             E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_STRINGS;
-        else
-            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
-
-        rerender();
-    }
-
-    return 0;
-}
-
-/* Enable highlighting of strings. */
-int syntax_highlight_trailing_whitespace_lua(lua_State *L)
-{
-    int cond = lua_tonumber(L, -1);
-
-    if (E.file[E.current_file]->syntax)
-    {
-        if (cond == 1)
+        else if (strcmp(str, "trailing_whitespace") == 0)
             E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_TRAILING;
         else
-            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_TRAILING;
+            editorSetStatusMessage(1, "Unknown syntax option: '%s'", str);
 
-        rerender();
+        lua_pop(L, 1);
+        i += 1;
     }
+
+    rerender();
 
     return 0;
 }
@@ -3174,6 +3171,11 @@ void editorRefreshScreen(void)
                 }
             }
 
+            /*
+             * reset the colour here - this is require to stop
+             * the highlighting of the trailing whitespace from
+             * continuing to the end of the buffer.
+             */
             abAppend(&ab, "\x1b[0m", 4);
         }
 
@@ -3532,9 +3534,7 @@ void initEditor(void)
      */
     lua_register(lua, "set_syntax_comments", set_syntax_comments_lua);
     lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
-    lua_register(lua, "syntax_highlight_numbers", syntax_highlight_numbers_lua);
-    lua_register(lua, "syntax_highlight_strings", syntax_highlight_strings_lua);
-    lua_register(lua, "syntax_highlight_trailing_whitespace", syntax_highlight_trailing_whitespace_lua);
+    lua_register(lua, "set_syntax_options", set_syntax_options_lua);
     lua_register(lua, "tabsize", tabsize_lua);
 
 

@@ -104,9 +104,11 @@ Functions relating to the selection.
 
 ## Syntax Highlighting.
 
-* `set_syntax_comments()`
-* `set_syntax_keywords()`
-* `syntax_highlight_numbers()`
-* `syntax_highlight_strings()`
+* `set_syntax_comments( single, multi_open, multi_close )`
+    * This function sets the comment-handling options.
+* `set_syntax_keywords( table )`
+    * This function accepts a table of strings and regular expressions, to load as keywords.
+* `set_syntax_options( table)`
+    * This function expects a table, and will enable highlighting for the appropriate entry.  Valid options are "`numbers`", "`strings`", & "`trailing_whitespace`".
 * `tabsize()`
     * Get/Set the width of TAB-stops (eight characters by default).
