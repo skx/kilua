@@ -16,6 +16,7 @@ The project is built upon the minimal [kilo editor](https://github.com/antirez/k
    * You can define functions in your [init-files](#lua-support), and invoke them via `M-x function()`.
 * The addition of regular expression support for searching.
 * The addition of regular-expressions for [syntax-highlighting](#syntax-highlighting).
+   * The ability to highlight trailing whitespace too.
 * The addition of [copy and paste](#copy--paste).
 * The notion of [named marks](#marks).
 * The [status bar](#status-bar) is configured via Lua.
