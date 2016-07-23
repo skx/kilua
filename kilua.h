@@ -307,8 +307,7 @@ extern  int width_lua(lua_State *L);
 /* Syntax highlighting */
 extern  int set_syntax_comments_lua(lua_State *L);
 extern  int set_syntax_keywords_lua(lua_State *L);
-extern  int syntax_highlight_numbers_lua(lua_State *L);
-extern  int syntax_highlight_strings_lua(lua_State *L);
+extern  int set_syntax_options_lua(lua_State *L);
 extern  int tabsize_lua(lua_State *L);
 
 /* Buffers */
