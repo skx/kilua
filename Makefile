@@ -17,22 +17,36 @@ FEATURES=
 FEATURES+=-D_REGEXP=1
 FEATURES+=-D_UNDO=1
 
-
 #
 # Version string.
 #
 FLAGS=-D_VERSION=\"0.4\"
 
+#
+#  The combined set of feature & version flags
+#
+OPT=$(FEATURES) $(FLAGS)
+
 
 #
-# Generate our embedded welcome-message
+#  g++ will use a different set of flags.
+#
+ifeq ($(CC),g++)
+   OPT+=--std=c++0x
+else
+   OPT+=-std=c99
+endif
+
+
+#
+# Generate our embedded welcome-message.
 #
 welcome.h: util/embed welcome.txt
 	perl util/embed --version=0.4 --array welcome.txt > welcome.h
 
 
 #
-# Generate our embedded default configuration-file
+# Generate our embedded configuration-file.
 #
 config.h: util/xxd kilua.lua
 	perl util/xxd kilua.lua  > config.h
@@ -42,7 +56,7 @@ config.h: util/xxd kilua.lua
 # Build the main binary.
 #
 kilua: Makefile $(wildcard *.c *.h) config.h welcome.h
-	$(CC) ${FEATURES} ${FLAGS} -o kilua -ggdb $(wildcard *.c) -Wall -Wextra -Werror -W -pedantic -std=c99 $(shell pkg-config --cflags --libs lua5.2)
+	$(CC) ${OPT} -o kilua -ggdb $(wildcard *.c) -Wall -Wextra -Werror -W -pedantic $(shell pkg-config --cflags --libs lua5.2)
 
 
 #
