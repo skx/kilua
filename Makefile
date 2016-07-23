@@ -20,7 +20,7 @@ FEATURES+=-D_UNDO=1
 #
 # Version string.
 #
-FLAGS=-D_VERSION=\"0.4\"
+FLAGS=-D_VERSION=\"0.5\"
 
 #
 #  The combined set of feature & version flags
@@ -29,12 +29,16 @@ OPT=$(FEATURES) $(FLAGS)
 
 
 #
-#  g++ will use a different set of flags.
+#  g++ & clang++ will use a different set of flags.
 #
 ifeq ($(CC),g++)
    OPT+=--std=c++0x
 else
+ ifeq ($(CC),clang++)
+   OPT+=--std=c++0x
+ else
    OPT+=-std=c99
+ endif
 endif
 
 
@@ -42,7 +46,7 @@ endif
 # Generate our embedded welcome-message.
 #
 welcome.h: util/embed welcome.txt
-	perl util/embed --version=0.4 --array welcome.txt > welcome.h
+	perl util/embed --version=0.5 --array welcome.txt > welcome.h
 
 
 #
