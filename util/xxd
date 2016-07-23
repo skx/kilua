@@ -46,6 +46,7 @@ for ( my $key = 0 ; $key < $len_data ; $key++ )
     $outdata .= sprintf( "0x%.2x, ", ord( substr( $indata, $key, 1 ) ) );
 }
 
+$outdata .= sprintf( "0x00, ");
 $outdata .= "\n};\nunsigned int $var_name\_len = $len_data;\n";
 
 binmode STDOUT;
