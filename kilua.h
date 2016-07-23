@@ -60,8 +60,15 @@
 #define HL_NUMBER 7
 #define HL_MATCH 8      /* Search match. */
 #define HL_SELECTION 9   /* area between point & mark */
-#define HL_HIGHLIGHT_STRINGS (1<<1)
-#define HL_HIGHLIGHT_NUMBERS (1<<2)
+#define HL_TRAILING_WHITESPACE 10
+
+/*
+ * Highlighting options.
+ */
+#define HL_HIGHLIGHT_STRINGS  (1<<1)
+#define HL_HIGHLIGHT_NUMBERS  (1<<2)
+#define HL_HIGHLIGHT_TRAILING (1<<4)
+
 
 #define KILO_QUERY_LEN 256
 

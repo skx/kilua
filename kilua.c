@@ -1716,7 +1716,7 @@ int set_syntax_keywords_lua(lua_State *L)
         s->singleline_comment_start[0] = '\0';
         s->multiline_comment_start[0]  = '\0';
         s->multiline_comment_end[0]    = '\0';
-        s->flags                       =  HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS;
+        s->flags                       =  HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_TRAILING;
         E.file[E.current_file]->syntax = s;
     }
 
@@ -1774,6 +1774,24 @@ int syntax_highlight_strings_lua(lua_State *L)
             E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_STRINGS;
         else
             E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_STRINGS;
+
+        rerender();
+    }
+
+    return 0;
+}
+
+/* Enable highlighting of strings. */
+int syntax_highlight_trailing_whitespace_lua(lua_State *L)
+{
+    int cond = lua_tonumber(L, -1);
+
+    if (E.file[E.current_file]->syntax)
+    {
+        if (cond == 1)
+            E.file[E.current_file]->syntax->flags |= HL_HIGHLIGHT_TRAILING;
+        else
+            E.file[E.current_file]->syntax->flags &= ~HL_HIGHLIGHT_TRAILING;
 
         rerender();
     }
@@ -2427,6 +2445,42 @@ void editorUpdateSyntax(erow *row)
         i++;
     }
 
+    /*
+     * OK now we're going to handle the case of trailing whitespace.
+     *
+     * We do this by over-writing the existing rendering code, unless
+     * it is a multi-line comment - because doing that would break the
+     * continuation detection.
+     */
+    if (E.file[E.current_file]->syntax->flags & HL_HIGHLIGHT_TRAILING)
+    {
+        if (row->hl && row->chars && row->rsize && row->size)
+        {
+            for (int i = row->rsize - 1; i >= 0 ; i--)
+            {
+                char c = row->render[i];
+                char r = row->hl[i];
+
+                /*
+                 * If this is a multi-line comment we must leave
+                 * alone because otherwise it'll break the detection.
+                 */
+                if (r == HL_MLCOMMENT)
+                    break;
+
+                /*
+                 * We'll never match on TAB because that has been
+                 * expanded to spaces already.
+                 */
+                if (isspace(c)  ||  c == 0  || c == '\n' || c == '\r')
+                    row->hl[i]     = HL_TRAILING_WHITESPACE;
+                else
+                    break;
+            }
+        }
+    }
+
+
     /* Propagate syntax change to the next row if the open comment
      * state changed. This may recursively affect all the following rows
      * in the file. */
@@ -2464,6 +2518,9 @@ int editorSyntaxToColor(int hl)
 
     case HL_SELECTION:
         return 30;
+
+    case HL_TRAILING_WHITESPACE:
+        return 41;  /* light red */
 
     default:
         return 37;             /* white */
@@ -3116,6 +3173,8 @@ void editorRefreshScreen(void)
                     }
                 }
             }
+
+            abAppend(&ab, "\x1b[0m", 4);
         }
 
         abAppend(&ab, "\x1b[39m", 5);
@@ -3475,6 +3534,7 @@ void initEditor(void)
     lua_register(lua, "set_syntax_keywords", set_syntax_keywords_lua);
     lua_register(lua, "syntax_highlight_numbers", syntax_highlight_numbers_lua);
     lua_register(lua, "syntax_highlight_strings", syntax_highlight_strings_lua);
+    lua_register(lua, "syntax_highlight_trailing_whitespace", syntax_highlight_trailing_whitespace_lua);
     lua_register(lua, "tabsize", tabsize_lua);
 
 
