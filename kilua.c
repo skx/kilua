@@ -569,7 +569,7 @@ char *get_selection()
          * Allocate a buffer that is one byte bigger, ensure it gets
          * a null-terminated copy of the append-buffer's contents.
          */
-        result = malloc(ab.len + 1);
+        result = (char *)malloc(ab.len + 1);
         memset(result, '\0', ab.len + 1);
         memcpy(result, ab.b, ab.len);
 
@@ -603,7 +603,7 @@ char *get_selection()
          * Allocate a buffer that is one byte bigger, ensure it gets
          * a null-terminated copy of the append-buffer's contents.
          */
-        result = malloc(ab.len + 1);
+        result = (char *)malloc(ab.len + 1);
         memset(result, '\0', ab.len + 1);
         memcpy(result, ab.b, ab.len);
 
@@ -1294,7 +1294,7 @@ int find_lua(lua_State *L)
                 if (row->hl)
                 {
                     saved_hl_line = current;
-                    saved_hl = malloc(row->rsize);
+                    saved_hl = (char *)malloc(row->rsize);
                     memcpy(saved_hl, row->hl, row->rsize);
                     memset(row->hl + match_offset, HL_MATCH, qlen);
                 }
@@ -1725,7 +1725,7 @@ int set_syntax_keywords_lua(lua_State *L)
 #else
     size_t len = lua_objlen(L, 1);
 #endif
-    E.file[E.current_file]->syntax->keywords = malloc((1 + len) * sizeof(char*));
+    E.file[E.current_file]->syntax->keywords = (char **)malloc((1 + len) * sizeof(char*));
 
     int i = 0;
     lua_pushnil(L);
@@ -1937,7 +1937,7 @@ int create_buffer_lua(lua_State *L)
     /*
      * Reallocate our buffer-list to be one larger.
      */
-    E.file = realloc(E.file, (sizeof(struct fileState *) * E.max_files + 1));
+    E.file = (struct fileState **)realloc(E.file, (sizeof(struct fileState *) * E.max_files + 1));
 
     /*
      * Bump the max-files.
@@ -1950,7 +1950,7 @@ int create_buffer_lua(lua_State *L)
      * Create a new buffer to populate our list.
      */
     int i = E.current_file;
-    E.file[i] = malloc(sizeof(struct fileState));
+    E.file[i] = (struct fileState*)malloc(sizeof(struct fileState));
     E.file[i]->markx = -1;
     E.file[i]->marky = -1;
     E.file[i]->tab_size = 8;
@@ -2006,7 +2006,7 @@ int kill_buffer_lua(lua_State *L)
         /*
          * Create a new set of buffers.
          */
-        struct fileState **tmp = malloc((sizeof(struct fileState *) * E.max_files - 1));
+        struct fileState **tmp = (struct fileState **)malloc((sizeof(struct fileState *) * E.max_files - 1));
 
         /**
          * Copy all non-free buffers over to the new structure.
@@ -2200,7 +2200,7 @@ void rerender()
  * to the right syntax highlight type (HL_* defines). */
 void editorUpdateSyntax(erow *row)
 {
-    row->hl = realloc(row->hl, row->rsize);
+    row->hl = (unsigned char*)realloc(row->hl, row->rsize);
     memset(row->hl, HL_NORMAL, row->rsize);
 
     /* No syntax, everything is HL_NORMAL. */
@@ -2531,7 +2531,7 @@ int editorSyntaxToColor(int hl)
 /* ======================= Input functions           ======================= */
 
 /* Show a prompt.  Read input until either `Esc` or `Return`. */
-char *get_input(char *prompt)
+char *get_input(const char *prompt)
 {
     char query[KILO_QUERY_LEN + 1] = {0};
     int qlen = 0;
@@ -2596,7 +2596,7 @@ void editorUpdateRow(erow *row)
         if (row->chars[j] == TAB)
             tabs++;
 
-    row->render = malloc(row->size + (tabs * (E.file[E.current_file]->tab_size)) + 1);
+    row->render = (char*)malloc(row->size + (tabs * (E.file[E.current_file]->tab_size)) + 1);
     idx = 0;
 
     for (j = 0; j < row->size; j++)
@@ -2623,11 +2623,12 @@ void editorUpdateRow(erow *row)
 
 /* Insert a row at the specified position, shifting the other rows on the bottom
  * if required. */
-void editorInsertRow(int at, char *s, size_t len)
+void editorInsertRow(int at, const char *s, size_t len)
 {
-    if (at > E.file[E.current_file]->numrows) return;
+    if (at > E.file[E.current_file]->numrows)
+        return;
 
-    E.file[E.current_file]->row = realloc(E.file[E.current_file]->row, sizeof(erow) * (E.file[E.current_file]->numrows + 1));
+    E.file[E.current_file]->row = (erow *)realloc(E.file[E.current_file]->row, sizeof(erow) * (E.file[E.current_file]->numrows + 1));
 
     if (at != E.file[E.current_file]->numrows)
     {
@@ -2637,7 +2638,7 @@ void editorInsertRow(int at, char *s, size_t len)
     }
 
     E.file[E.current_file]->row[at].size = len;
-    E.file[E.current_file]->row[at].chars = malloc(len + 1);
+    E.file[E.current_file]->row[at].chars = (char *)malloc(len + 1);
     memcpy(E.file[E.current_file]->row[at].chars, s, len + 1);
     E.file[E.current_file]->row[at].hl = NULL;
     E.file[E.current_file]->row[at].hl_oc = 0;
@@ -2700,7 +2701,7 @@ char *editorRowsToString(int *buflen)
     *buflen = totlen;
     totlen++; /* Also make space for nulterm */
 
-    p = buf = malloc(totlen);
+    p = buf =(char *) malloc(totlen);
 
     for (j = 0; j < E.file[E.current_file]->numrows; j++)
     {
@@ -2724,7 +2725,7 @@ void editorRowInsertChar(erow *row, int at, int c)
          * current length by more than a single character. */
         int padlen = at - row->size;
         /* In the next line +2 means: new char and null term. */
-        row->chars = realloc(row->chars, row->size + padlen + 2);
+        row->chars = (char *)realloc(row->chars, row->size + padlen + 2);
         memset(row->chars + row->size, ' ', padlen);
         row->chars[row->size + padlen + 1] = '\0';
         row->size += padlen + 1;
@@ -2733,7 +2734,7 @@ void editorRowInsertChar(erow *row, int at, int c)
     {
         /* If we are in the middle of the string just make space for 1 new
          * char plus the (already existing) null term. */
-        row->chars = realloc(row->chars, row->size + 2);
+        row->chars = (char *)realloc(row->chars, row->size + 2);
         memmove(row->chars + at + 1, row->chars + at, row->size - at + 1);
         row->size++;
     }
@@ -2746,7 +2747,7 @@ void editorRowInsertChar(erow *row, int at, int c)
 /* Append the string 's' at the end of a row */
 void editorRowAppendString(erow *row, char *s, size_t len)
 {
-    row->chars = realloc(row->chars, row->size + len + 1);
+    row->chars = (char *)realloc(row->chars, row->size + len + 1);
     memcpy(row->chars + row->size, s, len);
     row->size += len;
     row->chars[row->size] = '\0';
@@ -2873,12 +2874,13 @@ fixcursor:
 
 void abAppend(struct abuf *ab, const char *s, int len)
 {
-    char *new = realloc(ab->b, ab->len + len);
+    char *txt = (char *)realloc(ab->b, ab->len + len);
 
-    if (new == NULL) return;
+    if (txt == NULL)
+        return;
 
-    memcpy(new + ab->len, s, len);
-    ab->b = new;
+    memcpy(txt + ab->len, s, len);
+    ab->b = txt;
     ab->len += len;
 }
 
@@ -2938,7 +2940,7 @@ char * status_bar()
     /*
      * Now join the three pieces.
      */
-    char *memory = malloc(E.screencols + 2);
+    char *memory = (char *)malloc(E.screencols + 2);
     memset(memory, '\0', E.screencols + 2);
     snprintf(memory, E.screencols + 1, "%s%s%s", left, middle, right);
 
