@@ -4,6 +4,7 @@ dist: jessie
 compiler:
   - clang
   - gcc
+  - g++
 
 before_install:
   - sudo apt-get update -qq
