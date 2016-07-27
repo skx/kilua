@@ -49,3 +49,28 @@ The Lua implementation is divided into a number of files by purpose:
    * Functionality relating to the screen.
 
 The division might be somewhat arbitrary.
+
+
+Bugs
+----
+
+* There is zero undo support.
+
+* There is zero syntax-highlighting support.
+
+* There is zero support for marking a region.
+
+* The only Lua loaded is that specified via `--config`, and the file `editor.lua` from the pwd.
+
+
+* The status-bar shows the character under the cursor, but this __doesn't__ handle UTF-8.
+
+
+Outstanding Taskes
+------------------
+
+See the bugs listed above, and the [TODO file](TODO.md).
+
+
+Steve
+--

@@ -47,9 +47,8 @@ NOTE: All of this stuff MUST work with UTF-8 characters.
 [x] prompt() should handle wide-characters.
 [x] M-x goto_line() should work.
     -> TODO: Can we bind `goto-line` to `goto_line` via _G ?
-[ ] "M-x foo" and "M-x foo()" should do the same thing.
-[ ] Input prompt should have history.
-[ ] Sort out keymap lookup for operations
+[~] "M-x foo" and "M-x foo()" should do the same thing.
+[x] Sort out keymap lookup for operations
 [x] Move primitives into separate groups.
 [ ] Release as 0.0.1
 

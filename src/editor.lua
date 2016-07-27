@@ -45,71 +45,79 @@
 --
 local keymap = {}
 
+
 --
 --  Key bindings.
 --
---  You'll see some bindings use "function() ... end" this is to cope
--- with the fact that the function they invoke is not yet defined, because
--- it comes later in this file.
+--  You'll see some bindings are of the form "function() ... end", this is
+-- required to cope with the fact that the function they invoke is not yet
+-- defined, as it comes later in this file.
 --
 --  For example this would fail:
 --
 --     keymap['^Q'] = quit
 --
---  But by the time this function is _completely_ loaded the function is
+--  But by the time this file is _completely_ loaded the function is
 -- indeed defined which allows this to work:
 --
 --     keymap['^Q'] = function() quit() end
 --
 --
-keymap['ENTER']    = function() insert("\n") end
-keymap['q']        = function() exit() end
--- TODO: keymap['^ ']        = function() set_mark() end
-keymap['^A']        = sol
-keymap['^B']        = function() local x = os.date() insert(x) ; end
-keymap['^D']        = function() insert(os.date()) end
-keymap['^E']        = eol
-keymap['^F']        = find
-keymap['^H']        = delete
--- TODO: keymap['^_']        = undo
--- TODO: keymap['^G']        = function() search( prompt( "Search:" ) ) end
--- TODO: keymap['^J']        = function() goto_mark() end
--- TODO: keymap['^K']        = function() kill_line() end
--- TODO: keymap['^N']        = function() record_mark() end
-keymap['^Q']        = function() quit() end
---TODO: keymap['^T']        = function() status( os.date() ) end
---TODO: keymap['^U']        = function() yank() end
--- TODO: keymap['^W']        = function() kill_between_point_and_mark() end
--- TODO: keymap['^Z']        = undo
+keymap['ENTER']         = function() insert("\n") end
 keymap['KEY_BACKSPACE'] = delete
-keymap['KEY_PPAGE']   = page_up
-keymap['KEY_NPAGE'] = page_down
-keymap['KEY_LEFT']      = function() move("left") end
-keymap['KEY_RIGHT']     = function() move("right") end
-keymap['KEY_UP']        = function() move("up") end
-keymap['KEY_DOWN']      = function() move("down") end
+--
+-- TODO: keymap['^F'] = find
+-- TODO: keymap['^H'] = delete
+-- TODO: keymap['^_'] = undo
+-- TODO: keymap['^G'] = function() search( prompt( "Search:" ) ) end
+-- TODO: keymap['^J'] = function() goto_mark() end
+-- keymap['^K'] = function() kill_line() end
+-- TODO: keymap['^N'] = function() record_mark() end
+-- TODO: keymap['^T'] = function() status( os.date() ) end
+-- TODO: keymap['^U'] = function() yank() end
+-- TODO: keymap['^Z'] = undo
+--
 
 --
--- ASCII testing:
+-- TMP
 --
---  INSERT / DELETE insert a key.
+keymap['M-q'] = exit
+
 --
---  We've also bound pi/euro characters to run code.
+-- Movement
+--
+keymap['^A']         = sol  -- start of line
+keymap['^E']         = eol  -- end of line
+keymap['^B']         = function() move("left") end
+keymap['KEY_LEFT']   = function() move("left") end
+keymap['^F']         = function() move("right") end
+keymap['KEY_RIGHT']  = function() move("right") end
+keymap['^P']         = function() move("up") end
+keymap['KEY_UP']     = function() move("up") end
+keymap['KEY_DOWN']   = function() move("down") end
+keymap['^N']         = function() move("down") end
+keymap['KEY_HOME']   = sol   -- start of line
+keymap['KEY_END']    = eol   -- end of line
+keymap['M-KEY_HOME'] = sof   -- start of file
+keymap['M-KEY_END']  = eof   -- end of file
+keymap['KEY_PPAGE']  = function() page_up() end
+keymap['KEY_NPAGE']  = function() page_down() end
+
+--
+-- Mark-Functions / Copy / Paste
+--
+keymap['^ ']  = function() toggle_mark() end
+keymap['M-w'] = function() copy_selection() end
+keymap['^W']  = function() cut_selection() end
+keymap['^Y']  = function() paste() end
+
+--
+-- Non-ASCII testing functions:
 --
 keymap['KEY_IC'] = function() insert( "π" ) end
 keymap['KEY_DC'] = function() insert( "€" ) end
 keymap['€']      = function() status("Euros are like pounds, but smaller!") end
 keymap['π']      = function() status("Mmmm, pie ..") end
-
---
--- Home/End goes to start/end of line
---
--- Esc-Home/Esc-End goes to start/end of file
---
-keymap['KEY_HOME']      = sol
-keymap['KEY_END']       = eol
-keymap['M-KEY_HOME']    = sof
-keymap['M-KEY_END']     = eof
 
 --
 -- M-x -> eval, just like emacs.
@@ -122,37 +130,39 @@ keymap['M-x'] = function() eval_lua() end
 --
 keymap['M-!'] = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
 
---
--- M-SPACE will record a mark.
---
-keymap['M- '] = function() record_mark() end
 
 --
--- Prefix-map for jumping to recorded marks.
+-- M-b will record a (b)ookmark.
 --
-keymap['M-m'] = {}
+keymap['M-b'] = function() record_mark() end
+
+--
+-- Prefix-map for jumping to recorded (b)ookmarks.
+--
+keymap['M-b'] = {}
 
 
 --
 -- Prefixed keybindings
 --
 --  ^X ^S => Save
---
 --  ^X ^C => Exit
---
+--  ^X  i => Insert file/command
 --  ^X ^X => Swap point and mark
 --
 keymap['^X'] = {}
 keymap['^X']['^C'] = function() quit() end
 keymap['^X']['^S'] = save
--- TODO: keymap['^X']['^X'] = function() swap_point_mark() end
+keymap['^X']['^O'] = function() open_file() end
+keymap['^X']['^X'] = function() swap_point_mark() end
 keymap['^X']['i']  = function() insert_contents() end
 
 --
 -- Working with buffers.
 --
--- TODO: keymap['^X']['b']  = choose_buffer
--- TODO: keymap['^X']['B']  = choose_buffer
+-- TODO: keymap['^X']['b']  = select_buffer
+-- TODO: keymap['^X']['B']  = select_buffer
+--
 keymap['^X']['K']  = kill_buffer
 keymap['^X']['c']  = create_buffer
 keymap['^X']['k']  = function() confirm_kill_buffer() end
@@ -160,6 +170,10 @@ keymap['M-KEY_RIGHT']  = function() next_buffer() end
 keymap['^X']['n']  = function () next_buffer() end
 keymap['M-KEY_LEFT']   = function() prev_buffer() end
 keymap['^X']['p']  = function() prev_buffer() end
+
+
+
+
 
 
 --
@@ -237,7 +251,7 @@ do
       -- Lookup the key in our key-map.
       --
       local result = keymap[k]
-      status( "Key " .. k .. " result:" .. type(result))
+
       --
       -- Was there a result?
       --
@@ -261,15 +275,6 @@ do
       end
 
       --
-      -- We should ignore escape-characters and ctrl-characters
-      -- here.
-      --
---      if ( #k > 1 ) then
---         status("Ignoring special-character which isn't bound : '" .. k  .. "'")
---         return
---      end
-
-      --
       -- Otherwise just insert the character.
       --
       insert(k)
@@ -282,6 +287,8 @@ end
 --
 -- This function is called when a file is loaded, and is used
 -- to setup the syntax highlighting.
+--
+-- TODO: No, it isn't.
 --
 function on_loaded( filename )
 
@@ -323,6 +330,8 @@ end
 -- the file has a shebang-line, or perform similar magic
 -- here.
 --
+-- TODO: No, it isn't.
+--
 function on_saved( filename )
 
    --
@@ -343,31 +352,39 @@ function on_saved( filename )
 end
 
 
+
+
+
 --
---  Utility functions.
+--  Core things
+--
 -----------------------------------------------------------------------------
 
 
-function set_syntax( name )
-   -- Lookup the entry
-   local syntax = syn[name]
-   if ( syntax == nil ) then return end
+--
+-- Prompt for a name and open it.
+--
+function open_file()
 
-   -- If that worked, and there are keywords..
-   if (syntax and syntax['keywords'] ) then
+   --
+   -- TODO: Is there a currently dirty file?
+   --
+   -- If so we should prompt for confirmation.
+   --
 
-      -- Set the keywords
-      set_syntax_keywords( syntax['keywords'] )
-
-      -- If there are defined values for the comments, set them too.
-      if ( syntax['single'] and
-           syntax['multi_open'] and
-           syntax['multi_close'] ) then
-         set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
-      end
+   local name = prompt( "Open:" )
+   if ( name and name ~= "" ) then
+      open(name)
    end
 end
 
+
+
+
+--
+--  Utility functions.
+--
+-----------------------------------------------------------------------------
 
 --
 -- Run a command and return the output, if any.
@@ -387,32 +404,119 @@ end
 -----------------------------------------------------------------------------
 
 
-
---
--- Set the mark.  The region between the point & mark can be
--- cut easily.
---
-function set_mark()
-   x,y = point()
-   mark( x,y)
-
-   m_x, m_y = mark()
-   status( "Mark set to " .. m_x .. "," .. m_y  )
+function toggle_mark()
+   local mx, my = mark()
+   if ( mx == -1 and my == -1 ) then
+      -- set the mark
+      local x,y = point()
+      mark(x,y)
+   else
+      -- clear the mark
+      mark(-1,-1)
+   end
 end
 
 
+local copy_buf = ""
+
 
 --
--- This is the buffer which holds text which has been removed via:
+-- Remove the region which is currently selected, copying it to
+-- the `copy_buf` (where it can be pasted from).
 --
---   Ctrl-y to delete the current line.
+-- This function is pretty simple, but perhaps a little more  low-level
+-- than it needs to be.
 --
--- or
+-- There are two situations which we can find ourselves in:
 --
---   Ctrl-w to delete the region between the cursor and the mark.
---   (The mark being set by ctrl-space).
+--  The mark is "below" the cursor.
+--  The cursor is "below" the mark.
 --
-cut_buffer = ""
+-- We want to do three things
+--
+--  1. Get the selected text, via `selection()`, and save it away.
+--
+--  2. Move our cursor to the highest position of point()/mark().
+--
+--  3. Delete each character until we've deleted enough to remove the
+--     selection.
+--
+function cut_selection()
+   --
+   -- If there is no selection we can't do anything
+   --
+   local mx,my = mark()
+
+   if ( mx == -1 and my == -1 ) then
+      status("There is no selection." )
+      return
+   end
+
+   --
+   -- Get the selection - we do this first because we might need to jump
+   -- the cursor, and that'll ruin the current selection - and save it
+   -- away
+   --
+   local len = 0
+   copy_buf, len = selection()
+
+   --
+   -- We're going to cut the selection by working out how
+   -- long it is, then deleting that many characters.
+   --
+   -- Before we do that we must work out if the mark is below the cursor,
+   -- in which case we can do that immediately, or the mark is ahead of
+   -- the cursor in which case we need to jump the cursor.
+   --
+   local cx,cy = point()
+
+   --
+   --  Is the mark
+   --
+   if ((cy > my) or (cx > mx and cy == my)) then
+      --
+      -- Current position (point) is "above" the mark
+      --
+   else
+      --
+      -- Current position is below the mark, so we
+      -- need to flip the cursor so that (leftwise) deletion
+      -- will remove us from the area.
+      --
+      point( mx, my + 1 )
+   end
+
+   --
+   -- Now remove it.
+   --
+   while( len > 0 ) do
+      delete()
+      len = len - 1
+   end
+
+   --
+   -- Now we clear the mark.
+   --
+   mark(-1,-1)
+end
+
+
+--
+-- Copy the selected text to the copy-buffer.
+--
+function copy_selection()
+   local len = 0;
+   copy_buf,len = selection()
+   mark(-1,-1)
+end
+
+
+--
+-- Insert the contents of the copy-buffer.
+--
+function paste()
+   insert( copy_buf )
+end
 
 
 --
@@ -421,10 +525,18 @@ cut_buffer = ""
 function kill_line()
    -- move to beginning of line
    sol()
-   -- get the line, and save it
-   cut_buffer = get_line() .. "\n"
-   -- kill the line
-   kill()
+
+   -- get the co-ords and set the mark
+   local x,y = point()
+   mark(x,y)
+
+   -- move to the end of the line
+   eol()
+
+   -- Now we should have:
+   -- [start][mark] ... [end][point]
+   --
+   cut_selection()
 end
 
 --
@@ -594,27 +706,12 @@ function insert_contents()
    end
 end
 
+
+
+
 --
 --  Implementation of setting/jumping to (named) marks.
 -----------------------------------------------------------------------------
-
-
---
--- Swap the position of the point and mark
---
-function swap_point_mark()
-   m_x, m_y = mark()
-
-   if ( m_x == -1 and m_y == -1 ) then
-      -- no mark
-      status( "No mark is set!" )
-      return
-   end
-
-   x,y = point()
-   mark( x, y)
-   point( m_x , m_y )
-end
 
 
 --
@@ -631,9 +728,11 @@ function record_mark()
    local y
    x,y = point()
 
-   keymap['M-m'][k] = function() point(x,y) end
-   status( "M-m " .. k .. " will now take you to " .. x .. "," .. y )
+   keymap['M-b'][k] = function() point(x,y) end
+   status( "M-b " .. k .. " will now take you to " .. x .. "," .. y )
 end
+
+
 
 --
 -- Test function just to prove `on_idle` is called every second, or so.
@@ -724,7 +823,6 @@ function get_status_bar()
    --
    local fmt = "${buffer}/${buffers} - ${file} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${time}"
 
-
    --
    -- Things we use.
    --
@@ -791,6 +889,56 @@ function get_status_bar()
 end
 
 
+
+
+
+--
+--  Functions relating to the mark
+--
+-----------------------------------------------------------------------------
+
+
+
+
+--
+--  Functions relating to movement.
+--
+-----------------------------------------------------------------------------
+
+
+--
+-- Move up a screenful of text.
+--
+function page_up()
+   local h = height() - 1
+   while( h > 0 ) do
+      move( "up" )
+      h = h - 1
+   end
+end
+
+--
+-- Move down a screenful of text.
+--
+-- Leave two lines of context.
+--
+function page_down()
+   local h = height() - 1
+   while( h > 0 ) do
+      move( "down" )
+      h = h - 1
+   end
+end
+
+
+--
+-- Move to the given line-number.
+--
+-- NOTE: This is naive because it doesn't test that you entered a line-number
+-- that doesn't exist.
+--
+-- That said it does work, and in the worst case it can't do a bad thing.
+--
 function goto_line(number)
    if ( number == nil ) then
       number = prompt( "Goto line?" )
