@@ -4,14 +4,9 @@
 
 default: editor
 
-#
-# Generate our embedded configuration-file.
-#
-editor_conf.h: util/xxd editor.lua
-	perl util/xxd editor.lua  > editor_conf.h
 
 editor: $(wildcard *.cc *.h)
-	g++ -std=c++11 -ggdb $(wildcard *.cc) -o editor   -I/usr/include/ncursesw -lncursesw -I/usr/include/lua5.2 -llua5.2 -ldl
+	g++ -std=c++11 -ggdb $(wildcard *.cc) -o editor   -I/usr/include/ncursesw -lncursesw -I/usr/include/lua5.2 -llua5.2
 
 clean:
 	rm -f editor *.orig core
