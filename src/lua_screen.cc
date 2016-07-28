@@ -26,19 +26,28 @@ int at_lua(lua_State *L)
     int y = buffer->cy + buffer->rowoff ;
 
     /*
-     * Read the character
+     * Default return value.
      */
-    wchar_t c = (mvinch(y, x) & A_CHARTEXT);
+    std::wstring res;
 
     /*
-     * Convert to ASCII
+     * Get the row.
      */
-    std::wstring tmp;
-    tmp += c;
+    erow *row;
+    if ( y < buffer->rows.size() )
+        row = buffer->rows.at(y);
 
-    char *str = new char[255];
-    sprintf(str, "%ls", tmp.c_str());
+    if ( row  )
+    {
+        int len = row->chars->size();
+        if ( x < len )
+        {
+            res = row->chars->at( x );
+        }
+    }
 
+    char *str = new char[2];
+    sprintf(str, "%ls", res.c_str());
     lua_pushstring(L, str);
     delete(str);
     return 1;
