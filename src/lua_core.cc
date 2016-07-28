@@ -114,7 +114,7 @@ int prompt_lua(lua_State *L)
 
             char *out = Util::wide2ascii(input);
             lua_pushstring(L, out);
-            delete(out);
+            delete []out;
             return 1;
         }
         else if (ch == KEY_BACKSPACE)
@@ -470,7 +470,7 @@ int insert_lua(lua_State *L)
     for (int i = 0; i < size ; i++)
         e->insert(wide[i]);
 
-    delete(wide);
+    delete []wide;
 
 
     Buffer *buffer = e->current_buffer();

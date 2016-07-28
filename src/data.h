@@ -79,10 +79,7 @@ public:
          * Remove the rows
          */
         for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-        {
-            erow *r = (*it);
-            delete(r);
-        }
+            free( (*it) );
 
         rows.clear();
 
@@ -96,7 +93,8 @@ public:
     void empty_buffer()
     {
         for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-            delete((*it));
+            free( (*it) );
+
 
         rows.clear();
         cx      = 0;
@@ -176,8 +174,9 @@ private:
 /**
  * This structure represents the global state of the editor.
  */
-struct editorState
+class editorState
 {
+public:
     /*
      *  Number of rows that we can show.
      */
@@ -203,4 +202,5 @@ struct editorState
      */
     int current_buffer ;
 
-};
+}
+;

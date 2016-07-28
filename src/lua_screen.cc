@@ -48,10 +48,10 @@ int at_lua(lua_State *L)
         }
     }
 
-    char *str = new char[2];
+    char *str = new char[7];
     sprintf(str, "%ls", res.c_str());
     lua_pushstring(L, str);
-    delete(str);
+    delete []str;
     return 1;
 }
 

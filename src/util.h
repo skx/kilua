@@ -17,24 +17,24 @@ public:
      * Convert the single wide-character specified to
      * an ASCII string.
      *
-     * NOTE: The caller must `delete` the result.
+     * NOTE: The caller must `delete[]` the result.
      */
     static char * wchar2ascii(wchar_t ch)
     {
         std::wstring tmp;
         tmp += ch;
 
-
-        char *str = new char[5];
+        char *str = new char[7];
         sprintf(str, "%ls", tmp.c_str());
 
         return (str);
     }
 
+
     /**
      * Convert a normal string to a wide string.
      *
-     * NOTE: The caller must `delete` the result.
+     * NOTE: The caller must `delete[]` the result.
      */
     static wchar_t * ascii2wide(const char *in)
     {
@@ -47,44 +47,22 @@ public:
         return (result);
     };
 
+
     /**
      * Convert the wide-character string specified to
      * an ASCII string.
      *
-     * NOTE: The caller must `delete` the result.
+     * NOTE: The caller must `delete[]` the result.
      */
     static char * wide2ascii(wchar_t *in)
     {
         std::wstring tmp;
         tmp += in;
 
-        char *str = new char[tmp.size()];
+        char *str = new char[tmp.size()+1];
         sprintf(str, "%ls", tmp.c_str());
 
         return (str);
-    }
-
-#if 0
-    static wchar_t char2wchar(const char in)
-    {
-        wchar_t res;
-        return (res);
     };
 
-    static char wchar2char(wchar_t in)
-    {
-        char res;
-        return (res);
-    };
-
-    static char * wide2ascii(wchar_t *in)
-    {
-        return (NULL);
-    };
-
-    static wchar_t * ascii2wide(const char *in)
-    {
-        return (NULL);
-    };
-#endif
 };

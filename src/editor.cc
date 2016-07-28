@@ -16,7 +16,7 @@ Editor::Editor()
      * Create a new state and ensure that we have a buffer
      * which we can work with.
      */
-    m_state = (editorState *)malloc(sizeof(editorState));
+    m_state = new editorState();
 
     /*
      * Create a new buffer for messages.
@@ -98,7 +98,7 @@ Editor::Editor()
 
 Editor::~Editor()
 {
-    free(m_state);
+    delete(m_state);
 }
 
 
@@ -171,7 +171,7 @@ void Editor::main_loop()
              */
             char *ascii = Util::wchar2ascii(ch);
             call_lua("on_key", "s>", ascii);
-            delete(ascii);
+            delete []ascii;
         }
 
         /*
@@ -220,7 +220,7 @@ void Editor::set_status(int log, const char *fmt, ...)
                 insert(wide[i]);
             }
 
-            delete(wide);
+            delete []wide;
 
             insert('\n');
             m_state->current_buffer = old;
