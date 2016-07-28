@@ -282,9 +282,6 @@ void Editor::draw_screen()
         status += " ";
     }
 
-    if (status.length() > m_state->screencols)
-        status = status.substr(0, m_state->screencols);
-
     /*
      * Enable reverse.
      */
