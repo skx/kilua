@@ -36,6 +36,95 @@ int buffers_lua(lua_State *L)
     return 1;
 }
 
+/**
+ * Select a buffer, interactively.
+ */
+int choose_buffer_lua(lua_State *L)
+{
+    Editor *e = Editor::instance();
+    int selected = e->get_current_buffer();
+    int original = e->get_current_buffer();
+    int max      = e->count_buffers();
+
+    /*
+     * Hide the cursor
+     */
+    curs_set(0);
+    ::clear();
+
+    while (true)
+    {
+        for (int i = 0; i < max ; i++)
+        {
+            if (selected == i)
+                attron(A_STANDOUT);
+
+            e->set_current_buffer(i);
+            Buffer *b = e->current_buffer();
+
+            std::string tmp;
+            tmp = std::to_string(i + 1);
+            tmp += " ";
+            tmp += b->get_name();
+            tmp += " ";
+
+            if (b->dirty())
+                tmp += " <modified>";
+
+            while (tmp.size() < e->width())
+                tmp += " ";
+
+            mvwaddstr(stdscr, i, 0, tmp.c_str());
+
+            if (selected == i)
+                attroff(A_STANDOUT);
+        }
+
+        /*
+         * poll for input.
+         */
+        unsigned int ch;
+
+        int res = get_wch(&ch);
+
+        if (res == ERR)
+            continue;
+
+        if (ch == '\n')
+        {
+            curs_set(1);
+            e->set_current_buffer(selected);
+            return 0;
+        }
+
+        if (ch == 27)
+        {
+            curs_set(1);
+            e->set_current_buffer(original);
+            return 0;
+        }
+
+        if (ch == KEY_UP)
+        {
+            selected -= 1;
+
+            if (selected < 0)
+                selected = max - 1;
+        }
+
+        if (ch == KEY_DOWN)
+        {
+            selected += 1;
+
+            if (selected >= max)
+                selected = 0;
+        }
+
+    }
+
+    return 0;
+}
+
 /*
  * Create a new buffer.
  */

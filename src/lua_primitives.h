@@ -46,6 +46,7 @@ extern int width_lua(lua_State *L);
  */
 extern int buffer_lua(lua_State *L);
 extern int buffers_lua(lua_State *L);
+extern int choose_buffer_lua(lua_State *L);
 extern int create_buffer_lua(lua_State *L);
 extern int buffer_name_lua(lua_State *L);
 extern int kill_buffer_lua(lua_State *L);

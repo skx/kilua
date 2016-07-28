@@ -57,6 +57,7 @@ Editor::Editor()
     lua_register(m_lua, "buffer", buffer_lua);
     lua_register(m_lua, "buffer_name", buffer_name_lua);
     lua_register(m_lua, "buffers", buffers_lua);
+    lua_register(m_lua, "choose_buffer", choose_buffer_lua);
     lua_register(m_lua, "create_buffer", create_buffer_lua);
     lua_register(m_lua, "delete", delete_lua);
     lua_register(m_lua, "dirty", dirty_lua);

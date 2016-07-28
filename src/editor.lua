@@ -160,15 +160,15 @@ keymap['^X']['i']  = function() insert_contents() end
 --
 -- Working with buffers.
 --
--- TODO: keymap['^X']['b']  = select_buffer
--- TODO: keymap['^X']['B']  = select_buffer
 --
+keymap['M-KEY_LEFT']   = function() prev_buffer() end
+keymap['M-KEY_RIGHT']  = function() next_buffer() end
+keymap['^X']['B']  = choose_buffer
 keymap['^X']['K']  = kill_buffer
+keymap['^X']['b']  = choose_buffer
 keymap['^X']['c']  = create_buffer
 keymap['^X']['k']  = function() confirm_kill_buffer() end
-keymap['M-KEY_RIGHT']  = function() next_buffer() end
 keymap['^X']['n']  = function () next_buffer() end
-keymap['M-KEY_LEFT']   = function() prev_buffer() end
 keymap['^X']['p']  = function() prev_buffer() end
 
 
