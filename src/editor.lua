@@ -818,6 +818,7 @@ end
 -- Comment it out, or remove it, to fall-back to the C-based implementation.
 --
 function get_status_bar()
+
    --
    -- Format String of what we show.
    --
@@ -864,6 +865,21 @@ function get_status_bar()
    local out = string.interp( fmt, t )
 
    --
+   -- If the format string includes `${point}` - which expands to the
+   -- character under the cursor - then we need to make sure that is
+   -- only a single character.
+   --
+   -- If the character under the point is `€`, or other multi-byte
+   -- character, it will have a length of bigger than one byte
+   -- even though it is, by definition, a single character.
+   --
+   local at_pos = string.find( fmt, "${point}" )
+   local fix = 0
+   if ( at_pos ) then
+      fix = #at() -1
+   end
+
+   --
    -- Too large?
    --
    if ( #out > w ) then
@@ -873,7 +889,7 @@ function get_status_bar()
    --
    -- Too small?
    --
-   local pad = w - #out + ( 7 )   -- 7 == length of '#BLANK#'
+   local pad = w - #out + fix + ( 7 )   -- 7 == length of '#BLANK#'
    local spc = ""
    while( pad > 0 ) do
       spc = spc .. " "
