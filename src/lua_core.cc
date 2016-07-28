@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <string.h>
 #include <malloc.h>
+#include <regex.h>
 
 #include "editor.h"
 #include "lua_primitives.h"
@@ -138,6 +139,169 @@ int prompt_lua(lua_State *L)
         }
     }
 
+    return 0;
+}
+
+
+/*
+ * Search (fowards) for a regexp
+ */
+int search_lua(lua_State *L)
+{
+    Editor *e      = Editor::instance();
+    Buffer *buffer = e->current_buffer();
+
+    /*
+     * Get the search pattern.
+     */
+    const char *pattern = lua_tostring(L, -1);
+
+    if (pattern == NULL)
+    {
+        e->set_status(1, "There was no regular expression supplied!");
+        return 0;
+    }
+
+    /*
+     * Compile the pattern as a regular expression.
+     */
+    regex_t regex;
+
+    if (regcomp(&regex, pattern, REG_EXTENDED | REG_ICASE) != 0)
+    {
+        e->set_status(1, "Failed to compile %s as a regular expression!", pattern);
+        return 0;
+    };
+
+    /*
+     * Count the number of rows we have in the buffer.
+     */
+    int rows = buffer->rows.size();
+
+    /*
+     * The first line is special.
+     */
+    bool first = true;
+
+    /*
+     * Searching fowwards ..
+     */
+    int step = 1;
+
+    /*
+     * The starting offset into the buffer.
+     */
+    int offset = buffer->cy + buffer->rowoff;
+
+    /*
+     * For each row in the buffer
+     *
+     * NOTE: We deliberately search for ONE TOO MANY rows here.
+     *
+     * THis means if the point is a "skx:[POINT]" a search for
+     * "^skx" will match.
+     *
+     * Since we start searching the first line (the line with the point)
+     * at the current cursor position we'd otherwise fail to find this
+     * match.
+     *
+     */
+    for (int i = 0; i <= rows ; i ++)
+    {
+        /*
+         * Ensure we wrap around the buffer, rather than
+         * walking off the end of the list of rows.
+         */
+        if (offset >= rows)
+            offset = 0;
+
+        if (offset < 0)
+            offset = rows - 1;
+
+        /*
+         * Get the current row.
+         */
+        erow *row = buffer->rows.at(offset);
+
+        /*
+         * Now we need to search for the given text
+         * in the row.
+         *
+         * If we're in the first row we search from the
+         * current X-position, otherwise we search from
+         * the start of the line (ie. offset zero).
+         */
+        int x = 0;
+
+        if (first)
+            x = buffer->cx + buffer->coloff;
+
+
+        /*
+         * Get the text in the row.
+         */
+        std::string text;
+
+        while (x < row->chars->size())
+        {
+            std::wstring character = row->chars->at(x);
+            char *c_txt = (char *)malloc(wcslen(character.c_str()) + 1);
+            sprintf(c_txt, "%ls", character.c_str());
+
+            text += c_txt;
+            free(c_txt);
+            x++;
+        }
+
+        /*
+         * regexps match on txt;
+         */
+        regmatch_t result[1];
+        int res = regexec(&regex, text.c_str(), 1, result, 0);
+
+        /*
+         * Did we match?
+         */
+        if (res == 0)
+        {
+            /*
+             * The offset of the match.
+             */
+            int pos = result[0].rm_so;
+
+            if (first)
+                pos += (buffer->cx + buffer->coloff);
+
+            /*
+             * Move to the right row.
+             */
+            buffer->cy     = 0;
+            buffer->rowoff = offset;
+
+            /* move to start of line. */
+            sol_lua(L);
+
+            /* move right enough times to move to the start of the match. */
+            while (pos > 0)
+            {
+                e->move("right");
+                pos--;
+            }
+
+            return 0;
+        }
+
+
+        /*
+         * Now we're searching the next line.
+         */
+        offset += step;
+        first = false;
+
+
+    }
+
+    e->set_status(1, "No match found!");
     return 0;
 }
 
