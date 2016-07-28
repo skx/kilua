@@ -65,6 +65,18 @@ local keymap = {}
 --
 keymap['ENTER']         = function() insert("\n") end
 keymap['KEY_BACKSPACE'] = delete
+
+--
+-- Ctrl-s is search
+--
+keymap['^S'] = function()
+   local term = prompt("(regexp) Search? " )
+   if ( term ) then
+      search( term )
+   end
+end
+
+keymap['M-g' ] = function() goto_line() end
 --
 -- TODO: keymap['^F'] = find
 -- TODO: keymap['^H'] = delete
@@ -128,7 +140,12 @@ keymap['M-x'] = function() eval_lua() end
 -- M-! ("Escape", then "!") will run a command and insert the output
 -- into your document
 --
-keymap['M-!'] = function() cmd = prompt( "execute:" ); if ( cmd ) then insert( cmd_output(cmd) ) end end
+keymap['M-!'] = function()
+   local cmd = prompt( "execute:" )
+   if ( cmd ) then
+      insert( cmd_output(cmd) )
+   end
+end
 
 
 --
