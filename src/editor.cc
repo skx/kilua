@@ -760,12 +760,12 @@ void Editor::move(const char *direction)
     else  if (strcmp(direction, "right") == 0)
     {
 
-        int r   = buffer->cy + buffer->rowoff;
-        int cur = buffer->cx + buffer->coloff;
+        int x = buffer->cx + buffer->coloff;
+        int y = buffer->cy + buffer->rowoff;
 
-        erow *row = buffer->rows.at(r);
+        erow *row = buffer->rows.at(y);
 
-        if (cur < row->chars->size())
+        if (x < row->chars->size())
         {
             buffer->cx += 1;
 
@@ -777,14 +777,20 @@ void Editor::move(const char *direction)
         }
         else
         {
-            buffer->cx = 0;
-            buffer->coloff = 0;
-            buffer->cy += 1;
-
-            if (buffer->cy >= e->width())
+            /*
+             * Ensure moving right on the last row doesn't work.
+             */
+            if ( y + 1 < max_row)
             {
-                buffer->cy -= 1;
-                buffer->rowoff += 1;
+                buffer->cx = 0;
+                buffer->coloff = 0;
+                buffer->cy += 1;
+
+                if (buffer->cy >= e->width())
+                {
+                    buffer->cy -= 1;
+                    buffer->rowoff += 1;
+                }
             }
         }
     }
