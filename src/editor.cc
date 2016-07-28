@@ -83,6 +83,7 @@ Editor::Editor()
     if (erred)
     {
         endwin();
+
         if (lua_isstring(m_lua, -1))
             fprintf(stderr, "%s\n", lua_tostring(m_lua, -1));
 
@@ -112,7 +113,7 @@ void Editor::load_files(std::vector<std::string> files)
     {
         for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it)
         {
-            Buffer *tmp = new Buffer( (*it).c_str());
+            Buffer *tmp = new Buffer((*it).c_str());
             m_state->buffers.push_back(tmp);
             m_state->current_buffer = m_state->buffers.size() - 1;
 
@@ -166,7 +167,7 @@ void Editor::main_loop()
              * Convert the character to a string.
              * then call Lua.
              */
-            char *ascii = Util::wchar2ascii( ch );
+            char *ascii = Util::wchar2ascii(ch);
             call_lua("on_key", "s>", ascii);
             delete(ascii);
         }
@@ -203,21 +204,23 @@ void Editor::set_status(int log, const char *fmt, ...)
     {
         int old = m_state->current_buffer;
 
-        int b = buffer_by_name( "*Messages*" );
-        if ( b != -1 )
+        int b = buffer_by_name("*Messages*");
+
+        if (b != -1)
         {
             m_state->current_buffer = b;
 
-            wchar_t *wide = Util::ascii2wide( m_state->statusmsg );
+            wchar_t *wide = Util::ascii2wide(m_state->statusmsg);
             int size = wcslen(wide);
 
-            for( int i = 0; i < size; i++ )
+            for (int i = 0; i < size; i++)
             {
-                insert( wide[i] );
+                insert(wide[i]);
             }
+
             delete(wide);
 
-            insert( '\n' );
+            insert('\n');
             m_state->current_buffer = old;
         }
     }
@@ -516,8 +519,8 @@ void Editor::delete_char()
 
 const char *Editor::lookup_key(unsigned int c)
 {
-    if (c== 0 )
-        return( "^ " );
+    if (c == 0)
+        return ("^ ");
 
     if (c == '\n')
         return ("ENTER");
@@ -780,7 +783,7 @@ void Editor::move(const char *direction)
             /*
              * Ensure moving right on the last row doesn't work.
              */
-            if ( y + 1 < max_row)
+            if (y + 1 < max_row)
             {
                 buffer->cx = 0;
                 buffer->coloff = 0;
@@ -824,16 +827,17 @@ void Editor::new_buffer(const char *name)
      */
     Buffer *tmp;
 
-    if ( name != NULL )
+    if (name != NULL)
     {
         tmp = new Buffer(name);
     }
     else
     {
         std::string t;
-        t = "*Buffer-" + std::to_string( count_buffers() +1) + "*";
+        t = "*Buffer-" + std::to_string(count_buffers() + 1) + "*";
         tmp = new Buffer(t.c_str());
     }
+
     m_state->buffers.push_back(tmp);
     m_state->current_buffer = count_buffers() - 1;
 }
@@ -868,24 +872,25 @@ int Editor::count_buffers()
  *
  * Returns -1 on failure.
  */
-int Editor::buffer_by_name( const char *name )
+int Editor::buffer_by_name(const char *name)
 {
     int offset = 0;
 
-    for( std::vector<Buffer *>::iterator it = m_state->buffers.begin();
-         it != m_state->buffers.end(); ++it )
+    for (std::vector<Buffer *>::iterator it = m_state->buffers.begin();
+            it != m_state->buffers.end(); ++it)
     {
         Buffer *tmp          = (*it);
         const char *tmp_name = tmp->get_name();
 
-        if ( tmp_name && ( strcmp( tmp_name, name ) == 0 ) )
+        if (tmp_name && (strcmp(tmp_name, name) == 0))
         {
-            return(offset);
+            return (offset);
         }
-        offset +=1;
+
+        offset += 1;
     }
 
-    return( -1);
+    return (-1);
 }
 
 void Editor::kill_current_buffer()
@@ -893,11 +898,14 @@ void Editor::kill_current_buffer()
     /*
      * Kill the current buffer.
      */
-    m_state->buffers.erase( m_state->buffers.begin() + m_state->current_buffer );
-    if (  count_buffers() < 1 ){
+    m_state->buffers.erase(m_state->buffers.begin() + m_state->current_buffer);
+
+    if (count_buffers() < 1)
+    {
         endwin();
         exit(1);
     }
+
     m_state->current_buffer = count_buffers() - 1;
 }
 

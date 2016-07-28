@@ -34,15 +34,17 @@ int at_lua(lua_State *L)
      * Get the row.
      */
     erow *row;
-    if ( y < buffer->rows.size() )
+
+    if (y < buffer->rows.size())
         row = buffer->rows.at(y);
 
-    if ( row  )
+    if (row)
     {
         int len = row->chars->size();
-        if ( x < len )
+
+        if (x < len)
         {
-            res = row->chars->at( x );
+            res = row->chars->at(x);
         }
     }
 

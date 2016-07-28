@@ -70,7 +70,7 @@ public:
      *
      * Returns -1 on failure.
      */
-    int buffer_by_name( const char *name );
+    int buffer_by_name(const char *name);
 
     /**
      * Get the status-text.

@@ -19,7 +19,8 @@ public:
      *
      * NOTE: The caller must `delete` the result.
      */
-    static char * wchar2ascii( wchar_t ch ){
+    static char * wchar2ascii(wchar_t ch)
+    {
         std::wstring tmp;
         tmp += ch;
 
@@ -27,7 +28,7 @@ public:
         char *str = new char[5];
         sprintf(str, "%ls", tmp.c_str());
 
-        return( str );
+        return (str);
     }
 
     /**
@@ -35,15 +36,15 @@ public:
      *
      * NOTE: The caller must `delete` the result.
      */
-    static wchar_t * ascii2wide( const char *in )
+    static wchar_t * ascii2wide(const char *in)
     {
         size_t in_size  = strlen(in) + 1;
         size_t out_size = in_size * 5;
 
         wchar_t* result = new wchar_t[out_size];
 
-        mbstowcs(result, in, out_size );
-        return(result);
+        mbstowcs(result, in, out_size);
+        return (result);
     };
 
     /**
@@ -52,37 +53,38 @@ public:
      *
      * NOTE: The caller must `delete` the result.
      */
-    static char * wide2ascii( wchar_t *in ){
+    static char * wide2ascii(wchar_t *in)
+    {
         std::wstring tmp;
         tmp += in;
 
         char *str = new char[tmp.size()];
         sprintf(str, "%ls", tmp.c_str());
 
-        return( str );
+        return (str);
     }
 
 #if 0
-    static wchar_t char2wchar( const char in)
+    static wchar_t char2wchar(const char in)
     {
         wchar_t res;
-        return( res );
+        return (res);
     };
 
-    static char wchar2char( wchar_t in )
+    static char wchar2char(wchar_t in)
     {
         char res;
-        return( res );
+        return (res);
     };
 
-    static char * wide2ascii( wchar_t *in )
+    static char * wide2ascii(wchar_t *in)
     {
-        return( NULL );
+        return (NULL);
     };
 
-    static wchar_t * ascii2wide( const char *in )
+    static wchar_t * ascii2wide(const char *in)
     {
-        return( NULL );
+        return (NULL);
     };
 #endif
 };

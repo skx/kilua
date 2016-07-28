@@ -56,7 +56,7 @@ typedef struct erow
 class Buffer
 {
 public:
-    Buffer(const char *bname )
+    Buffer(const char *bname)
     {
         cx      = 0;
         cy      = 0;
@@ -86,7 +86,7 @@ public:
 
         rows.clear();
 
-        if (m_name )
+        if (m_name)
             free(m_name);
     };
 
@@ -139,18 +139,19 @@ public:
      */
     const char *get_name()
     {
-        return( m_name );
+        return (m_name);
     };
 
 
     /**
      * Set the name of the buffer.
      */
-    void set_name( const char *name )
+    void set_name(const char *name)
     {
-        if ( m_name )
+        if (m_name)
             free(m_name);
-        m_name = strdup( name );
+
+        m_name = strdup(name);
     }
 public:
     /* Cursor x and y position in characters */

@@ -63,7 +63,7 @@ int buffer_name_lua(lua_State *L)
 
     if (name)
     {
-        buffer->set_name( name );
+        buffer->set_name(name);
     }
 
     lua_pushstring(L, buffer->get_name());
@@ -87,8 +87,10 @@ int select_buffer_lua(lua_State *L)
     /*
      * Get the name we're to select.
      */
-   const char *name = lua_tostring(L, -1);
-   if ( name ==  NULL ){
+    const char *name = lua_tostring(L, -1);
+
+    if (name ==  NULL)
+    {
         lua_pushboolean(L, 0);
         return 1;
     }
@@ -98,12 +100,12 @@ int select_buffer_lua(lua_State *L)
      * Find the buffer.
      */
     Editor *e = Editor::instance();
-    int off   = e->buffer_by_name( name );
+    int off   = e->buffer_by_name(name);
 
-    if ( off != -1 )
+    if (off != -1)
     {
         e->set_current_buffer(off);
-        lua_pushboolean(L, 1 );
+        lua_pushboolean(L, 1);
     }
     else
     {

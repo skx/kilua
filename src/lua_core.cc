@@ -103,6 +103,7 @@ int prompt_lua(lua_State *L)
         unsigned int ch;
 
         int res = get_wch(&ch);
+
         if (res == ERR)
             continue;
 
@@ -110,7 +111,7 @@ int prompt_lua(lua_State *L)
         {
             e->set_status(0, "");
 
-            char *out = Util::wide2ascii( input );
+            char *out = Util::wide2ascii(input);
             lua_pushstring(L, out);
             delete(out);
             return 1;
@@ -171,8 +172,10 @@ int open_lua(lua_State *L)
      * Did we get a different name?
      */
     const char *new_name = lua_tostring(L, -1);
-    if ( new_name != NULL ){
-        buffer->set_name( new_name);
+
+    if (new_name != NULL)
+    {
+        buffer->set_name(new_name);
         path = new_name;
     }
 
@@ -225,8 +228,10 @@ int save_lua(lua_State *L)
      * Did we get a different name?
      */
     const char *new_name = lua_tostring(L, -1);
-    if ( new_name != NULL ){
-        buffer->set_name( new_name);
+
+    if (new_name != NULL)
+    {
+        buffer->set_name(new_name);
         path = new_name;
     }
 
@@ -288,13 +293,14 @@ int insert_lua(lua_State *L)
 {
     Editor *e      = Editor::instance();
     const char *str = lua_tostring(L, -1);
-    if ( str == NULL )
+
+    if (str == NULL)
         return 0;
 
     /*
      * Convert the input to wide characters.
      */
-    wchar_t *wide = Util::ascii2wide( str );
+    wchar_t *wide = Util::ascii2wide(str);
     int size = wcslen(wide);
 
     for (int i = 0; i < size ; i++)
@@ -333,6 +339,7 @@ int dirty_lua(lua_State *L)
 int key_lua(lua_State *L)
 {
     Editor *e = Editor::instance();
+
     while (1)
     {
         e->draw_screen();
@@ -353,8 +360,8 @@ int key_lua(lua_State *L)
             /*
              * Convert the character to a string.
              */
-            char *ascii = Util::wchar2ascii( ch );
-            lua_pushstring(L,ascii);
+            char *ascii = Util::wchar2ascii(ch);
+            lua_pushstring(L, ascii);
             delete(ascii);
             return 1;
         }

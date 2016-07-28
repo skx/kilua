@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         switch (c)
         {
         case 'c':
-            e->load_lua( optarg );
+            e->load_lua(optarg);
             break;
 
         case 'v':
