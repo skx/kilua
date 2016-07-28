@@ -17,27 +17,16 @@
 
 /**
  * This structure represents a single line of text.
- *
- * TODO: turn this into a class and add `to_string` method
- * to return the contents of the whole row at once - that
- * will be useful for saving.
- *
- * Though having the row available as a single-string probably
- * won't be so useful for syntax-highlighting, or similar.
  */
-typedef struct erow
+class erow
 {
+public:
     /*
      * The character at each position in this row.
      */
     std::vector<std::wstring> *chars;
 
-
-    /*
-     * TODO: Add highlighting information here.
-     */
-
-} erow;
+};
 
 
 
@@ -58,12 +47,13 @@ class Buffer
 public:
     Buffer(const char *bname)
     {
-        cx      = 0;
-        cy      = 0;
-        rowoff  = 0;
-        coloff  = 0;
-        m_name  = strdup(bname);
-        m_dirty = false;
+        cx       = 0;
+        cy       = 0;
+        rowoff   = 0;
+        coloff   = 0;
+        m_name   = strdup(bname);
+        m_dirty  = false;
+        m_syntax = "";
 
         /*
          * The buffer will have one (empty) row.
@@ -151,6 +141,7 @@ public:
 
         m_name = strdup(name);
     }
+
 public:
     /* Cursor x and y position in characters */
     int cx, cy;
@@ -160,6 +151,10 @@ public:
 
     /* the actual rows */
     std::vector<erow *> rows;
+
+    /* syntax details. */
+    std::string m_syntax;
+    std::vector<int> m_colours;
 
 private:
     /* Is this buffer dirty? */

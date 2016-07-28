@@ -84,6 +84,11 @@ public:
 
 
     /**
+     * Update the syntax of the buffer.
+     */
+    void update_syntax();
+
+    /**
      * Clear the screen and redraw it.
      */
     void draw_screen();

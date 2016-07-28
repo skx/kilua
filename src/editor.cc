@@ -230,11 +230,61 @@ void Editor::set_status(int log, const char *fmt, ...)
 
 
 /**
+ * Update the syntax of the current buffer.
+ */
+void Editor::update_syntax()
+{
+    /*
+     * Get the current buffer.
+     */
+    Buffer *cur = m_state->buffers.at(m_state->current_buffer);
+    if ( cur == NULL )
+        return;
+
+//  TODO: Test against a loaded table .
+//    if ( cur->m_syntax.empty() )
+//      return;
+
+    /*
+     * OK here we reset the current state.
+     */
+    cur->m_colours.clear();
+
+    /*
+     * Now update
+     */
+    int rows = cur->rows.size();
+
+    for (int y = 0; y < rows; y++)
+    {
+        /*
+         * For each character
+         */
+        int chars = cur->rows.at(y)->chars->size();
+        for (int x = 0; x < chars; x++)
+        {
+            int col = -1;
+
+            col = ( x + y ) % 8;
+            cur->m_colours.push_back(col);
+        }
+    }
+}
+
+
+/**
  * Draw the screen, as well as the status-bar and the message-area.
  */
 void Editor::draw_screen()
 {
-    clear();
+    /*
+     * Update syntax.
+     *
+     * TODO: Only trigger this if the buffer has changed.
+     *
+     * Meta-dirty flag?
+     */
+    update_syntax();
 
     /*
      * The current buffer.
@@ -242,10 +292,19 @@ void Editor::draw_screen()
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
 
     /*
+     * TODO: count characters above the point.
+     */
+    int chars = 0;
+
+    /*
      * For each row ..
      */
     for (int y = 0; y < m_state->screenrows;  y++)
     {
+        /*
+         * If this row is past the end of our list - draw
+         * "~" and exit.
+         */
         if ((y + cur->rowoff) >= cur->rows.size())
         {
             std::wstring x;
@@ -254,18 +313,49 @@ void Editor::draw_screen()
             continue;
         }
 
+        /*
+         * The row of characters.
+         */
         erow *row = cur->rows.at(y + cur->rowoff);
-        int len = row->chars->size();
 
         /*
          * For each column.
          */
         for (int x = 0; x < m_state->screencols; x++)
         {
+            /*
+             * If this row has a character here - draw it.
+             */
             if ((x + cur->coloff) < row->chars->size())
             {
+                /*
+                 * Get the colour
+                 */
+                int col = -1;
+                if ( chars <cur->m_colours.size() )
+                    col = cur->m_colours.at( chars );
+
+                if ( col != -1 )
+                    color_set( col, NULL );
+
                 std::wstring t = row->chars->at(x + cur->coloff);
                 mvwaddwstr(stdscr, y, x, t.c_str());
+
+                if ( col != -1 )
+                    color_set( 8, NULL );
+
+                chars += 1;
+            }
+            else
+            {
+                /*
+                 * Otherwise draw a space.  This ensures we don't
+                 * have display-artifacts, even though we didn't
+                 * call `clear()`.
+                 *
+                 * Calling clear is "better", but introduces flickering.
+                 */
+                mvwaddstr(stdscr, y, x, " ");
             }
         }
     }
