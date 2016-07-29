@@ -305,7 +305,6 @@ end
 -- This function is called when a file is loaded, and is used
 -- to setup the syntax highlighting.
 --
--- TODO: No, it isn't.
 --
 function on_loaded( filename )
 
@@ -315,28 +314,26 @@ function on_loaded( filename )
    local file = filename:match("^.+/(.+)$") or filename
    local ext = file:match("^.+%.(.+)$") or file
 
-   -- Lookup the entry
-   local syntax = syn[ext] or syn[file]
+   --
+   --  Association for suffix to mode.
+   --
+   local x  = {}
+   x['c']   = "cc"
+   x['cc']  = "cc"
+   x['h']   = "cc"
+   x['cpp'] = "cc"
+   x['lua'] = "lua"
+   x['md']  = "markdown"
+   x['txt'] = "markdown"
 
-   -- If that worked, and there are keywords..
-   if (syntax and syntax['keywords'] ) then
-
-      -- Set the keywords
-      set_syntax_keywords( syntax['keywords'] )
-
-      -- If there are defined values for the comments, set them too.
-      if ( syntax['single'] and
-           syntax['multi_open'] and
-           syntax['multi_close'] ) then
-         set_syntax_comments(syntax['single'],syntax['multi_open'], syntax['multi_close'] )
-      end
+   --
+   -- Setup syntax. Hack.
+   --
+   if ( x[ext] ) then
+      syntax( x[ext] )
+      status( "Selected syntax-mode " .. x[ext])
+      return
    end
-
-   -- Set any options, if we found them.
-   if (syntax and syntax['options'] ) then
-      set_syntax_options( syntax['options'] )
-   end
-
 end
 
 
@@ -346,8 +343,6 @@ end
 -- You might re-open the file and call `chmod 755 $file` if
 -- the file has a shebang-line, or perform similar magic
 -- here.
---
--- TODO: No, it isn't.
 --
 function on_saved( filename )
 
@@ -1043,7 +1038,6 @@ function on_syntax_highlight( text )
    --
    local obj = load_syntax( mode )
    if ( obj ) then
-      status( "Parsing text via " .. syntax() )
       obj.parse(text)
    else
       status("Failed to load syntax-module '" .. syntax() .. "' disabling highlighting.")
