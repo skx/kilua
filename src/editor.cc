@@ -279,7 +279,7 @@ void Editor::update_syntax()
 
         text += '\n';
 
-        cur->m_colours[count] = 8;  /* white */
+        cur->m_colours[count] = 8; /* white */
         count += 1;
     }
 
@@ -311,9 +311,28 @@ void Editor::draw_screen()
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
 
     /*
-     * TODO: count characters above the point.
+     * The count of characters we've displayed.
+     *
+     * THis is used to index into the buffer of colours.
      */
     int chars = 0;
+
+    /*
+     * Count the characters in rows we're not displaying.
+     */
+    for (int i = 0; i < cur->rowoff; i++)
+    {
+        int characters = cur->rows.at(i)->chars->size();
+
+
+        for (int x = 0; x < characters; x++)
+        {
+            chars += 1;
+        }
+
+        /* cope with newline. */
+        chars += 1;
+    }
 
     /*
      * For each row ..
@@ -364,12 +383,11 @@ void Editor::draw_screen()
                 std::wstring t = row->chars->at(x + cur->coloff);
                 mvwaddwstr(stdscr, y, x, t.c_str());
 
-                if (col != -1)
-                    color_set(8, NULL);
-
+                color_set(8, NULL);
                 chars += 1;
             }
         }
+
         chars += 1;
     }
 
