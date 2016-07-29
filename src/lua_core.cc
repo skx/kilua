@@ -433,6 +433,7 @@ int save_lua(lua_State *L)
 
         fprintf(handle, "\n");
     }
+
     fclose(handle);
 
     /*
