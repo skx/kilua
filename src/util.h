@@ -59,9 +59,17 @@ public:
         std::wstring tmp;
         tmp += in;
 
-        char *str = new char[tmp.size()+1];
+        char *str = new char[tmp.size() + 1];
         sprintf(str, "%ls", tmp.c_str());
 
+        return (str);
+    };
+
+    static char * widestr2ascii(std::wstring in)
+    {
+        size_t len = in.size()*5 + 1;
+        char *str = new char[len+1];
+        sprintf(str, "%ls", in.c_str());
         return (str);
     };
 
