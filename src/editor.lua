@@ -995,3 +995,52 @@ function goto_line(number)
       number = number - 1;
    end
 end
+
+
+--
+--  Syntax Highlighting
+--
+--
+-----------------------------------------------------------------------------
+
+package.path = package.path .. ';./syn/?.lua'
+lpeg         = require 'lpeg'
+
+
+function load_syntax( lang )
+   local status, obj = pcall(require, lang)
+
+   if ( status ) then
+      -- enable syntax highlighting.
+      return obj
+   else
+      -- disable syntax highlighting.
+      return nil
+   end
+end
+
+--
+-- Callback function that handles parsing
+--
+function on_syntax_highlight( text )
+   --
+   -- Get the syntax mode
+   --
+   local mode = syntax()
+   if ( not mode ) then
+      return
+   end
+
+   --
+   -- Load the module, which will be cached the second
+   -- time around.
+   --
+   local obj = load_syntax( mode )
+   if ( obj ) then
+      status( "Parsing text via " .. syntax() )
+      obj.parse(text)
+   else
+      status("Failed to load syntax-module '" .. syntax() .. "' disabling highlighting.")
+      syntax("")
+   end
+end
