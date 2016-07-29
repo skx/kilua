@@ -12,6 +12,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include <string>
 
 
@@ -69,7 +70,7 @@ public:
          * Remove the rows
          */
         for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-            free( (*it) );
+            free((*it));
 
         rows.clear();
 
@@ -83,7 +84,7 @@ public:
     void empty_buffer()
     {
         for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-            free( (*it) );
+            free((*it));
 
 
         rows.clear();
@@ -154,7 +155,7 @@ public:
 
     /* syntax details. */
     std::string m_syntax;
-    std::vector<int> m_colours;
+    std::unordered_map < int, int >m_colours;
 
 private:
     /* Is this buffer dirty? */
