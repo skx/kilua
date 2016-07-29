@@ -67,8 +67,8 @@ public:
 
     static char * widestr2ascii(std::wstring in)
     {
-        size_t len = in.size()*5 + 1;
-        char *str = new char[len+1];
+        size_t len = in.size() * 5 + 1;
+        char *str = new char[len + 1];
         sprintf(str, "%ls", in.c_str());
         return (str);
     };
