@@ -839,7 +839,7 @@ function get_status_bar()
    --
    -- Format String of what we show.
    --
-   local fmt = "${buffer}/${buffers} - ${file} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${time}"
+   local fmt = "${buffer}/${buffers} - ${file} ${mode} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${time}"
 
    --
    -- Things we use.
@@ -850,19 +850,25 @@ function get_status_bar()
    -- Table holding values we can interpolate.
    --
    local t = {}
-   t['buffer']          = buffer() + 1
-   t['buffers']         = buffers()
+   t['buffer']  = buffer() + 1
+   t['buffers'] = buffers()
 
    --
    -- See https://www.lua.org/pil/22.1.html
    --
-   t['date']            = os.date("%A %d %B %Y")
-   t['time']            = os.date("%X")
+   t['date'] = os.date("%A %d %B %Y")
+   t['time'] = os.date("%X")
 
-   t['file']            = buffer_name()
-   t['x']               = x
-   t['y']               = y + 1
+   t['file']  = buffer_name()
 
+   t['mode']  = ""
+
+   local s = syntax()
+   if ( #s > 0 ) then
+      t['mode'] = s .. "-mode"
+   end
+   t['x']     = x
+   t['y']     = y + 1
    t['point'] = at()
 
    if ( dirty() )  then
