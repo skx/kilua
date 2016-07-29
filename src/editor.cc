@@ -78,6 +78,8 @@ Editor::Editor()
     lua_register(m_lua, "sof", sof_lua);
     lua_register(m_lua, "sol", sol_lua);
     lua_register(m_lua, "status", status_lua);
+    lua_register(m_lua, "syntax", syntax_lua);
+    lua_register(m_lua, "syntax_range", syntax_range_lua);
     lua_register(m_lua, "width", width_lua);
 
     int erred = luaL_dofile(m_lua, "editor.lua");
@@ -238,12 +240,15 @@ void Editor::update_syntax()
      * Get the current buffer.
      */
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
-    if ( cur == NULL )
+
+    if (cur == NULL)
         return;
 
-//  TODO: Test against a loaded table .
-//    if ( cur->m_syntax.empty() )
-//      return;
+    /*
+     * If there is no syntax-mode set then we abort.
+     */
+    if (cur->m_syntax.empty())
+        return;
 
     /*
      * OK here we reset the current state.
@@ -251,9 +256,12 @@ void Editor::update_syntax()
     cur->m_colours.clear();
 
     /*
-     * Now update
+     * Now update via lua
      */
+    std::wstring text;
+
     int rows = cur->rows.size();
+    int count = 0;
 
     for (int y = 0; y < rows; y++)
     {
@@ -261,14 +269,23 @@ void Editor::update_syntax()
          * For each character
          */
         int chars = cur->rows.at(y)->chars->size();
+
         for (int x = 0; x < chars; x++)
         {
-            int col = -1;
-
-            col = ( x + y ) % 8;
-            cur->m_colours.push_back(col);
+            text += cur->rows.at(y)->chars->at(x);
+            cur->m_colours[count] = 8; /* white */
+            count += 1;
         }
+
+        text += '\n';
+
+        cur->m_colours[count] = 8;  /* white */
+        count += 1;
     }
+
+    char *ascii = Util::widestr2ascii(text);
+    call_lua("on_syntax_highlight", "s>", ascii);
+    delete[]ascii;
 }
 
 
@@ -285,6 +302,8 @@ void Editor::draw_screen()
      * Meta-dirty flag?
      */
     update_syntax();
+
+    clear();
 
     /*
      * The current buffer.
@@ -309,6 +328,9 @@ void Editor::draw_screen()
         {
             std::wstring x;
             x += '~';
+
+            /* Reset to white */
+            color_set(8, NULL);
             mvwaddwstr(stdscr, y, 0, x.c_str());
             continue;
         }
@@ -332,32 +354,23 @@ void Editor::draw_screen()
                  * Get the colour
                  */
                 int col = -1;
-                if ( chars <cur->m_colours.size() )
-                    col = cur->m_colours.at( chars );
 
-                if ( col != -1 )
-                    color_set( col, NULL );
+                if (chars < cur->m_colours.size())
+                    col = cur->m_colours[ chars ];
+
+                if (col != -1)
+                    color_set(col, NULL);
 
                 std::wstring t = row->chars->at(x + cur->coloff);
                 mvwaddwstr(stdscr, y, x, t.c_str());
 
-                if ( col != -1 )
-                    color_set( 8, NULL );
+                if (col != -1)
+                    color_set(8, NULL);
 
                 chars += 1;
             }
-            else
-            {
-                /*
-                 * Otherwise draw a space.  This ensures we don't
-                 * have display-artifacts, even though we didn't
-                 * call `clear()`.
-                 *
-                 * Calling clear is "better", but introduces flickering.
-                 */
-                mvwaddstr(stdscr, y, x, " ");
-            }
         }
+        chars += 1;
     }
 
     /*
@@ -391,6 +404,11 @@ void Editor::draw_screen()
 
     if (s.length() >  m_state->screencols)
         s = s.substr(s.length() - m_state->screencols + 1);
+
+    while (s.length() < m_state->screencols)
+    {
+        s += " ";
+    }
 
     mvwaddstr(stdscr, m_state->screenrows + 1, 0, s.c_str());
 
