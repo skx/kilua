@@ -345,25 +345,31 @@ int open_lua(lua_State *L)
 
     FILE *input;
 
-    if ((input = fopen(path, "r")) == NULL)
+    if ((input = fopen(path, "r")) != NULL)
+    {
+        wchar_t c;
+
+        while (1)
+        {
+            c = fgetwc(input);
+
+            if (c == WEOF)
+                break;
+
+            e->insert(c);
+        }
+
+        fclose(input);
+    }
+    else
     {
         e->set_status(1, "Failed to open %s", path);
-        return 0;
     }
 
-    wchar_t c;
-
-    while (1)
-    {
-        c = fgetwc(input);
-
-        if (c == WEOF)
-            break;
-
-        e->insert(c);
-    }
-
-    fclose(input);
+    /*
+     * Call the handler.
+     */
+    e->call_lua("on_loaded", "s>", path);
 
     /*
      * Move to start of file.
@@ -427,8 +433,12 @@ int save_lua(lua_State *L)
 
         fprintf(handle, "\n");
     }
-
     fclose(handle);
+
+    /*
+     * Call the handler.
+     */
+    e->call_lua("on_saved", "s>", path);
 
     buffer->set_dirty(false);
     return (0);
