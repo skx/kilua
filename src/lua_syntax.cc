@@ -46,14 +46,6 @@ int syntax_range_lua(lua_State *L)
         return 0;
     }
 
-    FILE* fp = fopen("test.txt", "a");
-
-    if (fp)
-    {
-        fprintf(fp, "%d-%d -> %d\n", start, end, colour);
-        fclose(fp);
-    }
-
     if (buffer->m_syntax.empty())
         return 0;
 
@@ -61,7 +53,7 @@ int syntax_range_lua(lua_State *L)
     /*
      * Set the colours - starting from the start
      */
-    for (int i = start; i <= start + end; i++)
+    for (int i = start; i <= end; i++)
     {
         /*
          * Set the value
