@@ -2701,7 +2701,7 @@ char *editorRowsToString(int *buflen)
     *buflen = totlen;
     totlen++; /* Also make space for nulterm */
 
-    p = buf =(char *) malloc(totlen);
+    p = buf = (char *) malloc(totlen);
 
     for (j = 0; j < E.file[E.current_file]->numrows; j++)
     {

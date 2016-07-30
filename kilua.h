@@ -45,13 +45,13 @@
 
 /* Lua interface */
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
 #ifdef __cplusplus
-  }
+}
 #endif
 
 /* Syntax highlight types */
@@ -247,7 +247,7 @@ void editorDelRow(int at);
 void editorFreeRow(erow *row);
 void editorInsertChar(int c);
 void editorInsertNewline(void);
-void editorInsertRow(int at,const char *s, size_t len);
+void editorInsertRow(int at, const char *s, size_t len);
 void editorMoveCursor(int key);
 void editorProcessKeypress(int fd);
 void editorRefreshScreen(void);
