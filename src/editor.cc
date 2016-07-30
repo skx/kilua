@@ -478,6 +478,14 @@ void Editor::draw_screen()
                  * Draw the string.
                  */
                 std::wstring t = row->chars->at(x + cur->coloff);
+
+                /*
+                 * Is it a TAB?  Change to space, because otherwise
+                 * trailing whitespace screws up.
+                 */
+                if ( t.at(0) == '\t' )
+                    t = ' ';
+
                 mvwaddwstr(stdscr, y, x, t.c_str());
 
                 /*
