@@ -325,6 +325,7 @@ function on_loaded( filename )
    x['lua'] = "lua"
    x['md']  = "markdown"
    x['txt'] = "markdown"
+   x['el']  = "lisp"
 
    --
    -- Setup syntax. Hack.
