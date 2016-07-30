@@ -65,6 +65,8 @@ local keymap = {}
 --
 keymap['ENTER']         = function() insert("\n") end
 keymap['KEY_BACKSPACE'] = delete
+keymap['^H']            = delete
+keymap['^D']            = function() delete_forwards() end
 
 --
 -- Ctrl-s is search
@@ -78,19 +80,16 @@ end
 
 keymap['M-g' ] = function() goto_line() end
 --
--- TODO: keymap['^H'] = delete
 -- TODO: keymap['^_'] = undo
--- TODO: keymap['^G'] = function() search( prompt( "Search:" ) ) end
 -- TODO: keymap['^J'] = function() goto_mark() end
 -- keymap['^K'] = function() kill_line() end
 -- TODO: keymap['^N'] = function() record_mark() end
--- TODO: keymap['^T'] = function() status( os.date() ) end
 -- TODO: keymap['^U'] = function() yank() end
 -- TODO: keymap['^Z'] = undo
 --
 
 --
--- TMP
+-- Esc-q quits immediately.
 --
 keymap['M-q'] = exit
 
@@ -408,7 +407,13 @@ function cmd_output(cmd)
    return(out)
 end
 
-
+--
+-- Delete forwards
+--
+function delete_forwards()
+   move("right")
+   delete()
+end
 
 
 --
