@@ -828,7 +828,8 @@ end
 --
 -- If this function is defined it will be invoked to draw the status-bar.
 --
--- Comment it out, or remove it, to fall-back to the C-based implementation.
+-- We use a format-string to determine what to draw, and ensure that we
+-- pad/truncate to fit the width of the console
 --
 function get_status_bar()
 
