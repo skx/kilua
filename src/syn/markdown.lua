@@ -12,7 +12,6 @@
 --
 --
 
--- local lpeg = require('lpeg')
 --
 -- This file is a Lua module.
 --
