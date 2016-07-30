@@ -41,6 +41,7 @@ int buffers_lua(lua_State *L)
  */
 int choose_buffer_lua(lua_State *L)
 {
+    (void)L;
     Editor *e = Editor::instance();
     int selected = e->get_current_buffer();
     int original = e->get_current_buffer();
@@ -71,7 +72,7 @@ int choose_buffer_lua(lua_State *L)
             if (b->dirty())
                 tmp += " <modified>";
 
-            while (tmp.size() < e->width())
+            while ((int)tmp.size() < e->width())
                 tmp += " ";
 
             mvwaddstr(stdscr, i, 0, tmp.c_str());
@@ -164,8 +165,10 @@ int buffer_name_lua(lua_State *L)
  */
 int kill_buffer_lua(lua_State *L)
 {
+    (void)L;
     Editor *e = Editor::instance();
     e->kill_current_buffer();
+    return 0;
 }
 
 /**
@@ -199,7 +202,7 @@ int select_buffer_lua(lua_State *L)
     else
     {
         lua_pushboolean(L, 0);
-        return 1;
     }
 
+    return 1;
 }

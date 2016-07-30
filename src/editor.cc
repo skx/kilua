@@ -294,11 +294,6 @@ void Editor::update_syntax()
     if (out == NULL)
         return;
 
-    /*
-     * Update syntax.
-     */
-    int count = strlen(out);
-    int done  = 0;
 
 
     /*
@@ -311,6 +306,8 @@ void Editor::update_syntax()
     /*
      * Now we'll update the colour of each character.
      */
+    int done = 0;
+
     for (int y = 0; y < rows; y++)
     {
         /*
@@ -322,7 +319,7 @@ void Editor::update_syntax()
          * For each character in the row, set the colour
          * to be the return value.
          */
-        for (int x = 0; x < crow->chars->size(); x++)
+        for (int x = 0; x < (int)crow->chars->size(); x++)
         {
             crow->cols->push_back(out[done] - '0');
             done += 1;
@@ -366,7 +363,7 @@ void Editor::draw_screen()
          * If this row is past the end of our list - draw
          * "~" and exit.
          */
-        if ((y + cur->rowoff) >= cur->rows.size())
+        if ((y + cur->rowoff) >= (int)cur->rows.size())
         {
             std::wstring x;
             x += '~';
@@ -390,14 +387,14 @@ void Editor::draw_screen()
             /*
              * If this row has a character here - draw it.
              */
-            if ((x + cur->coloff) < row->chars->size())
+            if ((x + cur->coloff) < (int)row->chars->size())
             {
                 /*
                  * Set the colour
                  */
                 int col = 8;
 
-                if ((x + cur->coloff) <  row->cols->size())
+                if ((x + cur->coloff) < (int)row->cols->size())
                     col = row->cols->at(x + cur->coloff);
 
                 color_set(col, NULL);
@@ -428,7 +425,7 @@ void Editor::draw_screen()
     else
         status = "Please define 'get_status_bar()";
 
-    while (status.length() < m_state->screencols)
+    while ((int)status.length() < m_state->screencols)
     {
         status += " ";
     }
@@ -445,10 +442,10 @@ void Editor::draw_screen()
      */
     std::string s = get_status();
 
-    if (s.length() >  m_state->screencols)
+    if ((int)s.length() >  m_state->screencols)
         s = s.substr(s.length() - m_state->screencols + 1);
 
-    while (s.length() < m_state->screencols)
+    while ((int)s.length() < m_state->screencols)
     {
         s += " ";
     }
@@ -476,10 +473,9 @@ void Editor::draw_screen()
 void Editor::insert(wchar_t c)
 {
     /*
-     * Get the current buffer & editor
+     * Get the current buffer.
      */
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
-    Editor *e   = Editor::instance();
 
     /*
      * Current offset
@@ -557,7 +553,7 @@ void Editor::insert(wchar_t c)
     /*
      * Trying to insert a character at an impossible position?
      */
-    if (row > cur->rows.size())
+    if (row > (int) cur->rows.size())
         return ;
 
 
@@ -600,10 +596,9 @@ void Editor::delete_char()
      */
 
     /*
-     * Get the current buffer & editor
+     * Get the current buffer.
      */
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
-    Editor *e   = Editor::instance();
 
     /*
      * Current offset
@@ -893,7 +888,7 @@ void Editor::move(const char *direction)
 
                     erow *row = buffer->rows.at(buffer->cy + buffer->rowoff);
 
-                    if (row->chars->size() < e->width())
+                    if ((int)row->chars->size() < e->width())
                     {
                         buffer->coloff = 0;
                         buffer->cx = row->chars->size() ;
@@ -920,7 +915,7 @@ void Editor::move(const char *direction)
 
         erow *row = buffer->rows.at(y);
 
-        if (x < row->chars->size())
+        if (x < (int)row->chars->size())
         {
             buffer->cx += 1;
 
@@ -962,7 +957,7 @@ void Editor::move(const char *direction)
 
     erow *row = buffer->rows.at(buffer->cy + buffer->rowoff);
 
-    if (row->chars->size() < (buffer->cx + buffer->coloff))
+    if ((int)row->chars->size() < (buffer->cx + buffer->coloff))
     {
         eol_lua(NULL);
     }

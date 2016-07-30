@@ -39,8 +39,9 @@ int eof_lua(lua_State *L)
 /**
  * Move to the end of the line.
  */
-int eol_lua(lua_State *)
+int eol_lua(lua_State *L)
 {
+    (void)L;
     Editor *e      = Editor::instance();
     Buffer *buffer = e->current_buffer();
 
@@ -49,7 +50,7 @@ int eol_lua(lua_State *)
      */
     erow *row = buffer->rows.at(buffer->cy + buffer->rowoff);
 
-    if (row->chars->size() < e->width())
+    if ((int)row->chars->size() < e->width())
     {
         buffer->coloff = 0;
         buffer->cx = row->chars->size() ;
@@ -59,6 +60,8 @@ int eol_lua(lua_State *)
         buffer->cx = e->width() - 1;
         buffer->coloff = row->chars->size() - e->width() + 1;
     }
+
+    return 0;
 }
 
 
@@ -98,10 +101,12 @@ int sof_lua(lua_State *L)
 /**
  * Move to the start of the line.
  */
-int sol_lua(lua_State *)
+int sol_lua(lua_State *L)
 {
+    (void)L;
     Editor *e      = Editor::instance();
     Buffer *buffer = e->current_buffer();
     buffer->cx = 0;
     buffer->coloff = 0;
+    return 0;
 }

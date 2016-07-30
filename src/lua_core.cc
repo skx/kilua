@@ -132,7 +132,7 @@ int prompt_lua(lua_State *L)
             e->set_status(0, "Cancelled");
             return 0;
         }
-        else if (len < sizeof(input))
+        else if (len < (int)sizeof(input))
         {
             input[len] = ch;
             len ++;
@@ -242,7 +242,7 @@ int search_lua(lua_State *L)
          */
         std::string text;
 
-        while (x < row->chars->size())
+        while (x < (int)row->chars->size())
         {
             std::wstring character = row->chars->at(x);
             char *c_txt = (char *)malloc(wcslen(character.c_str()) + 1);
@@ -353,7 +353,7 @@ int open_lua(lua_State *L)
         {
             c = fgetwc(input);
 
-            if (c == WEOF)
+            if (c == (wchar_t)WEOF)
                 break;
 
             e->insert(c);
@@ -451,6 +451,7 @@ int save_lua(lua_State *L)
  */
 int delete_lua(lua_State *L)
 {
+    (void)L;
     Editor *e      = Editor::instance();
     e->delete_char();
 

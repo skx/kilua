@@ -138,7 +138,7 @@ public:
     /**
      * Mark the buffer as dirty.
      */
-    bool set_dirty(bool state)
+    void set_dirty(bool state)
     {
         m_dirty = state;
     }
