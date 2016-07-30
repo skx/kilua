@@ -78,7 +78,6 @@ end
 
 keymap['M-g' ] = function() goto_line() end
 --
--- TODO: keymap['^F'] = find
 -- TODO: keymap['^H'] = delete
 -- TODO: keymap['^_'] = undo
 -- TODO: keymap['^G'] = function() search( prompt( "Search:" ) ) end
