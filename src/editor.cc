@@ -258,7 +258,7 @@ void Editor::update_syntax()
      *
      */
     std::wstring text;
-
+    int len = 0;
     int rows = cur->rows.size();
 
     for (int y = 0; y < rows; y++)
@@ -268,24 +268,38 @@ void Editor::update_syntax()
         for (int x = 0; x < chars; x++)
         {
             text += cur->rows.at(y)->chars->at(x);
+            len += 1;
         }
 
         text += '\n';
     }
 
     /*
+     * Is there no input?  Then abort
+     */
+    if (len <= 0)
+        return ;
+
+    /*
      * Now we've built up the string, pass it over and get the results.
      */
     char *ascii = Util::widestr2ascii(text);
-    const char *out;
+    const char *out = NULL;
     call_lua("on_syntax_highlight", "s>s", ascii, &out);
     delete[]ascii;
+
+    /*
+     * No result?  Then abort.
+     */
+    if (out == NULL)
+        return;
 
     /*
      * Update syntax.
      */
     int count = strlen(out);
     int done  = 0;
+
 
     /*
      * For each row - free the current colour, if any.
@@ -314,6 +328,9 @@ void Editor::update_syntax()
             done += 1;
         }
 
+        /*
+         * those damn newlines.
+         */
         done += 1;
     }
 }

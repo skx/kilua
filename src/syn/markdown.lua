@@ -64,7 +64,8 @@ local tokens = (http + https + any )^0
 -- The function we export.
 --
 function mymodule.parse(input)
-   start = 0
+   start  = 0
+   retval = ""
    lpeg.match(tokens, input)
    return( retval )
 end
