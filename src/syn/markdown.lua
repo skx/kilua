@@ -23,15 +23,20 @@ local mymodule = {}
 --
 local start = 0
 
-
+--
+-- The string we return.
+--
+local retval = ""
 
 --
 -- Helper to add the colour.
 --
 function add( colour, str )
    length = string.len(str)
-   syntax_range( start, start+length, colour )
-   start = start + length
+   while( length >0 ) do
+      retval = retval .. tostring(colour)
+      length = length -1
+   end
 end
 
 local P = lpeg.P
@@ -61,6 +66,7 @@ local tokens = (http + https + any )^0
 function mymodule.parse(input)
    start = 0
    lpeg.match(tokens, input)
+   return( retval )
 end
 
 --
