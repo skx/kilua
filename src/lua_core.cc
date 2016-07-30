@@ -146,7 +146,7 @@ int key_lua(lua_State *L)
              */
             char *ascii = Util::wchar2ascii(ch);
             lua_pushstring(L, ascii);
-            delete(ascii);
+            delete []ascii;
             return 1;
         }
     }
