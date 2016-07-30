@@ -378,10 +378,26 @@ end
 function open_file()
 
    --
-   -- TODO: Is there a currently dirty file?
+   -- Is there a currently dirty file?
    --
-   -- If so we should prompt for confirmation.
-   --
+   if ( dirty() ) then
+
+      -- Buffer is dirty.
+      status( "Buffer is dirty.  Really replace? (y/n)?" )
+
+      local run = true
+
+      while( run == true ) do
+         k = key()
+         if ( k == "y" or k == "Y" ) then
+            run = false
+         end
+         if ( k == "n" or k == "N" ) then
+            status("Cancelled")
+            return
+         end
+      end
+   end
 
    local name = prompt( "Open:" )
    if ( name and name ~= "" ) then
