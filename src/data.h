@@ -22,10 +22,26 @@
 class erow
 {
 public:
+    erow()
+    {
+        chars = new std::vector<std::wstring>;
+        cols  = new std::vector<int>;
+    };
+    ~erow()
+    {
+        delete(chars);
+        delete(cols);
+    };
+
     /*
      * The character at each position in this row.
      */
     std::vector<std::wstring> *chars;
+
+    /*
+     * The colour to draw at each position.
+     */
+    std::vector<int> *cols;
 
 };
 
@@ -59,8 +75,7 @@ public:
         /*
          * The buffer will have one (empty) row.
          */
-        erow *row = (erow*)malloc(sizeof(erow));
-        row->chars = new std::vector<std::wstring>;
+        erow *row = new erow();
         rows.push_back(row);
     };
 
@@ -70,7 +85,10 @@ public:
          * Remove the rows
          */
         for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-            free((*it));
+        {
+            erow *row = (*it);
+            delete(row);
+        }
 
         rows.clear();
 
@@ -84,7 +102,10 @@ public:
     void empty_buffer()
     {
         for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-            free((*it));
+        {
+            erow *row = (*it);
+            delete(row);
+        }
 
 
         rows.clear();
@@ -96,8 +117,7 @@ public:
         /*
          * The buffer will have one (empty) row.
          */
-        erow *row = (erow*)malloc(sizeof(erow));
-        row->chars = new std::vector<std::wstring>;
+        erow *row = new erow();
         rows.push_back(row);
     }
 
@@ -153,9 +173,8 @@ public:
     /* the actual rows */
     std::vector<erow *> rows;
 
-    /* syntax details. */
+    /* Syntax-mode which is in-use. */
     std::string m_syntax;
-    std::unordered_map < int, int >m_colours;
 
 private:
     /* Is this buffer dirty? */
