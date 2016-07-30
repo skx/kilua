@@ -45,7 +45,6 @@ extern int width_lua(lua_State *L);
  * Syntax
  */
 extern int syntax_lua(lua_State *L);
-extern int syntax_range_lua(lua_State *L);
 
 /*
  * Buffers
