@@ -1029,7 +1029,7 @@ function on_syntax_highlight( text )
    --
    local mode = syntax()
    if ( not mode ) then
-      return
+      return ""
    end
 
    --
@@ -1038,9 +1038,10 @@ function on_syntax_highlight( text )
    --
    local obj = load_syntax( mode )
    if ( obj ) then
-      obj.parse(text)
+      return(tostring(obj.parse(text)))
    else
       status("Failed to load syntax-module '" .. syntax() .. "' disabling highlighting.")
       syntax("")
+      return("")
    end
 end
