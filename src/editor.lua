@@ -427,8 +427,14 @@ end
 -- Delete forwards
 --
 function delete_forwards()
+   local x,y = point();
    move("right")
-   delete()
+   local nx,ny = point()
+   if ( nx == x and   ny == y  ) then
+      return
+   else
+      delete()
+   end
 end
 
 
