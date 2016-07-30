@@ -21,9 +21,9 @@ function mymodule.parse(input)
 
    for letter in input:gmatch(".") do
       if ( letter == '(' or letter == ')' ) then
-         ret = ret .. "2"
+         ret = ret .. CYAN
       else
-         ret = ret .. "8"
+         ret = ret .. WHITE
       end
    end
    return(tostring(ret))

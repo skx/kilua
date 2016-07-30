@@ -1,16 +1,6 @@
 --
 -- Syntax Highlighting for C/C++
 --
---        1,  COLOR_RED
---        2,  COLOR_GREEN
---        3,  COLOR_YELLOW
---        4,  COLOR_BLUE
---        5,  COLOR_MAGENTA
---        6,  COLOR_CYAN
---        7,  COLOR_BLUE
---        8,  COLOR_WHITE
---
---
 
 
 --
@@ -52,7 +42,7 @@ local C = lpeg.C
 -- account for it in our length calculations.
 --
 local white = S' \t\v\n\f'
-local whitespace = (white) / function(...) add(6, ...) end
+local whitespace = (white) / function(...) add(CYAN, ...) end
 
 
 local digit = R'09'
@@ -87,10 +77,10 @@ local ccomment = P'/*' * (1 - P'*/')^0 * P'*/'
 local newcomment = P'//' * (1 - P'\n')^0
 
 -- Both our comments.
-local comment = (ccomment + newcomment) / function(...)  add(1, ... ) end
+local comment = (ccomment + newcomment) / function(...)  add(RED, ... ) end
 
 -- Literals
-local literal = (numlit + charlit + stringlit) / function(...) add(4, ... ) end
+local literal = (numlit + charlit + stringlit) / function(...) add(BLUE, ... ) end
 
 -- Keywords
 local keyword = C(
@@ -131,7 +121,7 @@ local keyword = C(
       P"void" +
       P"volatile" +
       P"while"
-                 ) / function(...) add(4, ... ) end
+                 ) / function(...) add(CYAN, ... ) end
 
 -- Functions
 local functions = C(
@@ -139,23 +129,33 @@ local functions = C(
    P"stdout" +
    P"printf" +
    P"strlen" +
-   P"fprintf" +
+   P"wcslen" +
+   P"malloc" +
+      P"free" +
+   P"delete" +
+      P"fprintf" +
+   P"vsnprintf" +
    P"strcpy" +
    P"strncpy" +
    P"sprintf" +
       P"getenv" +
       P"ioctl" +
       P"lua_register"+
+      P"lua_pushinteger"+
+      P"lua_pushstring"+
+      P"lua_isstring"+
+      P"lua_isinteger"+
+      P"lua_setglobal"+
       P"luaL_newstate"+
       P"luaopen_base"+
       P"luaL_openlibs"
-                   ) / function(...) add(5, ... ) end
+                   ) / function(...) add(GREEN, ... ) end
 
 
 --
 -- Match any single character
 --
-local any = C(P(1) )/ function(...) add(8,... ) end
+local any = C(P(1) )/ function(...) add(WHITE,... ) end
 
 
 --

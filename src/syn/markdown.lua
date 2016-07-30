@@ -1,14 +1,6 @@
 --
--- Syntax Highlighting for C/C++
---
---        1,  COLOR_RED
---        2,  COLOR_GREEN
---        3,  COLOR_YELLOW
---        4,  COLOR_BLUE
---        5,  COLOR_MAGENTA
---        6,  COLOR_CYAN
---        7,  COLOR_BLUE
---        8,  COLOR_WHITE
+-- Syntax Highlighting for markdown - this is a faux mode that
+-- only attempts to highlight URLS.
 --
 --
 
@@ -46,14 +38,14 @@ local C = lpeg.C
 
 
 -- Terminator for a URL
-local term  = S']> \n'/ function(...) add(8,... ) end
+local term  = S']> \n'/ function(...) add(WHITE,... ) end
 
 -- Two types of links
-local http  = P('http://') * (1 -term)^0/ function(...)  add(4,...)end
-local https = P('https://') * (1 -term)^0/ function(...) add(4,...)end
+local http  = P('http://') * (1 -term)^0/ function(...)  add(RED,...)end
+local https = P('https://') * (1 -term)^0/ function(...) add(BLUE,...)end
 
 -- Any character - allows continuing.
-local any   = C(P(1) )/ function(...) add(8,... ) end
+local any   = C(P(1) )/ function(...) add(WHITE,... ) end
 
 
 -- We support links and "any"thing else.

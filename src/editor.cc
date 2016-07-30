@@ -114,6 +114,30 @@ Editor::Editor()
     lua_register(m_lua, "syntax", syntax_lua);
     lua_register(m_lua, "width", width_lua);
 
+    /*
+     * register our colours
+     */
+    lua_pushinteger(m_lua, 1);
+    lua_setglobal(m_lua, "RED");
+
+    lua_pushinteger(m_lua, 2);
+    lua_setglobal(m_lua, "GREEN");
+
+    lua_pushinteger(m_lua, 3);
+    lua_setglobal(m_lua, "YELLOW");
+
+    lua_pushinteger(m_lua, 4);
+    lua_setglobal(m_lua, "BLUE");
+
+    lua_pushinteger(m_lua, 5);
+    lua_setglobal(m_lua, "MEGENTA");
+
+    lua_pushinteger(m_lua, 6);
+    lua_setglobal(m_lua, "CYAN");
+
+    lua_pushinteger(m_lua, 7);
+    lua_setglobal(m_lua, "WHITE");
+
     int erred = luaL_dofile(m_lua, "editor.lua");
 
     if (erred)
@@ -402,7 +426,7 @@ void Editor::draw_screen()
             x += '~';
 
             /* Reset to white */
-            color_set(8, NULL);
+            color_set(7, NULL);
             mvwaddwstr(stdscr, y, 0, x.c_str());
             continue;
         }
@@ -425,7 +449,7 @@ void Editor::draw_screen()
                 /*
                  * Set the colour
                  */
-                int col = 8;
+                int col = 7;
 
                 if ((x + cur->coloff) < (int)row->cols->size())
                     col = row->cols->at(x + cur->coloff);
@@ -441,7 +465,7 @@ void Editor::draw_screen()
                 /*
                  * Reset
                  */
-                color_set(8, NULL); /* white */
+                color_set(7, NULL); /* white */
             }
         }
     }
