@@ -79,7 +79,6 @@ Editor::Editor()
     lua_register(m_lua, "sol", sol_lua);
     lua_register(m_lua, "status", status_lua);
     lua_register(m_lua, "syntax", syntax_lua);
-    lua_register(m_lua, "syntax_range", syntax_range_lua);
     lua_register(m_lua, "width", width_lua);
 
     int erred = luaL_dofile(m_lua, "editor.lua");
@@ -251,41 +250,72 @@ void Editor::update_syntax()
         return;
 
     /*
-     * OK here we reset the current state.
-     */
-    cur->m_colours.clear();
-
-    /*
-     * Now update via lua
+     * Now update via lua.
+     *
+     * We'll pass the (string) contents of the buffer to the
+     * on_syntax_highlight(txt) function, and that will return
+     * a string containing the colour to use for each buffer-position.
+     *
      */
     std::wstring text;
 
     int rows = cur->rows.size();
-    int count = 0;
 
     for (int y = 0; y < rows; y++)
     {
-        /*
-         * For each character
-         */
         int chars = cur->rows.at(y)->chars->size();
 
         for (int x = 0; x < chars; x++)
         {
             text += cur->rows.at(y)->chars->at(x);
-            cur->m_colours[count] = 8; /* white */
-            count += 1;
         }
 
         text += '\n';
-
-        cur->m_colours[count] = 8; /* white */
-        count += 1;
     }
 
+    /*
+     * Now we've built up the string, pass it over and get the results.
+     */
     char *ascii = Util::widestr2ascii(text);
-    call_lua("on_syntax_highlight", "s>", ascii);
+    const char *out;
+    call_lua("on_syntax_highlight", "s>s", ascii, &out);
     delete[]ascii;
+
+    /*
+     * Update syntax.
+     */
+    int count = strlen(out);
+    int done  = 0;
+
+    /*
+     * For each row - free the current colour, if any.
+     */
+    for (int y = 0; y < rows; y++)
+        cur->rows.at(y)->cols->clear();
+
+
+    /*
+     * Now we'll update the colour of each character.
+     */
+    for (int y = 0; y < rows; y++)
+    {
+        /*
+         * The current row.
+         */
+        erow *crow = cur->rows.at(y);
+
+        /*
+         * For each character in the row, set the colour
+         * to be the return value.
+         */
+        for (int x = 0; x < crow->chars->size(); x++)
+        {
+            crow->cols->push_back(out[done] - '0');
+            done += 1;
+        }
+
+        done += 1;
+    }
 }
 
 
@@ -309,30 +339,6 @@ void Editor::draw_screen()
      * The current buffer.
      */
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
-
-    /*
-     * The count of characters we've displayed.
-     *
-     * THis is used to index into the buffer of colours.
-     */
-    int chars = 0;
-
-    /*
-     * Count the characters in rows we're not displaying.
-     */
-    for (int i = 0; i < cur->rowoff; i++)
-    {
-        int characters = cur->rows.at(i)->chars->size();
-
-
-        for (int x = 0; x < characters; x++)
-        {
-            chars += 1;
-        }
-
-        /* cope with newline. */
-        chars += 1;
-    }
 
     /*
      * For each row ..
@@ -370,25 +376,27 @@ void Editor::draw_screen()
             if ((x + cur->coloff) < row->chars->size())
             {
                 /*
-                 * Get the colour
+                 * Set the colour
                  */
-                int col = -1;
+                int col = 8;
 
-                if (chars < cur->m_colours.size())
-                    col = cur->m_colours[ chars ];
+                if ((x + cur->coloff) <  row->cols->size())
+                    col = row->cols->at(x + cur->coloff);
 
-                if (col != -1)
-                    color_set(col, NULL);
+                color_set(col, NULL);
 
+                /*
+                 * Draw the string.
+                 */
                 std::wstring t = row->chars->at(x + cur->coloff);
                 mvwaddwstr(stdscr, y, x, t.c_str());
 
-                color_set(8, NULL);
-                chars += 1;
+                /*
+                 * Reset
+                 */
+                color_set(8, NULL); /* white */
             }
         }
-
-        chars += 1;
     }
 
     /*
@@ -478,8 +486,7 @@ void Editor::insert(wchar_t c)
          *
          * We know this means we need to create a new-line, which we'll insert.
          */
-        erow *new_row = (erow*)malloc(sizeof(erow));
-        new_row->chars = new std::vector<std::wstring>;
+        erow *new_row = new erow();
 
         /*
          * Take the characters in the current row after the point.
