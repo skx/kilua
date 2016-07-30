@@ -138,6 +138,24 @@ Editor::Editor()
     lua_pushinteger(m_lua, 7);
     lua_setglobal(m_lua, "WHITE");
 
+    lua_pushinteger(m_lua, 8);
+    lua_setglobal(m_lua, "REV_RED");
+
+    lua_pushinteger(m_lua, 9);
+    lua_setglobal(m_lua, "REV_GREEN");
+
+    lua_pushinteger(m_lua, 10);
+    lua_setglobal(m_lua, "REV_YELLOW");
+
+    lua_pushinteger(m_lua, 11);
+    lua_setglobal(m_lua, "REV_BLUE");
+
+    lua_pushinteger(m_lua, 12);
+    lua_setglobal(m_lua, "REV_MAGENTA");
+
+    lua_pushinteger(m_lua, 13);
+    lua_setglobal(m_lua, "REV_CYAN");
+
     int erred = luaL_dofile(m_lua, "editor.lua");
 
     if (erred)

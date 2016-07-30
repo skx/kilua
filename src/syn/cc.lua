@@ -9,11 +9,6 @@
 local mymodule = {}
 
 --
---  Start of position.
---
-local start = 0
-
---
 -- The result we return to the caller.
 --
 local retval = ""
@@ -24,7 +19,9 @@ local retval = ""
 function add( colour, str )
    length = string.len(str)
    while( length >0 ) do
-      retval = retval .. tostring(colour)
+      -- The colour has "0" subtracted from it.
+      local val = ( string.char( ( string.byte('0') + colour ) ) )
+      retval = retval .. val
       length = length -1
    end
 end
@@ -36,13 +33,6 @@ local P = lpeg.P
 local R = lpeg.R
 local S = lpeg.S
 local C = lpeg.C
-
---
--- Whitespace isn't syntax highlighted, but we still have to
--- account for it in our length calculations.
---
-local white = S' \t\v\n\f'
-local whitespace = (white) / function(...) add(CYAN, ...) end
 
 
 local digit = R'09'
@@ -71,13 +61,15 @@ local stringlit =
    P'L'^-1 * P'"' * (P'\\' * P(1) + (1 - S'\\"'))^0 * P'"'
 
 
--- Multi-line comment
-local ccomment = P'/*' * (1 - P'*/')^0 * P'*/'
--- Single-line comment
+--
+-- Single and multi-line comments.
+--
+local ccomment   = P'/*' * (1 - P'*/')^0 * P'*/'
 local newcomment = P'//' * (1 - P'\n')^0
+local comment    = (ccomment + newcomment) / function(...)  add(RED, ... ) end
 
--- Both our comments.
-local comment = (ccomment + newcomment) / function(...)  add(RED, ... ) end
+-- Show trailing-whitespace with a `cyan` background.
+local trailing_space = S' \t'^1 * S'\n'/ function(...) add(REV_CYAN,... ) end
 
 -- Literals
 local literal = (numlit + charlit + stringlit) / function(...) add(BLUE, ... ) end
@@ -161,14 +153,13 @@ local any = C(P(1) )/ function(...) add(WHITE,... ) end
 --
 -- The complete set of tokens we understand
 --
-local tokens = (comment + functions + keyword + literal + whitespace + any)^0
+local tokens = (comment + functions + keyword + literal + trailing_space + any)^0
 
 
 --
 -- The function we export.
 --
 function mymodule.parse(input)
-   start  = 0
    retval = ""
    lpeg.match(tokens, input)
    return( retval )
