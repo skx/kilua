@@ -14,9 +14,9 @@ kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many upda
    * This is done [via buffers](#buffers).
 * The addition of an embedded Lua instance.
    * You can define functions in your [init-files](#lua-support), and invoke them via `M-x function()`.
-* The addition of regular expression support for searching.
+* Regular expression support for searching.
 * The adition of [syntax-highlighting](#syntax-highlighting) via the `lua-lpeg` library.
-   * The ability to highlight trailing whitespace too.
+   * **NOTE**: You should see the [installation](#installation) section for caveats here.
 * The notion of [named marks](#bookmarks).
 * The [status bar](#status-bar) is configured via Lua.
 * Several bugfixes.
@@ -56,6 +56,32 @@ The following command-line options are recognized and understood:
     * Specify the location of syntax-highlighting functions.
 * `--version`
     * Report the version and exit.
+
+
+
+## Installation
+
+Installation should be straight-forward, to build the code run:
+
+    make
+
+Once built you can run this in a portable fashion, like so:
+
+    ./kilua --syntax-path ./syntax [options] [file1] [file2] .. [fileN]
+
+The usage of `--syntax-path` is required to load the syntax files, but
+you can remove the option if you copy the contents of the `./syntax/`
+directory to either:
+
+* `/etc/kilua/syntax/`
+* `~/.kilua/syntax/`
+
+If you don't specify the location of the syntax-highlighting libraries,
+and you don't install them then you'll have zero syntax-highlighting support.
+
+This is a consequence of placing the syntax-highlighting code in external
+libraries: If you can't load those libraries then the functionality will
+not be available.
 
 
 
