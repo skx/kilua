@@ -4,21 +4,20 @@
 
 # Kilua
 
-Kilua is an extensible, small, portable, and Lua-powered text editor.
+Kilua is an small, extensible, and Lua-powered text editor.
 
-The project is built upon the minimal [kilo editor](https://github.com/antirez/kilo) originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108).  This derived work was put together by [Steve Kemp](https://steve.kemp.fi/) and features many updates and additions compared to the original project:
+The project was orginally based upon the minimal [kilo editor](https://github.com/antirez/kilo) originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108), but now shares no code with that project, just ancestry.
+
+kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many updates and additions compared to the original project:
 
 * The ability to open/edit/view multiple files
    * This is done [via buffers](#buffers).
-* The addition of undo-support.
-   * Documented later [in this file](#undo-support).
 * The addition of an embedded Lua instance.
    * You can define functions in your [init-files](#lua-support), and invoke them via `M-x function()`.
 * The addition of regular expression support for searching.
-* The addition of regular-expressions for [syntax-highlighting](#syntax-highlighting).
+* The adition of [syntax-highlighting](#syntax-highlighting) via the `lua-lpeg` library.
    * The ability to highlight trailing whitespace too.
-* The addition of [copy and paste](#copy--paste).
-* The notion of [named marks](#marks).
+* The notion of [named marks](#bookmarks).
 * The [status bar](#status-bar) is configured via Lua.
 * Several bugfixes.
 
@@ -29,11 +28,17 @@ Launching `kilua` works as you would expect:
 Once launched the arrow keys will move you around, and the main keybindings
 to learn are:
 
-    CTRL-l: Read lua from the user, and evaluate it.
-    CTRL-o: Open a new file.
-    CTRL-s: Save the current file.
-    CTRL-q: Quit
-    CTRL-f: Find string in file (ESC to exit search, arrows to navigate)
+    Ctrl-x Ctrl-o Open a new file in the current buffer.
+    Ctrl-x Ctrl-s Save the current file.
+    Ctrl-x Ctrl-c Quit.
+
+    Ctrl-x c      Create a new buffer
+    Ctrl-x n      Move to the next buffer.
+    Ctrl-x p      Move to the previous buffer.
+    Ctrl-x b      Select buffer from a list
+
+    M-x           Evaluate lua at the prompt.
+    CTRL-r:       Regular expression search.
 
 
 
@@ -51,9 +56,10 @@ The following command-line options are recognized and understood:
     * Report the version and exit.
 
 
+
 ## Lua Support
 
-We build with Lua 5.2 by default, but if you edit the `Makefile` you
+We build with Lua 5.2 by default, but if you edit `src/Makefile` you
 should also be able to build successfully with Lua 5.1.
 
 On startup the following configuration-files are read if present:
@@ -78,6 +84,7 @@ particular preferences.
 > **Pull-requests** implementing useful functionality will be recieved with thanks, even if just to add syntax-highlighting for additional languages.
 
 
+
 ## Callbacks
 
 In the future more callbacks might be implemented, which are functions the
@@ -87,7 +94,6 @@ Right now the following callbacks exist and are invoked via the C-core:
 
 * `get_status_bar()`
     * This function is called to populate the status-bar in the footer.
-    * If this function isn't found then a default C-implementation will be used.
 * `on_idle()`
     * Called roughly once a second, can be used to run background things.
     * If this function isn't defined it will not be invoked.
@@ -102,6 +108,8 @@ Right now the following callbacks exist and are invoked via the C-core:
     * Called __after__ a file is saved.
     * Can be used to make files executable, etc.
     * If this function is not defined then it will not be invoked.
+* `on_syntax_highlight( text )`
+    * Invoked to run [syntax-highlighting](#syntax-highlighting).
 
 
 
@@ -112,7 +120,7 @@ Right now the following callbacks exist and are invoked via the C-core:
 * `*Messages*`
     * This receives copies of the status-message.
 * An unnamed buffer for working with.
-    * Enter your text here, then use `M-x save("name")` to save it.
+    * Enter your text here, then use `Ctrl-x Ctrl-s`, or `M-x save("name")`, to save it.
 
 Otherwise there will be one buffer for each file named upon the command-line,
 as well as the `*Messages*` buffer.  (You can kill the `*Messages*` buffer
@@ -143,30 +151,21 @@ Uptime sample:
       -- Run `uptime`, and show the result in a dedicated buffer.
       function uptime()
           local result = select_buffer( "*uptime*" )
-          if ( result == 0 ) then create_buffer( "*uptime*" )   end
-          end_of_file()
+          if ( result == false ) then create_buffer( "*uptime*" )   end
+          -- move to end of file.
+          eof()
           insert(cmd_output( "uptime" ) )
       end
 
 
-## Copy & Paste
 
-We've added a notion of a `mark`.  A mark is set by pressing `Ctrl+space`,
-and at any time you can cut the region between the cursor and the mark by
-pressing `Ctrl-w`.
-
-You can also cut the current line via `Ctrl-y`.
-
-In both cases you can yank the selection back with `Ctrl-u`.
-
-
-## Marks
+## Bookmarks
 
 You can record your position (i.e. "mark") in a named key, and
 later jump to it, just like in `vi`.
 
-To record the current position use `M-SPACE`, and press the key
-you wish to use.  To return to it use `M-m XX` where XX was the
+To record the current position use `M-m`, and press the key
+you wish to use.  To return to it use `M-b XX` where XX was the
 key you chose.
 
 
@@ -178,7 +177,8 @@ the name of the current file/buffer, as well as the cursor position, etc.
 The contents of the status-bar are generated via Lua, so it is simple
 to modify.  The default display shows:
 
-     "${buffer}/${buffers} - ${file} ${modified} #BLANK# Chars:${chars} Words:${words} Col:${x} Row:${y}"
+     "${buffer}/${buffers} - ${file} ${mode} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${time}"
+
 
 Values inside "`${...}`" are expanded via substitutions and the following
 are provided by default:
@@ -187,10 +187,11 @@ Name             | Meaning
 ---------------- | --------------
 `${buffers}`     | The count of open buffers.
 `${buffer}`      | The number of the current buffer.
-`${chars}`       | the number of characters in the buffer.
 `${date}`        | The current date.
 `${file}`        | The name of the file/buffer.
+`${mode}`        | The syntax-highlighting mode in use.
 `${modified}`    | A string that reports whether the buffer is modified.
+`${point}`       | The character under the point.
 `${time}`        | The current time.
 `${words}`       | The count of words in the buffer.
 `${x}`           | The X-coordinate of the cursor.
@@ -201,49 +202,38 @@ Name             | Meaning
 
 ## Syntax Highlighting
 
-Syntax highlighting is defined in lua, and configured by calling:
+Syntax highlighting is handled via the `lua-lpeg` library, and so if
+that is not installed it will not be available.
 
-    -- Setup "keywords"
-    set_syntax_keywords({ "void|", "int|", "while", "true" } )
+Each buffer has an associated syntax-highlighting mode, which is a string
+such as "c", "markdown", or "lua".  The default configuration file sets
+the mode based upon the suffix of the file you're editing.
 
-    -- Setup "comments"
-    set_syntax_comments( "//", "/*", "*/" )
+If you wish to change the mode interactivally to Lua, then run:
 
-    -- Enable highlighting of numbers/strings
-    set_syntax_options( "numbers", "strings" )
+    M-x syntax("lua")
 
-    -- You can also highlight trailing whitespace:
-    set_syntax_options( "numbers", "strings", "trailing_whitespace" )
+The implementation of syntax highlighting requires the loading of
+a library.  For example the syntax highlighting of lua requires
+that the library `lua.lua` is loaded - The syntax modes are looked
+for in two locations:
 
-The `on_loaded()` function has code currently for highlighting C, C++,
-and Lua files, as well as `Makefiles` and some simple highlighting for
-both Markdown and plain-text files.
+* `/etc/kilua/syntax`
+    * Global syntax-modes.
+* `~/.kilua/syntax`
+    * Per-user syntax-modes.
 
-If you wish to change the syntax-highlighting once a file is loaded,
-you can do that by entering `M-x` to open the Lua-prompt then
-typing (for example):
+Currently we include syntax for Lua, C, C++, and plain-text/markdown.
 
-    set_syntax( "pl" )
+> **Pull-requests** adding more syntax modes would be most welcome.
 
-Currently we include syntax for Perl, Lua, C, C++, and shell.
-
-
-## Undo Support
-
-The basic actions of inserting characters, deleting characters, and
-moving the cursor can be undo via the lua `undo` function.  (Which is
-bound to `Ctrl-z` by default).
-
-**NOTE**: Due to the implementation some actions might corrupt the
-undo-stack.  Specifically difficult functions are:
-
-* `kill`.
-* `cut_selection`.
 
 
 ## Discussion on Hacker News
 
 https://news.ycombinator.com/item?id=12137698
+
+
 
 ## The Future
 
