@@ -156,6 +156,9 @@ Editor::Editor()
     lua_pushinteger(m_lua, 13);
     lua_setglobal(m_lua, "REV_CYAN");
 
+    lua_pushstring(m_lua,KILUA_VERSION);
+    lua_setglobal(m_lua, "KILUA_VERSION");
+
 }
 
 

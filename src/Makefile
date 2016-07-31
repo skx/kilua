@@ -6,7 +6,7 @@ default: editor
 
 
 editor: $(wildcard *.cc *.h)
-	$(CXX) -Wall -Wextra -Werror -fsanitize=address -fno-omit-frame-pointer -std=c++11 -ggdb $(wildcard *.cc) -o ../kilua   -I/usr/include/ncursesw -lncursesw -I/usr/include/lua5.2 -llua5.2
+	$(CXX) -DKILUA_VERSION="\"0.5\"" -Wall -Wextra -Werror -fsanitize=address -fno-omit-frame-pointer -std=c++11 -ggdb $(wildcard *.cc) -o ../kilua   -I/usr/include/ncursesw -lncursesw -I/usr/include/lua5.2 -llua5.2
 
 clean:
 	rm -f editor *.orig core

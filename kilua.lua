@@ -687,12 +687,12 @@ end
 
 
 --
--- Test function just to prove `on_idle` is called every second, or so.
+-- `on_idle` is called every second, or so, and can run things in the
+-- background.
 --
 function on_idle()
-   --
-   -- status( os.date() )
-   --
+   -- Empty the status-bar.
+   status( "" )
 end
 
 
@@ -958,3 +958,8 @@ function load_syntax( lang )
       return nil
    end
 end
+
+--
+-- Show the version
+--
+status("Kilua v" .. KILUA_VERSION)
