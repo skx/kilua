@@ -40,8 +40,12 @@
 #include <sys/socket.h>
 
 #include "editor.h"
+#include "intro.h"
 #include "util.h"
 
+
+bool one_key_pressed = false;
+std::vector<std::string> intro;
 
 /**
  * Constructor.
@@ -208,6 +212,7 @@ void Editor::load_files(std::vector<std::string> files)
  */
 void Editor::main_loop()
 {
+
     while (1)
     {
         unsigned int ch;
@@ -226,9 +231,23 @@ void Editor::main_loop()
             continue;
         }
 
-        // Lookup what that means
+        /*
+         * We've had at least one keystroke - so the welcome
+         * message can go away.
+         */
+        one_key_pressed = true;
+
+        /*
+         * Expand the key.
+         */
         const char *name = lookup_key(ch);
 
+        /*
+         * This is a bit horrid.
+         *
+         * The intention is to ensure that Lua can process special
+         * key-strokes, and they are not inserted.
+         */
         if (name && strlen(name) > 1 &&
                 (
                     (strncmp(name, "KEY_", 4) == 0) ||
@@ -241,8 +260,7 @@ void Editor::main_loop()
         else
         {
             /*
-             * Convert the character to a string.
-             * then call Lua.
+             * Convert the character to a string, then call Lua.
              */
             char *ascii = Util::wchar2ascii(ch);
             call_lua("on_key", "s>", ascii);
@@ -250,7 +268,7 @@ void Editor::main_loop()
         }
 
         /*
-         * Draw screen
+         * Draw the screen.
          */
         draw_screen();
     }
@@ -462,6 +480,7 @@ void Editor::update_syntax()
  */
 void Editor::draw_screen()
 {
+
     /*
      * Update the syntax-highlighting of the buffer.
      *
@@ -476,9 +495,10 @@ void Editor::draw_screen()
     clear();
 
     /*
-     * The current buffer.
+     * The current buffer, and row-count.
      */
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
+    int rows = cur->rows.size();
 
     /*
      * For each row ..
@@ -515,17 +535,20 @@ void Editor::draw_screen()
             if ((x + cur->coloff) < (int)row->chars->size())
             {
                 /*
-                 * Set the colour
+                 * Default colour - white.
                  */
                 int col = 7;
 
+                /*
+                 * Get & set the colour.
+                 */
                 if ((x + cur->coloff) < (int)row->cols->size())
                     col = row->cols->at(x + cur->coloff);
 
                 color_set(col, NULL);
 
                 /*
-                 * Draw the string.
+                 * Draw the character.
                  */
                 std::wstring t = row->chars->at(x + cur->coloff);
 
@@ -536,15 +559,32 @@ void Editor::draw_screen()
                 if (t.at(0) == '\t')
                     t = ' ';
 
-                mvwaddwstr(stdscr, y, x, t.c_str());
-
                 /*
-                 * Reset
+                 * Draw the character, and reset the colour to white.
                  */
+                mvwaddwstr(stdscr, y, x, t.c_str());
                 color_set(7, NULL); /* white */
             }
         }
     }
+
+    if ((rows == 1) && (one_key_pressed == false))
+    {
+        /*
+         * Setup the introductionary message.
+         */
+        init_intro();
+
+        int row = 0;
+
+        for (auto it = intro.begin(); it != intro.end() ; ++it)
+        {
+            mvwaddstr(stdscr, row, 0, (*it).c_str());
+            row += 1;
+        }
+    }
+
+
 
     /*
      * Get the status-bar from Lua, if we can.
