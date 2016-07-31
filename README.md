@@ -6,6 +6,8 @@
 
 Kilua is an small, extensible, and Lua-powered text editor.
 
+[![screenshot](kilua.png)]()
+
 The project was orginally based upon the minimal [kilo editor](https://github.com/antirez/kilo) originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108), but now shares no code with that project, just ancestry.
 
 kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many updates and additions compared to the original project:
