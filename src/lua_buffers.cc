@@ -58,7 +58,7 @@ int buffer_lua(lua_State *L)
      * If called with a string then select the buffer
      * by name, and return the offset.
      */
-    if (lua_isstring(L, -1 ) )
+    if (lua_isstring(L, -1))
     {
         const char *name = lua_tostring(L, -1);
         int off          = e->buffer_by_name(name);
@@ -106,8 +106,18 @@ int buffer_name_lua(lua_State *L)
 int buffers_lua(lua_State *L)
 {
     Editor *e = Editor::instance();
-    int mx    = e->count_buffers();
-    lua_pushnumber(L, mx);
+    std::vector<Buffer *>buffers = e->get_buffers();
+
+    lua_createtable(L, buffers.size(), 0);
+
+
+    for (int i = 0; i < (int)buffers.size(); i++)
+    {
+        Buffer *b = buffers.at(i);
+        lua_pushstring(L, b->get_name());
+        lua_rawseti(L, -2, i + 1);
+    }
+
     return 1;
 }
 

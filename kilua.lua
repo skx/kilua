@@ -530,14 +530,15 @@ function quit()
    -- The current-buffer
    --
    local old_buffer = buffer()
+
    --
    -- For each buffer
    --
-   for i=0,(buffers()-1) do
+   for index,name in ipairs(buffers()) do
       --
       -- Select the buffer
       --
-      buffer( i )
+      buffer( index - 1 )
 
       --
       -- Is it dirty?
@@ -557,7 +558,7 @@ function quit()
    --
    if ( dirty_count > 0 ) then
       if ( quit_count > 0 ) then
-         status( dirty_count .. "/" .. buffers() .. " buffers are dirty, repeat " .. quit_count .. " more times to exit!")
+         status( dirty_count .. "/" .. #buffers() .. " buffers are dirty, repeat " .. quit_count .. " more times to exit!")
          quit_count = quit_count - 1
       else
          exit()
@@ -630,7 +631,7 @@ end
 -- Move to the next buffer
 --
 function next_buffer()
-   local max = buffers()
+   local max = #buffers()
    local cur = buffer()
    if ( cur < max ) then
       buffer( cur + 1)
@@ -691,8 +692,6 @@ end
 -- background.
 --
 function on_idle()
-   -- Empty the status-bar.
-   status( "" )
 end
 
 
@@ -736,7 +735,7 @@ function get_status_bar()
    --
    local t = {}
    t['buffer']  = buffer() + 1
-   t['buffers'] = buffers()
+   t['buffers'] = #buffers()
 
    --
    -- See https://www.lua.org/pil/22.1.html
@@ -963,3 +962,36 @@ end
 -- Show the version
 --
 status("Kilua v" .. KILUA_VERSION)
+
+
+--
+-- Dump details about our buffers
+--
+function bd()
+   --
+   -- Create a buffer to show our output
+   --
+   local result = buffer( "*Buffers*" )
+   if ( result == -1 ) then
+      create_buffer( "*Buffers*" )
+   end
+
+   --
+   -- Move to the end of the file.
+   --
+   eof()
+
+   --
+   -- Get the buffers
+   --
+   local b = buffers()
+   insert( "There are " ..  #b .. " buffers" .. "\n" )
+
+   --
+   -- Show them.
+   --
+   for i,n in ipairs(b) do
+      insert( "Buffer " .. i .. " has name " .. n .. "\n" )
+   end
+
+end

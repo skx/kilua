@@ -173,6 +173,7 @@ public:
     void set_current_buffer(int off);
     void new_buffer(const char *name = "unnamed");
     void kill_current_buffer();
+    std::vector<Buffer *> get_buffers();
 
     /**
      * Get the hostname we're running on.
