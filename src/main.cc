@@ -40,50 +40,10 @@
 #include "editor.h"
 
 
-/* Get the hostname of the local system */
-char * get_hostname()
-{
-    /**
-     * If the environmental varaible HOSTNAME
-     * is set, use that, otherwise use the standard networking
-     * functions to determine our FQDN.
-     */
-    const char *env = getenv("HOSTNAME");
 
-    if (env != NULL)
-    {
-        return (strdup(env));
-    }
-
-    /*
-     * Get the short version.
-     */
-    char res[1024];
-    res[sizeof(res) - 1] = '\0';
-    gethostname(res, sizeof(res) - 1);
-
-    /*
-     * Attempt to get the full vrsion.
-     */
-    struct hostent *hstnm;
-    hstnm = gethostbyname(res);
-
-    if (hstnm)
-    {
-        /*
-         * Success.
-         */
-        return (strdup(hstnm->h_name));
-    }
-    else
-    {
-        /*
-         * Failure: Return the short-version.
-         */
-        return (strdup(res));
-    }
-}
-
+/**
+ * Setup the curses environment, along with the colours.
+ */
 void setup()
 {
     char e[] = "ESCDELAY=0";
@@ -122,12 +82,17 @@ void setup()
     timeout(750);
 }
 
+
+/**
+ * Exit from curses
+ */
 void teardown()
 {
     endwin();
 }
 
-/*
+
+/**
  * Setup the console, and start the editor.
  */
 int main(int argc, char *argv[])
@@ -195,7 +160,7 @@ int main(int argc, char *argv[])
 
 
     /*
-     * Load our default configuration files ~/.kilua/init.lua
+     * Load our default configuration file ~/.kilua/init.lua
      */
     int loaded = 0;
 
@@ -205,9 +170,9 @@ int main(int argc, char *argv[])
     loaded += e->load_lua(init_buf);
 
     /*
-     * Load our default configuration files ~/.kilua/$hostname.lua
+     * Load our default configuration file ~/.kilua/$hostname.lua
      */
-    char *hostname = get_hostname();
+    char *hostname = e->hostname();
     snprintf(init_buf, sizeof(init_buf) - 1, "%s/.kilua/%s.lua",
              getenv("HOME"), hostname);
     loaded += e->load_lua(init_buf);
