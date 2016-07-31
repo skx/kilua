@@ -3,7 +3,6 @@ dist: jessie
 
 compiler:
   - clang
-  - g
 
 before_install:
   - sudo apt-get update -qq
