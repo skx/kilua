@@ -1,9 +1,9 @@
-language: c
+language: cpp
 dist: jessie
 
 compiler:
-  - clang++
-  - g++
+  - clang
+  - g
 
 before_install:
   - sudo apt-get update -qq
