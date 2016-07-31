@@ -12,6 +12,7 @@ The project was orginally based upon the minimal [kilo editor](https://github.co
 
 kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many updates and additions compared to the original project:
 
+* Complete handling for UTF-8 and multi-byte text.
 * The ability to open/edit/view multiple files
    * This is done [via buffers](#buffers).
 * The addition of an embedded Lua instance.
