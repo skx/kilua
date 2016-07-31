@@ -1,6 +1,2 @@
 kilua
 core
-*.orig
-valgrind.out
-config.h
-welcome.h
