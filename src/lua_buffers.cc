@@ -45,12 +45,35 @@ int buffer_lua(lua_State *L)
 {
     Editor *e = Editor::instance();
 
-
+    /*
+     * If called with a number, then select the given buffer.
+     */
     if (lua_isnumber(L, -1))
     {
-        e->set_current_buffer(lua_tonumber(L, -1));
+        int off = lua_tonumber(L, -1);
+        e->set_current_buffer(off);
     }
 
+    /*
+     * If called with a string then select the buffer
+     * by name, and return the offset.
+     */
+    if (lua_isstring(L, -1 ) )
+    {
+        const char *name = lua_tostring(L, -1);
+        int off          = e->buffer_by_name(name);
+
+        if (off != -1)
+            e->set_current_buffer(off);
+
+        lua_pushnumber(L, off);
+        return 1;
+    }
+
+
+    /*
+     * Return the number of the current buffer.
+     */
     int cur = e->get_current_buffer();
     lua_pushnumber(L, cur);
     return 1;
@@ -204,39 +227,4 @@ int kill_buffer_lua(lua_State *L)
     Editor *e = Editor::instance();
     e->kill_current_buffer();
     return 0;
-}
-
-/*
- * Select a buffer, by name.
- */
-int select_buffer_lua(lua_State *L)
-{
-    /*
-     * Get the name we're to select.
-     */
-    const char *name = lua_tostring(L, -1);
-
-    if (name ==  NULL)
-    {
-        lua_pushboolean(L, 0);
-        return 1;
-    }
-
-    /*
-     * Find the buffer.
-     */
-    Editor *e = Editor::instance();
-    int off   = e->buffer_by_name(name);
-
-    if (off != -1)
-    {
-        e->set_current_buffer(off);
-        lua_pushboolean(L, 1);
-    }
-    else
-    {
-        lua_pushboolean(L, 0);
-    }
-
-    return 1;
 }

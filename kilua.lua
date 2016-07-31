@@ -452,14 +452,14 @@ function make()
    --
    -- Select the buffer.
    --
-   local result = select_buffer( "*Make*" )
+   local result = buffer( "*Make*" )
 
    --
    -- If selecting by name failed then the buffer can't exist.
    --
    -- Create it.
    --
-   if ( result == false ) then
+   if ( result == -1 ) then
       create_buffer( "*Make*" )
    end
 

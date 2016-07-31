@@ -107,7 +107,6 @@ Editor::Editor()
     lua_register(m_lua, "prompt", prompt_lua);
     lua_register(m_lua, "save", save_lua);
     lua_register(m_lua, "search", search_lua);
-    lua_register(m_lua, "select_buffer", select_buffer_lua);
     lua_register(m_lua, "sof", sof_lua);
     lua_register(m_lua, "sol", sol_lua);
     lua_register(m_lua, "status", status_lua);
