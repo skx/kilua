@@ -43,6 +43,9 @@
 #include "util.h"
 
 
+/**
+ * Constructor.
+ */
 Editor::Editor()
 {
     /**
@@ -161,6 +164,9 @@ Editor::Editor()
 }
 
 
+/**
+ * Destructor.
+ */
 Editor::~Editor()
 {
     delete(m_state);
@@ -193,8 +199,13 @@ void Editor::load_files(std::vector<std::string> files)
         m_state->buffers.push_back(tmp);
         m_state->current_buffer = m_state->buffers.size() - 1;
     }
-
 }
+
+
+/**
+ * Run the main loop - polling for input, reacting to the same, and
+ * refreshing the screen.
+ */
 void Editor::main_loop()
 {
     while (1)
@@ -225,7 +236,6 @@ void Editor::main_loop()
                     (strncmp(name, "ESC", 3) == 0)
                 ))
         {
-            // Eval Lua here.
             call_lua("on_key", "s>", name);
         }
         else
@@ -246,16 +256,28 @@ void Editor::main_loop()
     }
 }
 
+
+/**
+ * Return the current buffer.
+ */
 Buffer *Editor::current_buffer()
 {
     return (m_state->buffers.at(m_state->current_buffer));
 }
 
+
+/**
+ * Return the text in the status-bar.
+ */
 char * Editor::get_status()
 {
     return (m_state->statusmsg);
 }
 
+
+/**
+ * Set the status-bar text.
+ */
 void Editor::set_status(int log, const char *fmt, ...)
 {
     va_list ap;
@@ -775,6 +797,10 @@ void Editor::delete_char()
     move("left");
 }
 
+
+/**
+ * Convert the given key to a human-readable version of it.
+ */
 const char *Editor::lookup_key(unsigned int c)
 {
     if (c == 0)
@@ -795,6 +821,10 @@ const char *Editor::lookup_key(unsigned int c)
     return (keyname(c));
 }
 
+
+/**
+ * Call a lua function, with variadic arguments.
+ */
 void Editor::call_lua(const char *func, const char *sig, ...)
 {
     va_list vl;
@@ -952,6 +982,10 @@ void Editor::warp(int x, int y)
     }
 }
 
+
+/**
+ * Move the cursor in the given direction.
+ */
 void Editor::move(const char *direction)
 {
     Editor *e = Editor::instance();
@@ -968,10 +1002,8 @@ void Editor::move(const char *direction)
     }
     else if (strcmp(direction, "down") == 0)
     {
-        // Don't allow moving past the bottom of the file.
         if (buffer->cy + buffer->rowoff < max_row - 1)
         {
-            // Bump the cy.
             buffer->cy += 1;
 
             if (buffer->cy >= e->height())
@@ -1056,8 +1088,6 @@ void Editor::move(const char *direction)
         }
     }
 
-
-    // bound.
     while (buffer->cy + buffer->rowoff >= max_row)
     {
         if (buffer->rowoff)
@@ -1076,7 +1106,7 @@ void Editor::move(const char *direction)
 
 
 /*
- * Create a new buffer, save it, and make it active.
+ * Create a new buffer, and make it active.
  */
 void Editor::new_buffer(const char *name)
 {
@@ -1120,6 +1150,10 @@ int Editor::get_current_buffer()
 {
     return (m_state->current_buffer);
 }
+
+/*
+ * Count the buffers.
+ */
 int Editor::count_buffers()
 {
     return (m_state->buffers.size());
@@ -1151,6 +1185,12 @@ int Editor::buffer_by_name(const char *name)
     return (-1);
 }
 
+
+/**
+ * Remove the current buffer.
+ *
+ * If that means there are no remaining buffers then terminate.
+ */
 void Editor::kill_current_buffer()
 {
     /*
@@ -1167,21 +1207,36 @@ void Editor::kill_current_buffer()
     m_state->current_buffer = count_buffers() - 1;
 }
 
+
+/**
+ * Return all the buffers.
+ */
 std::vector<Buffer *> Editor::get_buffers()
 {
     return (m_state->buffers);
 }
 
-
+/**
+ * Return the height of the edit-area - which is the height of the terminal
+ * minus two rows for the footer.
+ */
 int Editor::height()
 {
     return (m_state->screenrows);
 }
+
+/**
+ * Return the width of the edit-area / terminal
+ */
 int Editor::width()
 {
     return (m_state->screencols);
 }
 
+
+/**
+ * Execute the contents of the given file, as lua.
+ */
 int Editor::load_lua(const char *filename)
 {
     if (access(filename, 0) == 0)
