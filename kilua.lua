@@ -87,6 +87,7 @@ keymap['M-g' ] = function() goto_line() end
 -- TODO: keymap['^_'] = undo
 -- TODO: keymap['^J'] = function() goto_mark() end
 keymap['^K'] = function() kill_line() end
+keymap['^Y'] = function() paste() end
 -- TODO: keymap['^N'] = function() record_mark() end
 -- TODO: keymap['^U'] = function() yank() end
 -- TODO: keymap['^Z'] = undo
@@ -117,13 +118,6 @@ keymap['M-KEY_END']  = eof   -- end of file
 keymap['KEY_PPAGE']  = function() page_up() end
 keymap['KEY_NPAGE']  = function() page_down() end
 
---
--- Mark-Functions / Copy / Paste
---
-keymap['^ ']  = function() toggle_mark() end
-keymap['M-w'] = function() copy_selection() end
-keymap['^W']  = function() cut_selection() end
-keymap['^Y']  = function() paste() end
 
 --
 -- Non-ASCII testing functions:
@@ -446,20 +440,49 @@ end
 
 
 --
+-- The paste-buffer
+--
+paste_buffer = ""
+
+--
 -- Kill the current line.
 --
 function kill_line()
 
-   -- Move to the end of the line, and see how long it is
+   -- Move to the end of the line, so we can see how long it is
    eol()
    local x,y = point()
+   sol()
+
+   paste_buffer = ""
+
+   -- The count of characters we must remove
+   local count = x
 
    -- While we've not deleted all the characters, do so.
-   while( x > 0 ) do
-      delete()
-      x = x - 1
+   while( count > 0 ) do
+
+      -- Store the character under the point in the paste-buffer
+      paste_buffer = paste_buffer .. at()
+
+      -- Then delete it.
+      delete_forwards()
+
+      -- Bump the count.
+      count = count - 1
    end
 end
+
+
+--
+-- Paste in our paste-buffer.
+--
+-- This is currently set by `Ctrl-k` which kills the current line.
+--
+function paste()
+   insert( paste_buffer .. "\n" )
+end
+
 
 
 --
