@@ -51,14 +51,17 @@ local floatnum = digit^1 * exp * fs^-1 +
    digit^1 * P'.' * digit^0 * exp^-1 * fs^-1
 local numlit = hexnum + octnum + floatnum + decnum
 
+--
+-- Numbers
+--
+local numbers = (numlit) / function(...) add(YELLOW, ... ) end
 
--- Character-string
-local charlit =
-   P'L'^-1 * P"'" * (P'\\' * P(1) + (1 - S"\\'"))^1 * P"'"
-
--- String.
-local stringlit =
-   P'L'^-1 * P'"' * (P'\\' * P(1) + (1 - S'\\"'))^0 * P'"'
+--
+-- Character-strings
+--
+local charlit   = P'L'^-1 * P"'" * (P'\\' * P(1) + (1 - S"\\'"))^1 * P"'"
+local stringlit = P'L'^-1 * P'"' * (P'\\' * P(1) + (1 - S'\\"'))^0 * P'"'
+local strings   = (charlit + stringlit) / function(...) add(BLUE, ... ) end
 
 
 --
@@ -81,7 +84,6 @@ local keyword = C(
       P"break" +
       P"case" +
       P"char" +
-      P"_Complex" +
       P"const" +
       P"continue" +
       P"default" +
@@ -94,7 +96,6 @@ local keyword = C(
       P"for" +
       P"goto" +
       P"if" +
-      P"_Imaginary" +
       P"inline" +
       P"int" +
       P"long" +
@@ -153,7 +154,7 @@ local any = C(P(1) )/ function(...) add(WHITE,... ) end
 --
 -- The complete set of tokens we understand
 --
-local tokens = (comment + functions + keyword + literal + trailing_space + any)^0
+local tokens = (comment + functions + keyword + numbers + strings + trailing_space + any)^0
 
 
 --

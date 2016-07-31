@@ -53,13 +53,13 @@ local floatnum = digit^1 * exp * fs^-1 +
 local numlit = hexnum + octnum + floatnum + decnum
 
 
--- Character-string
-local charlit =
-   P'L'^-1 * P"'" * (P'\\' * P(1) + (1 - S"\\'"))^1 * P"'"
+-- Numbers
+local numbers = (numlit) / function(...) add(YELLOW, ... ) end
 
--- String.
-local stringlit =
-   P'L'^-1 * P'"' * (P'\\' * P(1) + (1 - S'\\"'))^0 * P'"'
+-- Character-strings
+local charlit   = P'L'^-1 * P"'" * (P'\\' * P(1) + (1 - S"\\'"))^1 * P"'"
+local stringlit = P'L'^-1 * P'"' * (P'\\' * P(1) + (1 - S'\\"'))^0 * P'"'
+local strings   = (charlit + stringlit) / function(...) add(BLUE, ... ) end
 
 
 --
@@ -72,8 +72,6 @@ local comment    = (ccomment + newcomment) / function(...)  add(RED, ... ) end
 -- Show trailing-whitespace with a `cyan` background.
 local trailing_space = S' \t'^1 * S'\n'/ function(...) add(REV_CYAN,... ) end
 
--- Literals
-local literal = (numlit + charlit + stringlit) / function(...) add(BLUE, ... ) end
 
 -- Keywords
 local keyword = C(
@@ -125,7 +123,7 @@ local any = C(P(1) )/ function(...) add(WHITE,... ) end
 --
 -- The complete set of tokens we understand
 --
-local tokens = (comment + keyword + functions + literal + trailing_space  + any)^0
+local tokens = (comment + keyword + functions + strings + numbers + trailing_space  + any)^0
 
 --
 -- The function we export.
