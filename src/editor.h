@@ -146,6 +146,11 @@ public:
     int load_lua(const char *filename);
 
     /**
+     * Eval a given string.
+     */
+    int eval_lua(const char *text);
+
+    /**
      * Move the cursor to the given position, if possible.
      */
     void warp(int x, int y);

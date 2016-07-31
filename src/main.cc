@@ -32,7 +32,57 @@
 
 #include <locale.h>
 #include <getopt.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <sys/socket.h>
+
+#include "config.h"
 #include "editor.h"
+
+
+/* Get the hostname of the local system */
+char * get_hostname()
+{
+    /**
+     * If the environmental varaible HOSTNAME
+     * is set, use that, otherwise use the standard networking
+     * functions to determine our FQDN.
+     */
+    const char *env = getenv("HOSTNAME");
+
+    if (env != NULL)
+    {
+        return (strdup(env));
+    }
+
+    /*
+     * Get the short version.
+     */
+    char res[1024];
+    res[sizeof(res) - 1] = '\0';
+    gethostname(res, sizeof(res) - 1);
+
+    /*
+     * Attempt to get the full vrsion.
+     */
+    struct hostent *hstnm;
+    hstnm = gethostbyname(res);
+
+    if (hstnm)
+    {
+        /*
+         * Success.
+         */
+        return (strdup(hstnm->h_name));
+    }
+    else
+    {
+        /*
+         * Failure: Return the short-version.
+         */
+        return (strdup(res));
+    }
+}
 
 void setup()
 {
@@ -101,6 +151,7 @@ int main(int argc, char *argv[])
         static struct option long_options[] =
         {
             {"config", required_argument, 0, 'c'},
+            {"dump-config", no_argument, 0, 'd'},
             {"version", no_argument, 0, 'v'},
             {0, 0, 0, 0}
         };
@@ -108,7 +159,7 @@ int main(int argc, char *argv[])
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        char c = getopt_long(argc, argv, "c:v", long_options, &option_index);
+        char c = getopt_long(argc, argv, "c:vd", long_options, &option_index);
 
         /* Detect the end of the options. */
         if (c == -1)
@@ -120,6 +171,12 @@ int main(int argc, char *argv[])
             e->load_lua(optarg);
             break;
 
+        case 'd':
+            endwin();
+            printf("%s\n", kilua_lua);
+            exit(0);
+            break;
+
         case 'v':
             endwin();
             fprintf(stderr, "kilua v£π\n");
@@ -129,6 +186,33 @@ int main(int argc, char *argv[])
         }
     }
 
+
+
+
+    /*
+     * Load our default configuration files ~/.kilua/init.lua
+     */
+    int loaded = 0;
+
+    char init_buf[1024] = {'\0'};
+    snprintf(init_buf, sizeof(init_buf) - 1, "%s%s",
+             getenv("HOME"), "/.kilua/init.lua");
+    loaded += e->load_lua(init_buf);
+
+    /*
+     * Load our default configuration files ~/.kilua/$hostname.lua
+     */
+    char *hostname = get_hostname();
+    snprintf(init_buf, sizeof(init_buf) - 1, "%s/.kilua/%s.lua",
+             getenv("HOME"), hostname);
+    loaded += e->load_lua(init_buf);
+    free(hostname);
+
+    /*
+     * If we loaded nothing use the default.
+     */
+    if (loaded == 0)
+        e->eval_lua((const char *)kilua_lua);
 
     /*
      * Filenames we'll load in our editor session.

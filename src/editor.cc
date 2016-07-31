@@ -156,19 +156,6 @@ Editor::Editor()
     lua_pushinteger(m_lua, 13);
     lua_setglobal(m_lua, "REV_CYAN");
 
-    int erred = luaL_dofile(m_lua, "editor.lua");
-
-    if (erred)
-    {
-        endwin();
-
-        if (lua_isstring(m_lua, -1))
-            fprintf(stderr, "%s\n", lua_tostring(m_lua, -1));
-
-        fprintf(stderr, "Failed to load lua - aborting\n");
-        exit(1);
-    }
-
 }
 
 
@@ -1175,6 +1162,26 @@ int Editor::load_lua(const char *filename)
 
     return 0;
 }
+
+/**
+ * Eval a given string.
+ */
+int Editor::eval_lua(const char *text)
+{
+
+    int erred = luaL_dostring(m_lua, text);
+
+    if (erred)
+    {
+        if (lua_isstring(m_lua, -1))
+            set_status(1, "%s", lua_tostring(m_lua, -1));
+
+        return (0);
+    }
+
+    return 1;
+}
+
 
 
 /**
