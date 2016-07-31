@@ -3,30 +3,48 @@
 This document briefly describes each of the available Lua primitives
 which are implemented in the editor.
 
-## Buffers
+Most of these primitives are demonstrated in the default [kilua.lua](https://github.com/skx/kilua/blob/master/kilua.lua) file.
 
+
+
+## Buffer Primitives
+
+* `buffer`
+    * Get or set the current buffer.
+    * `buffer(1)` will select buffer 1.
+    * `buffer("name")` will select the buffer with the given name, returning `-1` if it doesn't exist.
+    * `buffer()` returns the index of the currently selected buffer.
 * `buffers()`
+    * Return a table of all known buffers.
+    * The table will contain the integer-offset, along with the name.
+* `buffer_name()`
+    * Get/Set the name of the current buffer.
 * `choose_buffer()`
+    * Choose a buffer, interactively.
 * `create_buffer()`
-* `current_buffer()`
+    * Create a buffer with the given name.
 * `kill_buffer()`
-* `next_buffer()`
-* `prev_buffer()`
-* `select_buffer()`
+    * Delete the currently selected buffer.
 
 
-## Core Functions
 
+## Core Primitives
+
+* `delete()`
+    * Delete a single character, to the left of the point.
+    * See `delete_forwards()` in the default configuration file for the reverse.
 * `dirty()`
     * Is the current buffer modified & unsaved?
 * `exit()`
-    * Exit the editor.
-* `filename()`
-    * Get/Set the filename of the current buffer.
-* `find()`
-    * Open and interactive find mode, for performing forward/backward searches.
-* `height()`
-    * Return the height of the terminal we're running in.
+    * Exit the editor, immediately.
+* `insert(string)`
+    * Insert the given string into the current buffer.
+* `key()`
+    * Read a single (wide) key from the user.
+* `point()`
+    * Get/Set the position of the cursor/point.
+* `prompt( message )`
+    * Prompt the user for a line of input, showing the specified message.
 * `open([filename])`
     * Open a file, and insert the text into the current buffer.
 * `save([filename])`
@@ -34,81 +52,41 @@ which are implemented in the editor.
     * If there is a filename given this will be used.
 * `search(regexp)`
     * Search forward for the given regular expression.
-* `status()`
+* `status(msg)`
     * Set the contents of the status-bar.
-* `undo()`
-    * Undo the previous action(s).
-* `width()`
-    * Return the width of the terminal we're running in.
 
 
-## Movement
 
-* `down()`
-    * Move the cursor down one character.
+## Movement Primitives
+
+* `move(direction)`
+    * This function moves the cursor, if possible.
+    * For example `move('left')`, `move("right")`, etc.
+* `eof()`
+    * Move to the end of the current file/buffer.
 * `eol()`
     * Move to the end of the current line.
-* `left()`
-    * Move the cursor one character to the left.
-* `page_up()`
-    * Scroll the screen up one page, if possible.
-* `page_down()`
-    * Scroll the screen down one page, if possible.
-* `right()`
-    * Move the cursor one character to the right.
+* `sof()`
+    * Move to the start of the current file/buffer.
 * `sol()`
-    * Move the cursor to the start of the current line.
-* `up()`
-    * Move the cursor one character up.
+    * Move to the start of the current line.
+
+See `page_up` and `page_down` in the default configuration file for examples
+of movement facilities built upon this one.
 
 
-## Insertions & Removals & Accessors
+## Screen Primitives
 
 * `at(x,y)`
-    * Return the character at the given point.
-* `delete()`
-    * Delete a single character (backwards).
-* `get_line()`
-    * Retrieve the text from the point to the end of the line.
-* `prompt( "prompt" )`
-    * Prompt the user for input, and return it to lua.
-* `key()`
-    * Read a single key from the keyboard (blocking).
-    * Used to implement setting of marks.
-* `kill()`
-    * Kill the current line, deleting it from display.
-* `insert("string")`
-    * Inserts the given string at the current cursor position.
-    * (Newlines work as expected.)
-* `text()`
-    * Return the text in the buffer.
-
-## Marks
-
-* `mark()`
-    * Get/Set the X,Y position of the global mark, which allows a selection to be made.
-    * The selection is the region between the cursor/point and the mark.
-* `point()`
-    * Get/Set the X,Y coordinate of the cursor.
+    * Return the (wide) character at the given position, if it exists.
+* `height()`
+    * Return the height of the editor-area.  This is the same as the screen height, minus two lines to account for the status-area.
+* `width()`
+    * Return the width of the editor-area.
 
 
-## Selection
 
-Functions relating to the selection.
+## Syntax Highlighting Primitives
 
-* `cut_selection()`
-   * Remove the selected text from the buffer.
-* `selection()`
-   * Retrieve the contents of the selected region.
-
-
-## Syntax Highlighting.
-
-* `set_syntax_comments( single, multi_open, multi_close )`
-    * This function sets the comment-handling options.
-* `set_syntax_keywords( table )`
-    * This function accepts a table of strings and regular expressions, to load as keywords.
-* `set_syntax_options( table)`
-    * This function expects a table, and will enable highlighting for the appropriate entry.  Valid options are "`numbers`", "`strings`", & "`trailing_whitespace`".
-* `tabsize()`
-    * Get/Set the width of TAB-stops (eight characters by default).
+* `syntax()`
+    * Get/Set the syntax-mode.
