@@ -51,8 +51,12 @@ int delete_lua(lua_State *L)
     Editor *e      = Editor::instance();
     e->delete_char();
 
+    /*
+     * The buffer is now dirty and needs to be re-rendered.
+     */
     Buffer *buffer = e->current_buffer();
     buffer->set_dirty(true);
+    buffer->touch();
 
     return 0;
 }
@@ -109,10 +113,12 @@ int insert_lua(lua_State *L)
 
     delete []wide;
 
-
+    /*
+     * The buffer is now dirty and needs to be re-rendered.
+     */
     Buffer *buffer = e->current_buffer();
     buffer->set_dirty(true);
-
+    buffer->touch();
     return 0;
 }
 

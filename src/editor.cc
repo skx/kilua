@@ -298,6 +298,11 @@ void Editor::set_status(int log, const char *fmt, ...)
 void Editor::update_syntax()
 {
     /*
+     * The last time we've rendered the buffer.
+     */
+    static int last_render = -1;
+
+    /*
      * Get the current buffer.
      */
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
@@ -310,6 +315,18 @@ void Editor::update_syntax()
      */
     if (cur->m_syntax.empty())
         return;
+
+    /*
+     * Check to see if we've already rendered for this version
+     * of the buffer.
+     */
+    time_t modified = cur->updated();
+
+    if (last_render == modified)
+        return;
+    else
+        last_render = modified;
+
 
     /*
      * Now update via lua.
@@ -422,14 +439,16 @@ void Editor::update_syntax()
 void Editor::draw_screen()
 {
     /*
-     * Update syntax.
+     * Update the syntax-highlighting of the buffer.
      *
-     * TODO: Only trigger this if the buffer has changed.
-     *
-     * Meta-dirty flag?
+     * This will terminate early if the buffer hasn't changed
+     * since the last time it was called.
      */
     update_syntax();
 
+    /*
+     * Clear the screen.
+     */
     clear();
 
     /*
@@ -443,8 +462,7 @@ void Editor::draw_screen()
     for (int y = 0; y < m_state->screenrows;  y++)
     {
         /*
-         * If this row is past the end of our list - draw
-         * "~" and exit.
+         * If this row is past the end of our list - draw "~" and exit.
          */
         if ((y + cur->rowoff) >= (int)cur->rows.size())
         {

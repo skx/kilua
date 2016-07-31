@@ -129,12 +129,12 @@ public:
             delete(row);
         }
 
-
         rows.clear();
-        cx      = 0;
-        cy      = 0;
-        rowoff  = 0;
-        coloff  = 0;
+        cx         = 0;
+        cy         = 0;
+        rowoff     = 0;
+        coloff     = 0;
+        m_modified = 0;
 
         /*
          * The buffer will have one (empty) row.
@@ -185,6 +185,22 @@ public:
         m_name = strdup(name);
     }
 
+    /**
+     * Return the modification-number of the buffer.
+     */
+    int updated()
+    {
+        return m_modified;
+    }
+
+    /**
+     * Bump the modification number.
+     */
+    void touch()
+    {
+        m_modified++;
+    }
+
 public:
     /* Cursor x and y position in characters */
     int cx, cy;
@@ -205,6 +221,8 @@ private:
     /* The name of this buffer */
     char *m_name;
 
+    /* Modifiction-marker for the buffer. */
+    int m_modified;
 };
 
 
