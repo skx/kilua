@@ -324,6 +324,7 @@ function on_loaded( filename )
    x['h']   = "cc"
    x['cpp'] = "cc"
    x['lua'] = "lua"
+   x['ini'] = "ini"
    x['md']  = "markdown"
    x['txt'] = "markdown"
    x['el']  = "lisp"
