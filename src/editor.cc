@@ -319,7 +319,7 @@ void Editor::update_syntax()
      * a string containing the colour to use for each buffer-position.
      *
      */
-    std::wstring text;
+    std::string text;
     int len = 0;
     int rows = cur->rows.size();
 
@@ -329,8 +329,23 @@ void Editor::update_syntax()
 
         for (int x = 0; x < chars; x++)
         {
-            text += cur->rows.at(y)->chars->at(x);
-            len += 1;
+            /*
+             * We append the character at the row,col position.
+             *
+             * NOTE This might be an N-byte character string, we
+             * deliberately only use the first because LPEG doesn't
+             * even handle UTF-8, so it doesn't matter.
+             *
+             * We could have said this instead:
+             *
+             *   if (cur->rows.at(y)->chars->at(x)->size() > 1 )
+             *      text += "?";
+             *   else
+             *      text += cur->rows.at(y)->chars->at(x);
+             *
+             */
+            text += cur->rows.at(y)->chars->at(x)[0];
+            len  += 1;
         }
 
         text += '\n';
@@ -345,10 +360,8 @@ void Editor::update_syntax()
     /*
      * Now we've built up the string, pass it over and get the results.
      */
-    char *ascii = Util::widestr2ascii(text);
     const char *out = NULL;
-    call_lua("on_syntax_highlight", "s>s", ascii, &out);
-    delete[]ascii;
+    call_lua("on_syntax_highlight", "s>s", text.c_str(), &out);
 
     /*
      * No result?  Then abort.
