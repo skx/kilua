@@ -2,8 +2,7 @@ language: c
 dist: jessie
 
 compiler:
-  - clang
-  - gcc
+  - clang++
   - g++
 
 before_install:
