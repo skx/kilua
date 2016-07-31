@@ -34,7 +34,6 @@
 #include <clocale>
 #include <cstdlib>
 #include <string.h>
-#include <malloc.h>
 #include "editor.h"
 #include "lua_primitives.h"
 
