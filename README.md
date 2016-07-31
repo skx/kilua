@@ -53,7 +53,7 @@ The following command-line options are recognized and understood:
 * `--eval`
     * Evaluate the given lua, post-load.
 * `--syntax-path`
-    * Add the named path to that searched for syntax-files.
+    * Specify the location of syntax-highlighting functions.
 * `--version`
     * Report the version and exit.
 
@@ -211,21 +211,30 @@ Each buffer has an associated syntax-highlighting mode, which is a string
 such as "c", "markdown", or "lua".  The default configuration file sets
 the mode based upon the suffix of the file you're editing.
 
-If you wish to change the mode interactivally to Lua, then run:
+If you wish to change the mode interactivally to Lua, for example, then run:
 
     M-x syntax("lua")
 
 The implementation of syntax highlighting requires the loading of
 a library.  For example the syntax highlighting of lua requires
 that the library `lua.lua` is loaded - The syntax modes are looked
-for in two locations:
+for in these locations:
 
 * `/etc/kilua/syntax`
     * Global syntax-modes.
 * `~/.kilua/syntax`
     * Per-user syntax-modes.
+* The path specified via the `--syntax-path` command-line option.
 
-Currently we include syntax for Lua, C, C++, and plain-text/markdown.
+The implementation is pretty simple:
+
+* The function `on_syntax_highlight(text)` is invoked.
+* That function will return a string containing the colour-code to set for each corresponding byte of the string.
+* For example given input "Steve Kemp" you might return:
+    * `RED RED RED RED RED WHITE GREEN GREEN GREEN GREEN`
+    * That would make "Steve" red, and "Kemp" green.
+
+Currently we include syntax for C, C++, Lua, Lisp, and plain-text/markdown (which is a simple implementation that just highlights URLs).
 
 > **Pull-requests** adding more syntax modes would be most welcome.
 
