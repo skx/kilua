@@ -86,7 +86,7 @@ keymap['M-g' ] = function() goto_line() end
 --
 -- TODO: keymap['^_'] = undo
 -- TODO: keymap['^J'] = function() goto_mark() end
--- keymap['^K'] = function() kill_line() end
+keymap['^K'] = function() kill_line() end
 -- TODO: keymap['^N'] = function() record_mark() end
 -- TODO: keymap['^U'] = function() yank() end
 -- TODO: keymap['^Z'] = undo
@@ -446,6 +446,23 @@ end
 
 
 --
+-- Kill the current line.
+--
+function kill_line()
+
+   -- Move to the end of the line, and see how long it is
+   eol()
+   local x,y = point()
+
+   -- While we've not deleted all the characters, do so.
+   while( x > 0 ) do
+      delete()
+      x = x - 1
+   end
+end
+
+
+--
 -- Call `make` - showing the output in our `*MAKE*` buffer.
 --
 function make()
@@ -482,7 +499,7 @@ end
 
 
 --
--- Kill the current buffer
+-- Kill the current buffer, prompting for confirmation if it is modified.
 --
 function confirm_kill_buffer()
    if ( not dirty() ) then
