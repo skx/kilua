@@ -483,7 +483,7 @@ void Editor::draw_screen()
                  * Is it a TAB?  Change to space, because otherwise
                  * trailing whitespace screws up.
                  */
-                if ( t.at(0) == '\t' )
+                if (t.at(0) == '\t')
                     t = ' ';
 
                 mvwaddwstr(stdscr, y, x, t.c_str());
