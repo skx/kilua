@@ -23,6 +23,9 @@
 --  * on_key(key)
 --     Called when input is received.
 --
+--  * on_syntax_highlight(txt)
+--     Called to perform the syntax highlighting of the current buffer.
+--
 -- Otherwise the only magic here is the `keymap` table.  Kilua will lookup
 -- every keypress in this table, and if there is a matching function defined
 -- it will be invoked, otherwise the literal character will be inserted.
@@ -55,12 +58,12 @@ local keymap = {}
 --
 --  For example this would fail:
 --
---     keymap['^Q'] = quit
+--     keymap['^D'] = delete_forwards
 --
 --  But by the time this file is _completely_ loaded the function is
 -- indeed defined which allows this to work:
 --
---     keymap['^Q'] = function() quit() end
+--     keymap['^D'] = function() delete_forwards() end
 --
 --
 keymap['ENTER']         = function() insert("\n") end
@@ -79,6 +82,7 @@ keymap['^S'] = function()
 end
 
 keymap['M-g' ] = function() goto_line() end
+
 --
 -- TODO: keymap['^_'] = undo
 -- TODO: keymap['^J'] = function() goto_mark() end
@@ -147,12 +151,12 @@ end
 
 
 --
--- M-b will record a (b)ookmark.
+-- M-m will record a bookmark.
 --
-keymap['M-b'] = function() record_mark() end
+keymap['M-m'] = function() record_mark() end
 
 --
--- Prefix-map for jumping to recorded (b)ookmarks.
+-- Prefix-map for jumping to recorded bookmark.
 --
 keymap['M-b'] = {}
 
@@ -169,7 +173,6 @@ keymap['^X'] = {}
 keymap['^X']['^C'] = function() quit() end
 keymap['^X']['^S'] = save
 keymap['^X']['^O'] = function() open_file() end
-keymap['^X']['^X'] = function() swap_point_mark() end
 keymap['^X']['i']  = function() insert_contents() end
 
 --
@@ -399,6 +402,9 @@ function open_file()
       end
    end
 
+   --
+   -- Either no dirty-buffer, or the user didn't care
+   --
    local name = prompt( "Open:" )
    if ( name and name ~= "" ) then
       open(name)
@@ -439,168 +445,32 @@ end
 
 
 --
---  Copy & Paste functionality.
------------------------------------------------------------------------------
-
-
-function toggle_mark()
-   local mx, my = mark()
-   if ( mx == -1 and my == -1 ) then
-      -- set the mark
-      local x,y = point()
-      mark(x,y)
-   else
-      -- clear the mark
-      mark(-1,-1)
-   end
-end
-
-
-local copy_buf = ""
-
-
+-- Call `make` - showing the output in our `*MAKE*` buffer.
 --
--- Remove the region which is currently selected, copying it to
--- the `copy_buf` (where it can be pasted from).
---
--- This function is pretty simple, but perhaps a little more  low-level
--- than it needs to be.
---
--- There are two situations which we can find ourselves in:
---
---  The mark is "below" the cursor.
---  The cursor is "below" the mark.
---
--- We want to do three things
---
---  1. Get the selected text, via `selection()`, and save it away.
---
---  2. Move our cursor to the highest position of point()/mark().
---
---  3. Delete each character until we've deleted enough to remove the
---     selection.
---
-function cut_selection()
+function make()
    --
-   -- If there is no selection we can't do anything
+   -- Select the buffer.
    --
-   local mx,my = mark()
+   local result = select_buffer( "*Make*" )
 
-   if ( mx == -1 and my == -1 ) then
-      status("There is no selection." )
-      return
+   --
+   -- If selecting by name failed then the buffer can't exist.
+   --
+   -- Create it.
+   --
+   if ( result == false ) then
+      create_buffer( "*Make*" )
    end
 
-   --
-   -- Get the selection - we do this first because we might need to jump
-   -- the cursor, and that'll ruin the current selection - and save it
-   -- away
-   --
-   local len = 0
-   copy_buf, len = selection()
+   -- Ensure we append output
+   eof()
 
-   --
-   -- We're going to cut the selection by working out how
-   -- long it is, then deleting that many characters.
-   --
-   -- Before we do that we must work out if the mark is below the cursor,
-   -- in which case we can do that immediately, or the mark is ahead of
-   -- the cursor in which case we need to jump the cursor.
-   --
-   local cx,cy = point()
+   -- Run the command.
+   insert(cmd_output( "make" ) )
 
-   --
-   --  Is the mark
-   --
-   if ((cy > my) or (cx > mx and cy == my)) then
-      --
-      -- Current position (point) is "above" the mark
-      --
-   else
-      --
-      -- Current position is below the mark, so we
-      -- need to flip the cursor so that (leftwise) deletion
-      -- will remove us from the area.
-      --
-      point( mx, my + 1 )
-   end
-
-   --
-   -- Now remove it.
-   --
-   while( len > 0 ) do
-      delete()
-      len = len - 1
-   end
-
-   --
-   -- Now we clear the mark.
-   --
-   mark(-1,-1)
+   -- completed
+   insert("completed\n")
 end
-
-
---
--- Copy the selected text to the copy-buffer.
---
-function copy_selection()
-   local len = 0;
-   copy_buf,len = selection()
-   mark(-1,-1)
-end
-
-
---
--- Insert the contents of the copy-buffer.
---
-function paste()
-   insert( copy_buf )
-end
-
-
---
--- Kill a line - by copying it to our kill-buffer, and deleting the line
---
-function kill_line()
-   -- move to beginning of line
-   sol()
-
-   -- get the co-ords and set the mark
-   local x,y = point()
-   mark(x,y)
-
-   -- move to the end of the line
-   eol()
-
-   -- Now we should have:
-   -- [start][mark] ... [end][point]
-   --
-   cut_selection()
-end
-
---
--- Insert the contents of the cut-buffer.
---
-function yank()
-   insert(cut_buffer)
-end
-
-
---
--- Kill the region between the point and the mark.
---
--- Append the text between the point&mark to the cut-buffer.
---
-function kill_between_point_and_mark()
-   -- Save the selection
-   cut_buffer = selection()
-
-   -- Nuke it
-   cut_selection()
-end
-
-
-
 
 
 
@@ -748,82 +618,11 @@ end
 
 
 
+
 --
---  Implementation of setting/jumping to (named) marks.
+--  Functions relating to buffers.
+--
 -----------------------------------------------------------------------------
-
-
---
--- Read a character, then use that to set a mark.
---
--- Marks are bound to `M-m XX` where XX is the key
--- the user entered.
---
-function record_mark()
-   k = expand_key(key())
-
-   -- Ensure the values persist
-   local x
-   local y
-   x,y = point()
-
-   keymap['M-b'][k] = function() point(x,y) end
-   status( "M-b " .. k .. " will now take you to " .. x .. "," .. y )
-end
-
-
-
---
--- Test function just to prove `on_idle` is called every second, or so.
---
-function on_idle()
-   --
-   -- status( os.date() )
-   --
-end
-
-
---
--- Call `make` - showing the output in our `*MAKE*` buffer.
---
-function make()
-   --
-   -- Select the buffer.
-   --
-   local result = select_buffer( "*Make*" )
-
-   --
-   -- If selecting by name failed then the buffer can't exist.
-   --
-   -- Create it.
-   --
-   if ( result == false ) then
-      create_buffer( "*Make*" )
-   end
-
-   -- Ensure we append output
-   eof()
-
-   -- Run the command.
-   insert(cmd_output( "make" ) )
-
-   -- completed
-   insert("completed\n")
-end
-
-
---
--- String interopolation function, taken from the Lua wiki:
---
---   http://lua-users.org/wiki/StringInterpolation
---
--- Usage:
---
---   print( string.interp( "Hello ${name}", { name = "World" } )
---
-function string.interp(s, tab)
-   return (s:gsub('($%b{})', function(w) return tab[w:sub(3, -2)] or w end))
-end
 
 
 --
@@ -847,6 +646,68 @@ function prev_buffer()
    end
 end
 
+
+
+
+--
+--  Implementation of setting/jumping to (named) marks.
+-----------------------------------------------------------------------------
+
+
+--
+-- Read a character, then use that to set a mark.
+--
+-- Marks are bound to `M-m XX` where XX is the key
+-- the user entered.
+--
+function record_mark()
+   status( "Press key to use for bookmark")
+   k = key()
+
+   -- Ensure the values persist
+   local x
+   local y
+   x,y = point()
+
+   keymap['M-b'][k] = function() point(x,y) end
+   status( "M-b-" .. k .. " will now take you to " .. x .. "," .. y )
+end
+
+
+
+
+
+
+
+--
+--  Callback functions
+--
+-----------------------------------------------------------------------------
+
+
+--
+-- Test function just to prove `on_idle` is called every second, or so.
+--
+function on_idle()
+   --
+   -- status( os.date() )
+   --
+end
+
+
+
+--
+-- String interopolation function, taken from the Lua wiki:
+--
+--   http://lua-users.org/wiki/StringInterpolation
+--
+-- Usage:
+--
+--   print( string.interp( "Hello ${name}", { name = "World" } )
+--
+function string.interp(s, tab)
+   return (s:gsub('($%b{})', function(w) return tab[w:sub(3, -2)] or w end))
+end
 
 
 
@@ -952,13 +813,31 @@ end
 
 
 
-
-
 --
---  Functions relating to the mark
+-- Callback function that handles parsing
 --
------------------------------------------------------------------------------
+function on_syntax_highlight( text )
+   --
+   -- Get the syntax mode
+   --
+   local mode = syntax()
+   if ( not mode ) then
+      return ""
+   end
 
+   --
+   -- Load the module, which will be cached the second
+   -- time around.
+   --
+   local obj = load_syntax( mode )
+   if ( obj ) then
+      return(tostring(obj.parse(text)))
+   else
+      status("Failed to load syntax-module '" .. syntax() .. "' disabling highlighting.")
+      syntax("")
+      return("")
+   end
+end
 
 
 
@@ -1032,7 +911,14 @@ end
 --
 -----------------------------------------------------------------------------
 
-package.path = package.path .. ';./syn/?.lua'
+--
+-- Load syntax files from:
+--
+--   /etc/kilua/syntax/
+--   ~/.kilua/syntax/
+--
+package.path = package.path .. ';/etc/kilua/syntax/?.lua'
+package.path = package.path .. ';' .. os.getenv("HOME") .. '/.kilua/syntax/?.lua'
 lpeg         = require 'lpeg'
 
 
@@ -1045,31 +931,5 @@ function load_syntax( lang )
    else
       -- disable syntax highlighting.
       return nil
-   end
-end
-
---
--- Callback function that handles parsing
---
-function on_syntax_highlight( text )
-   --
-   -- Get the syntax mode
-   --
-   local mode = syntax()
-   if ( not mode ) then
-      return ""
-   end
-
-   --
-   -- Load the module, which will be cached the second
-   -- time around.
-   --
-   local obj = load_syntax( mode )
-   if ( obj ) then
-      return(tostring(obj.parse(text)))
-   else
-      status("Failed to load syntax-module '" .. syntax() .. "' disabling highlighting.")
-      syntax("")
-      return("")
    end
 end
