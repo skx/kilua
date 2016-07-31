@@ -101,7 +101,7 @@ int buffer_name_lua(lua_State *L)
 
 
 /*
- * Count the buffers.
+ * Return a table of all known buffers.
  */
 int buffers_lua(lua_State *L)
 {
