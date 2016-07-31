@@ -64,7 +64,7 @@ int at_lua(lua_State *L)
     /*
      * Get the row.
      */
-    erow *row;
+    erow *row = nullptr;
 
     if (y < (int)buffer->rows.size())
         row = buffer->rows.at(y);
