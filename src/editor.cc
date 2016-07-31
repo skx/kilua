@@ -356,6 +356,10 @@ void Editor::update_syntax()
     if (out == NULL)
         return;
 
+    /*
+     * Length of the output.
+     */
+    int out_len = strlen(out);
 
 
     /*
@@ -383,7 +387,11 @@ void Editor::update_syntax()
          */
         for (int x = 0; x < (int)crow->chars->size(); x++)
         {
-            crow->cols->push_back(out[done] - '0');
+            if (done < out_len)
+                crow->cols->push_back(out[done] - '0');
+            else
+                crow->cols->push_back(7) ; /* white */
+
             done += 1;
         }
 
