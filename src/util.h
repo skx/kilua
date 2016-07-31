@@ -43,6 +43,8 @@
 class Util
 {
 public:
+    static const int max_len = 6;
+
 
     /**
      * Convert the single wide-character specified to
@@ -55,7 +57,7 @@ public:
         std::wstring tmp;
         tmp += ch;
 
-        char *str = new char[7];
+        char *str = new char[Util::max_len];
         sprintf(str, "%ls", tmp.c_str());
 
         return (str);
@@ -70,7 +72,7 @@ public:
     static wchar_t * ascii2wide(const char *in)
     {
         size_t in_size  = strlen(in) + 1;
-        size_t out_size = in_size * 5;
+        size_t out_size = in_size * Util::max_len;
 
         wchar_t* result = new wchar_t[out_size];
 
@@ -90,8 +92,8 @@ public:
         std::wstring tmp;
         tmp += in;
 
-        char *str = new char[tmp.size() + 1];
-        sprintf(str, "%ls", tmp.c_str());
+        char *str = new char[(tmp.size() * Util::max_len) + 1];
+        sprintf(str, "%ls", in);
 
         return (str);
     };

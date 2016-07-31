@@ -68,6 +68,7 @@ local keymap = {}
 --
 keymap['ENTER']         = function() insert("\n") end
 keymap['KEY_BACKSPACE'] = delete
+keymap['KEY_DC']        = function() delete_forwards() end
 keymap['^H']            = delete
 keymap['^D']            = function() delete_forwards() end
 
@@ -81,17 +82,16 @@ keymap['^S'] = function()
    end
 end
 
+--
+-- Goto line
+--
 keymap['M-g' ] = function() goto_line() end
 
 --
--- TODO: keymap['^_'] = undo
--- TODO: keymap['^J'] = function() goto_mark() end
+-- Cut-line, and paste
+--
 keymap['^K'] = function() kill_line() end
 keymap['^Y'] = function() paste() end
--- TODO: keymap['^N'] = function() record_mark() end
--- TODO: keymap['^U'] = function() yank() end
--- TODO: keymap['^Z'] = undo
---
 
 --
 -- Esc-q quits immediately.
@@ -119,13 +119,6 @@ keymap['KEY_PPAGE']  = function() page_up() end
 keymap['KEY_NPAGE']  = function() page_down() end
 
 
---
--- Non-ASCII testing functions:
---
-keymap['KEY_IC'] = function() insert( "π" ) end
-keymap['KEY_DC'] = function() insert( "€" ) end
-keymap['€']      = function() status("Euros are like pounds, but smaller!") end
-keymap['π']      = function() status("Mmmm, pie ..") end
 
 --
 -- M-x -> eval, just like emacs.
