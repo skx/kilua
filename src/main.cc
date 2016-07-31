@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
         {
             {"config", required_argument, 0, 'c'},
             {"dump-config", no_argument, 0, 'd'},
+            {"syntax-path", required_argument, 0, 's'},
             {"version", no_argument, 0, 'v'},
             {0, 0, 0, 0}
         };
@@ -159,7 +160,7 @@ int main(int argc, char *argv[])
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        char c = getopt_long(argc, argv, "c:vd", long_options, &option_index);
+        char c = getopt_long(argc, argv, "c:s:vd", long_options, &option_index);
 
         /* Detect the end of the options. */
         if (c == -1)
@@ -175,6 +176,10 @@ int main(int argc, char *argv[])
             endwin();
             printf("%s\n", kilua_lua);
             exit(0);
+            break;
+
+        case 's':
+            e->set_syntax_path(optarg);
             break;
 
         case 'v':

@@ -1191,6 +1191,15 @@ int Editor::eval_lua(const char *text)
 }
 
 
+/**
+ * Update the syntax-path
+ */
+void Editor::set_syntax_path(const char *path)
+{
+    lua_pushstring(m_lua, path);
+    lua_setglobal(m_lua, "syntax_path");
+}
+
 
 /**
  * Get the hostname we're running on.

@@ -52,6 +52,8 @@ The following command-line options are recognized and understood:
     * Display the (embedded) default configuration file.
 * `--eval`
     * Evaluate the given lua, post-load.
+* `--syntax-path`
+    * Add the named path to that searched for syntax-files.
 * `--version`
     * Report the version and exit.
 

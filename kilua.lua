@@ -826,6 +826,18 @@ function on_syntax_highlight( text )
    end
 
    --
+   -- Load LPEG
+   --
+   lpeg = load_syntax( 'lpeg' )
+   if ( not lpeg ) then
+      status("Lua LPEG library not available - syntax highlighting disabled")
+      syntax("")
+      return
+   end
+
+
+
+   --
    -- Load the module, which will be cached the second
    -- time around.
    --
@@ -919,11 +931,23 @@ end
 --
 package.path = package.path .. ';/etc/kilua/syntax/?.lua'
 package.path = package.path .. ';' .. os.getenv("HOME") .. '/.kilua/syntax/?.lua'
-lpeg         = require 'lpeg'
 
 
 function load_syntax( lang )
+
+   -- Save the original path
+   orig = package.path
+
+   -- Add the per-run one.
+   if ( syntax_path ) then
+      package.path = package.path .. ';' .. syntax_path .. "/?.lua"
+   end
+
+   -- Load the library
    local status, obj = pcall(require, lang)
+
+   -- Restore the path
+   package.path = orig
 
    if ( status ) then
       -- enable syntax highlighting.

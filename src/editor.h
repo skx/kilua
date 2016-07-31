@@ -151,6 +151,11 @@ public:
     int eval_lua(const char *text);
 
     /**
+     * Update the syntax-path
+     */
+    void set_syntax_path(const char *path);
+
+    /**
      * Move the cursor to the given position, if possible.
      */
     void warp(int x, int y);
