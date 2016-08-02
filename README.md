@@ -41,7 +41,7 @@ to learn are:
     Ctrl-x b      Select buffer from a list
 
     M-x           Evaluate lua at the prompt.
-    CTRL-r:       Regular expression search.
+    Ctrl-r:       Regular expression search.
 
 
 
@@ -100,16 +100,18 @@ On startup the following configuration-files are read if present:
    * This is useful for those who store their dotfiles under revision control and share them across hosts.
    * You can use the `*Messages*` buffer to see which was found, if any.
 
-If neither file is read then the embedded copy of `kilua.lua` which
-was generated at build-time will be executed - this ensures that there
-is some minimal functionality and key-bindings.
+If neither file is read then the embedded copy of `kilua.lua`, which
+was generated at build-time will be executed, which ensures that the
+minimum functionality is present.  (i.e. If you load zero config
+files then there won't be any keybindings setup so you can neither
+navigate nor edit!)
 
 It is assumed you'll edit the [supplied startup](kilua.lua) file, to
-change the bindings to suit your needs, and add functionality via
-the [supplied lua primitives](PRIMITIVES.md), and copy into a suitable
-location.
+change the bindings to suit your needs, add functionality via
+the [supplied lua primitives](PRIMITIVES.md), and then copy into
+`~/.kilua/init.lua` (perhaps extending that with a per-host file too).
 
-But without any changes you'll get a functional editor which follows my
+Without any changes you'll get a functional editor which follows my
 particular preferences.
 
 > **Pull-requests** implementing useful functionality will be recieved with thanks, even if just to add syntax-highlighting for additional languages.
@@ -162,8 +164,8 @@ The default key-bindings for working with buffers are:
 Action                             | Binding
 ---------------------------------- | --------------
 Create a new buffer.               | `Ctrl-x c`
-kill the current buffer.           | `Ctrl-x k`
-kill the current buffer, forcibly. | `Ctrl-x K`
+Kill the current buffer.           | `Ctrl-x k`
+Kill the current buffer, forcibly. | `Ctrl-x K`
 Select the next buffer.            | `Ctrl-x n` or `M-right`
 Select the previous buffer.        | `Ctrl-x p` or `M-left`
 Choose a buffer, via menu.         | `Ctrl-x b` or `Ctrl-x B`
@@ -181,11 +183,11 @@ Uptime sample:
 
       -- Run `uptime`, and show the result in a dedicated buffer.
       function uptime()
-          local result = select_buffer( "*uptime*" )
-          if ( result == false ) then create_buffer( "*uptime*" )   end
+          local result = buffer( "*uptime*" )
+          if ( result == -1 ) then create_buffer("*uptime*") end
           -- move to end of file.
           eof()
-          insert(cmd_output( "uptime" ) )
+          insert(cmd_output("uptime"))
       end
 
 
@@ -220,7 +222,7 @@ Name             | Meaning
 `${buffer}`      | The number of the current buffer.
 `${date}`        | The current date.
 `${file}`        | The name of the file/buffer.
-`${mode}`        | The syntax-highlighting mode in use.
+`${mode}`        | The syntax-highlighting mode in use, if any.
 `${modified}`    | A string that reports whether the buffer is modified.
 `${point}`       | The character under the point.
 `${time}`        | The current time.
