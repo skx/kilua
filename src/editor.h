@@ -180,6 +180,13 @@ public:
      */
     char *hostname();
 
+    /**
+     * Prompt the user to choose from a series of strings.
+     *
+     * Return the index of the selected choice, -1 if cancelled.
+     */
+    int menu(std::vector<std::string> choices);
+
 private:
 
     /**

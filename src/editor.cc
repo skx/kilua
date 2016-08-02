@@ -108,6 +108,7 @@ Editor::Editor()
     lua_register(m_lua, "insert", insert_lua);
     lua_register(m_lua, "key", key_lua);
     lua_register(m_lua, "kill_buffer", kill_buffer_lua);
+    lua_register(m_lua, "menu", menu_lua);
     lua_register(m_lua, "move", move_lua);
     lua_register(m_lua, "open", open_lua);
     lua_register(m_lua, "point", point_lua);
@@ -1372,4 +1373,95 @@ char *Editor::hostname()
          */
         return (strdup(res));
     }
+}
+
+
+/**
+ * Prompt the user to choose from a series of strings.
+ *
+ * Return the index of the selected choice, -1 if cancelled.
+ */
+int Editor::menu(std::vector<std::string> choices)
+{
+    int selected = 0;
+
+    int w = width();
+
+    /*
+     * Hide the cursor & clear the screen.
+     */
+    curs_set(0);
+    ::clear();
+
+    while (true)
+    {
+        int max = choices.size();
+
+        for (int i = 0; i < max ; i++)
+        {
+            if (selected == i)
+                attron(A_STANDOUT);
+
+            /*
+             * Get the choice.
+             */
+            std::string tmp = choices.at(i);;
+
+            /*
+             * Pad, where appropriate.
+             */
+            while ((int)tmp.size() < w)
+                tmp += " ";
+
+            mvwaddstr(stdscr, i, 0, tmp.c_str());
+
+            if (selected == i)
+                attroff(A_STANDOUT);
+        }
+
+        /*
+         * poll for input.
+         */
+        unsigned int ch;
+
+        int res = get_wch(&ch);
+
+        if (res == ERR)
+            continue;
+
+        if (ch == '\n')
+        {
+            curs_set(1);
+            return (selected);
+        }
+
+        if (ch == 27)
+        {
+            curs_set(1);
+            return (-1);
+        }
+
+        if (ch == KEY_UP)
+        {
+            selected -= 1;
+
+            if (selected < 0)
+                selected = max - 1;
+        }
+
+        if (ch == KEY_DOWN)
+        {
+            selected += 1;
+
+            if (selected >= max)
+                selected = 0;
+        }
+
+    }
+
+    /*
+     * Never reached.
+     */
+    return 0;
+
 }

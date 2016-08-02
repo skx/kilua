@@ -60,6 +60,7 @@ extern int dirty_lua(lua_State *L);
 extern int exit_lua(lua_State *L);
 extern int insert_lua(lua_State *L);
 extern int key_lua(lua_State *L);
+extern int menu_lua(lua_State *L);
 extern int open_lua(lua_State *L);
 extern int point_lua(lua_State *L);
 extern int prompt_lua(lua_State *L);

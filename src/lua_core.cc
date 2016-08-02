@@ -160,6 +160,42 @@ int key_lua(lua_State *L)
 }
 
 
+/**
+ * Given a table of strings let the user select one, via a menu.
+ */
+int menu_lua(lua_State *L)
+{
+    Editor *e = Editor::instance();
+
+    if (!lua_istable(L, 1))
+    {
+        e->set_status(1, "Table expected!");
+        return 0;
+    }
+
+    /*
+     * Build up the list of choices the user has submitted.
+     */
+    std::vector < std::string > choices;
+
+    lua_pushnil(L);
+
+    while (lua_next(L, -2))
+    {
+        const char *entry = lua_tostring(L, -1);
+        choices.push_back(entry);
+        lua_pop(L, 1);
+    }
+
+    /*
+     * Now the user will choose an entry, interactively.
+     */
+    int ret = e->menu(choices);
+    lua_pushinteger(L, ret);
+    return 1;
+}
+
+
 /*
  * Get/Set the point.
  */

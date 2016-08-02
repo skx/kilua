@@ -41,6 +41,8 @@ Most of these primitives are demonstrated in the default [kilua.lua](https://git
     * Insert the given string into the current buffer.
 * `key()`
     * Read a single (wide) key from the user.
+* `menu()`
+    * Given a table of strings allow the user to choose one of them, returning the index of the selected choice.
 * `point()`
     * Get/Set the position of the cursor/point.
 * `prompt( message )`
