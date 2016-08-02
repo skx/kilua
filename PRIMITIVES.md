@@ -19,8 +19,6 @@ Most of these primitives are demonstrated in the default [kilua.lua](https://git
     * The table will contain the integer-offset, along with the name.
 * `buffer_name()`
     * Get/Set the name of the current buffer.
-* `choose_buffer()`
-    * Choose a buffer, interactively.
 * `create_buffer()`
     * Create a buffer with the given name.
 * `kill_buffer()`

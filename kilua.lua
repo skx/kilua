@@ -166,15 +166,15 @@ keymap['^X']['i']  = function() insert_contents() end
 -- Working with buffers.
 --
 --
-keymap['M-KEY_LEFT']   = function() prev_buffer() end
-keymap['M-KEY_RIGHT']  = function() next_buffer() end
-keymap['^X']['B']  = choose_buffer
-keymap['^X']['K']  = kill_buffer
-keymap['^X']['b']  = choose_buffer
-keymap['^X']['c']  = create_buffer
-keymap['^X']['k']  = function() confirm_kill_buffer() end
-keymap['^X']['n']  = function () next_buffer() end
-keymap['^X']['p']  = function() prev_buffer() end
+keymap['M-KEY_LEFT']  = function() prev_buffer() end
+keymap['M-KEY_RIGHT'] = function() next_buffer() end
+keymap['^X']['B']     = function() choose_buffer() end
+keymap['^X']['K']     = kill_buffer
+keymap['^X']['b']     = function() choose_buffer() end
+keymap['^X']['c']     = create_buffer
+keymap['^X']['k']     = function() confirm_kill_buffer() end
+keymap['^X']['n']     = function () next_buffer() end
+keymap['^X']['p']     = function() prev_buffer() end
 
 
 
@@ -658,6 +658,60 @@ end
 --  Functions relating to buffers.
 --
 -----------------------------------------------------------------------------
+
+
+--
+-- Prompt for a buffer, interactively
+--
+function choose_buffer()
+
+   --
+   -- Save the current buffer
+   --
+   local cur = buffer()
+
+   --
+   -- Build up a table of each buffer-name
+   --
+   local m = {}
+
+   --
+   -- Show them.
+   --
+   for index,name in ipairs(buffers()) do
+
+      -- Select it, so we can see if it is dirty
+      buffer( index - 1 )
+
+      -- The name and mode
+      local name = buffer_name()
+      local mode = syntax()
+      if ( mode and mode ~= "" ) then
+         mode = "[" .. mode .. "]"
+      end
+
+      if ( dirty() ) then
+         table.insert(m, index .. " " .. name .. " <modified>" .. " " .. mode )
+      else
+         table.insert(m, index .. " " .. name .. " " .. mode  )
+      end
+   end
+
+   --
+   -- Make the menu-choice
+   --
+   local r = menu( m )
+
+   if ( r  == -1 ) then
+      buffer( cur)
+      return
+   end
+
+   --
+   -- Otherwise change to the buffer
+   --
+   buffer( r )
+end
 
 
 --
