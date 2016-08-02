@@ -99,9 +99,11 @@ Editor::Editor()
     lua_register(m_lua, "buffers", buffers_lua);
     lua_register(m_lua, "create_buffer", create_buffer_lua);
     lua_register(m_lua, "delete", delete_lua);
+    lua_register(m_lua, "directory_entries", directory_entries_lua);
     lua_register(m_lua, "dirty", dirty_lua);
     lua_register(m_lua, "eof", eof_lua);
     lua_register(m_lua, "eol", eol_lua);
+    lua_register(m_lua, "exists", exists_lua);
     lua_register(m_lua, "exit", exit_lua);
     lua_register(m_lua, "height", height_lua);
     lua_register(m_lua, "insert", insert_lua);

@@ -69,6 +69,12 @@ extern int search_lua(lua_State *L);
 extern int status_lua(lua_State *L);
 
 /*
+ * Files.
+ */
+extern int directory_entries_lua(lua_State *L);
+extern int exists_lua(lua_State *L);
+
+/*
  * Screen.
  */
 extern int at_lua(lua_State *L);

@@ -56,6 +56,16 @@ Most of these primitives are demonstrated in the default [kilua.lua](https://git
     * Set the contents of the status-bar.
 
 
+## File Primitives
+
+We only need two primitives so far for dealing with the filesystem:
+
+* `directory_entries(path)`
+     * Return a table containing the names of all files beneath the given directory.
+     * For example `directory_entries("/etc/")`
+* `exists(path)`
+     * Return `true` if the given path exists, `false` otherwise.
+
 
 ## Movement Primitives
 
