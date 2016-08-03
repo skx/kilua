@@ -88,6 +88,8 @@ public:
     {
         cx       = 0;
         cy       = 0;
+        markx    = -1;
+        marky    = -1;
         rowoff   = 0;
         coloff   = 0;
         m_name   = strdup(bname);
@@ -132,6 +134,8 @@ public:
         rows.clear();
         cx         = 0;
         cy         = 0;
+        markx      = -1;
+        marky      = -1;
         rowoff     = 0;
         coloff     = 0;
         m_modified = 0;
@@ -213,6 +217,10 @@ public:
 
     /* Syntax-mode which is in-use. */
     std::string m_syntax;
+
+    /* mark */
+    int markx;
+    int marky;
 
 private:
     /* Is this buffer dirty? */

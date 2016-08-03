@@ -195,6 +195,12 @@ private:
     const char *lookup_key(unsigned int c);
 
     /**
+     * Get the character offset of the given X,Y coordinate in our
+     * buffer.
+     */
+    int pos2offset(int w_x, int w_y);
+
+    /**
      * Our state.
      */
     editorState *m_state;

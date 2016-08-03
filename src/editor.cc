@@ -31,6 +31,7 @@
  */
 
 
+#include <algorithm>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,6 +110,7 @@ Editor::Editor()
     lua_register(m_lua, "insert", insert_lua);
     lua_register(m_lua, "key", key_lua);
     lua_register(m_lua, "kill_buffer", kill_buffer_lua);
+    lua_register(m_lua, "mark", mark_lua);
     lua_register(m_lua, "menu", menu_lua);
     lua_register(m_lua, "move", move_lua);
     lua_register(m_lua, "open", open_lua);
@@ -478,6 +480,45 @@ void Editor::update_syntax()
 
 
 /**
+ * Get the character offset of the given X,Y coordinate in our
+ * buffer.
+ */
+int Editor::pos2offset(int w_x, int w_y)
+{
+    Buffer *cur = m_state->buffers.at(m_state->current_buffer);
+    int rows = cur->rows.size();
+
+
+    /*
+     * Count of characters which are before the screen position.
+     *
+     * We use this to show the marked region.
+     */
+    int count = 0;
+
+    for (int y = 0; y < rows; y++)
+    {
+        erow *row = cur->rows.at(y);
+        int row_size = row->chars->size();
+
+        /*
+         * NOTE: We add one character to the row
+         * to cope with the trailing newline.
+         */
+        for (int x = 0; x < row_size + 1; x++)
+        {
+            if (x == w_x && y == w_y)
+                return count;
+
+            count += 1;
+        }
+    }
+
+    return -1;
+}
+
+
+/**
  * Draw the screen, as well as the status-bar and the message-area.
  */
 void Editor::draw_screen()
@@ -502,6 +543,44 @@ void Editor::draw_screen()
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
     int rows = cur->rows.size();
 
+
+    /*
+     * Count of characters which are before the screen position.
+     *
+     * We use this to show the marked region.
+     */
+    int count = 0;
+
+    for (int y = 0; y < cur->rowoff; y++)
+    {
+        erow *row = cur->rows.at(y);
+        int row_size = row->chars->size();
+        count += row_size + 1;
+    }
+
+    /*
+     * The position of the point and mark.
+     */
+    int m_pos = pos2offset(cur->markx, cur->marky);
+    int c_pos = pos2offset(cur->cx + cur->coloff,  cur->cy + cur->rowoff);
+
+    /*
+     * The character offsets - the characters between these
+     * two numbers should be in reverse.
+     */
+    int sel_min = std::min(m_pos, c_pos);
+    int sel_max = std::max(m_pos, c_pos);
+
+    /*
+     * If the mark is not set disable the whole damn thing.
+     */
+    if ((cur->markx == -1) && (cur->marky == -1))
+    {
+        sel_min = -1;
+        sel_max = -1;
+    }
+
+
     /*
      * For each row ..
      */
@@ -510,7 +589,7 @@ void Editor::draw_screen()
         /*
          * If this row is past the end of our list - draw "~" and exit.
          */
-        if ((y + cur->rowoff) >= (int)cur->rows.size())
+        if ((y + cur->rowoff) >= rows)
         {
             std::wstring x;
             x += '~';
@@ -550,6 +629,13 @@ void Editor::draw_screen()
                 color_set(col, NULL);
 
                 /*
+                 * Is the current character between the point
+                 * and the mark?  If so enable the reverse-drawing.
+                 */
+                if (count >= sel_min && count <= sel_max)
+                    attron(A_STANDOUT);
+
+                /*
                  * Draw the character.
                  */
                 std::wstring t = row->chars->at(x + cur->coloff);
@@ -566,8 +652,19 @@ void Editor::draw_screen()
                  */
                 mvwaddwstr(stdscr, y, x, t.c_str());
                 color_set(7, NULL); /* white */
+
+                /*
+                 * Is the current character between the point
+                 * and the mark?  If so disable the reverse-drawing.
+                 */
+                if (count >= sel_min && count <= sel_max)
+                    attroff(A_STANDOUT);
+
+                count += 1;
             }
         }
+
+        count += 1; /*newline*/
     }
 
     if ((rows == 1) && (one_key_pressed == false))

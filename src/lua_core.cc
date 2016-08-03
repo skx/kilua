@@ -160,6 +160,29 @@ int key_lua(lua_State *L)
 }
 
 
+/*
+ * Get/Set the mark.
+ */
+int mark_lua(lua_State *L)
+{
+    Editor *e      = Editor::instance();
+    Buffer *buffer = e->current_buffer();
+
+    if (lua_isnumber(L, -2) && lua_isnumber(L, -1))
+    {
+        int y = lua_tonumber(L, -1) - 1;
+        int x = lua_tonumber(L, -2) - 1;
+
+        buffer->markx = x;
+        buffer->marky = y;
+    }
+
+    lua_pushnumber(L,  buffer->markx);
+    lua_pushnumber(L,  buffer->marky);
+    return 2;
+}
+
+
 /**
  * Given a table of strings let the user select one, via a menu.
  */
@@ -299,7 +322,7 @@ int prompt_lua(lua_State *L)
 
             e->call_lua("on_complete", "s>s", current, &completed);
 
-            if ( completed != NULL )
+            if (completed != NULL)
             {
                 wchar_t *tmp = Util::ascii2wide(completed);
                 wcscpy(input,  tmp);
