@@ -11,14 +11,23 @@
 -- embedded into the generated binary, via the file `config.h`, as part
 -- of the build-process.
 --
--- There are several functions that kilua invokes at various times, without
--- which you'll have no functionality, so a configuration file is required:
+-- There are several functions that kilua invokes at various times, these
+-- callbacks are documented later in the file, but in brief they include:
 --
 --  * get_status_bar()
 --     This function is called to populate the status-bar in the footer.
 --
+--  * on_complete(str)
+--     This is invoked if the user presses `TAB` when prompted for input.
+--
 --  * on_idle(key)
 --     Called when things are idle, to allow actions to be carried out.
+--
+--  * on_loaded(filename)
+--     Called when a file is loaded, and enables syntax highlighting.
+--
+--  * on_saved(filename)
+--      Called __after__ a file is saved.
 --
 --  * on_key(key)
 --     Called when input is received.
@@ -73,7 +82,7 @@ keymap['^H']            = delete
 keymap['^D']            = function() delete_forwards() end
 
 --
--- Ctrl-s is search
+-- Ctrl-s is (regexp) search
 --
 keymap['^S'] = function()
    local term = prompt("(regexp) Search? " )
@@ -88,7 +97,7 @@ end
 keymap['M-g' ] = function() goto_line() end
 
 --
--- Cut-line, and paste
+-- Cut-line, and paste-line.
 --
 keymap['^K'] = function() kill_line() end
 keymap['^Y'] = function() paste() end
@@ -117,7 +126,6 @@ keymap['M-KEY_HOME'] = sof   -- start of file
 keymap['M-KEY_END']  = eof   -- end of file
 keymap['KEY_PPAGE']  = function() page_up() end
 keymap['KEY_NPAGE']  = function() page_down() end
-
 
 
 --
@@ -173,7 +181,7 @@ keymap['^X']['K']     = kill_buffer
 keymap['^X']['b']     = function() choose_buffer() end
 keymap['^X']['c']     = create_buffer
 keymap['^X']['k']     = function() confirm_kill_buffer() end
-keymap['^X']['n']     = function () next_buffer() end
+keymap['^X']['n']     = function() next_buffer() end
 keymap['^X']['p']     = function() prev_buffer() end
 
 
@@ -195,6 +203,9 @@ keymap['^X']['p']     = function() prev_buffer() end
 --
 -- If no binding is found then the key is inserted into
 -- the editor, literally.
+--
+-- There is some magic to handle multi-character keystrokes
+-- but it is pretty simple.
 --
 do
    pending_char = nil
@@ -293,6 +304,8 @@ end
 -- This function is called when a file is loaded, and is used
 -- to setup the syntax highlighting.
 --
+-- You can replace this function if you don't like the defaults
+-- or leave as-is if you do.
 --
 function on_loaded( filename )
 
@@ -614,7 +627,7 @@ function eval_lua()
          status( result )
       end
    else
-      status( "Evaluation cancelled" )
+      status( "Evaluation cancelled!" )
    end
 end
 
@@ -676,7 +689,7 @@ function choose_buffer()
    local m = {}
 
    --
-   -- Show them.
+   -- For each buffer.
    --
    for index,name in ipairs(buffers()) do
 
@@ -690,6 +703,7 @@ function choose_buffer()
          mode = "[" .. mode .. "]"
       end
 
+      -- Add the result to our menu-choice-table.
       if ( dirty() ) then
          table.insert(m, index .. " " .. name .. " <modified>" .. " " .. mode )
       else
@@ -702,13 +716,17 @@ function choose_buffer()
    --
    local r = menu( m )
 
+   --
+   -- User cancelled.
+   -- Restore the original buffer and return.
+   --
    if ( r  == -1 ) then
       buffer( cur)
       return
    end
 
    --
-   -- Otherwise change to the buffer
+   -- Otherwise change to the buffer the user chose.
    --
    buffer( r )
 end
@@ -810,7 +828,7 @@ function get_status_bar()
    --
    -- Format String of what we show.
    --
-   local fmt = "${buffer}/${buffers} - ${file} ${mode} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${time}"
+   local fmt = "${buffer}/${buffers} - ${file} ${mode} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${markx} ${marky} ${time}"
 
    --
    -- Things we use.
@@ -847,6 +865,8 @@ function get_status_bar()
    else
       t['modified'] = ""
    end
+
+   t['markx'],t['marky'] = mark()
 
    --
    -- Width of console
@@ -899,9 +919,138 @@ function get_status_bar()
 end
 
 
+--
+-- Callback function to perform TAB-completion at the prompt.
+--
+-- This function should return the updated input to use at the prompt,
+-- when the user presses TAB.
+--
+--    i.e. Input "/etc/pas", the result should be "/etc/passwd".
+--
+-- This only completes at the start of the string at the moment, but
+-- extending it should be simple enough.
+--
+function on_complete( str )
+
+   --
+   -- Holder for things that we might be able to complete upon.
+   --
+   tmp = {}
+
+   --
+   -- Add in all user-defined functions.
+   --
+   for k,v in pairs(_G) do
+      tmp[k] = k .. "("
+   end
+
+   --
+   -- If the token starts with "~" then replace that with
+   -- the users' home-directory
+   --
+   if ( string.sub( str, 0, 1 ) == "~" ) then
+      str = string.sub( str, 2 )
+      str = os.getenv("HOME") .. str
+   end
+
+   --
+   -- Is the user attempting to complete on a file-path?
+   --
+   if ( string.match( str, "^/" ) ) then
+
+      --
+      -- Get the directory this is from.
+      --
+      -- Default to / if we found no match.
+      --
+      dir = string.match(str, "^(.*)/" )
+      if ( dir == "" ) then dir = "/" end
+
+      --
+      -- If the directory exists then add all the entries to the completion-set.
+      --
+      if ( exists( dir ) ) then
+         entries = directory_entries( dir )
+         for i,v in ipairs(entries) do
+            tmp[v] = v
+         end
+      end
+   end
+
+   --
+   -- We have a list of things in `tmp` which _might_ match
+   -- the user's input.
+   --
+   -- Now build up a table of the things that actually _do_ match
+   -- what the user gave us.
+   --
+   ret = { }
+
+   --
+   -- Do we have a match?
+   --
+   for k,v in pairs(tmp) do
+      if ( string.match( v, "^" .. str ) ) then
+         table.insert(ret, v)
+      end
+   end
+
+   --
+   -- OK at this point we have a table `ret` with things that
+   -- match the users's input.
+   --
+
+
+   --
+   -- If there are zero entries then there is no completion.
+   --
+   if ( #ret == 0 ) then
+      return( str )
+   end
+
+   --
+   -- If there is just one entry - return it.
+   --
+   if ( #ret == 1 ) then
+      return( ret[1] )
+   end
+
+   --
+   -- Otherwise sort the choices and let the user choose.
+   --
+   table.sort(ret)
+
+   --
+   -- So we have ambiguity.  Resolve it
+   --
+   local res = menu( ret )
+
+   --
+   -- If the user cancelled that return the unmolested input
+   --
+   if ( res == -1 ) then
+      return(str)
+   else
+      --
+      -- Otherwise return what they chose.
+      --
+      return( ret[res+1] )
+   end
+end
+
 
 --
--- Callback function that handles parsing
+-- Callback function that handles syntax highlighting.
+--
+-- Given the text "Steve Kemp" this funciton should return
+-- one character for each byte of that input.  The character
+-- will be added to '0' and used to colour the input.
+--
+-- A defualt implementation would return
+--
+--       WHITE
+--
+-- For each character.
 --
 function on_syntax_highlight( text )
    --
@@ -913,7 +1062,8 @@ function on_syntax_highlight( text )
    end
 
    --
-   -- Load LPEG
+   -- Load LPEG - if that fails then unset the syntax for this
+   -- buffer, which will ensure we're not called again in the future.
    --
    lpeg = load_syntax( 'lpeg' )
    if ( not lpeg ) then
@@ -925,8 +1075,10 @@ function on_syntax_highlight( text )
 
 
    --
-   -- Load the module, which will be cached the second
-   -- time around.
+   -- Load the module, which will be cached the second time around.
+   --
+   -- Again if this fails we'll disable syntax-highlighting for this
+   -- mode, by unsetting `syntax`.
    --
    local obj = load_syntax( mode )
    if ( obj ) then
@@ -1051,6 +1203,14 @@ end
 status("Kilua v" .. KILUA_VERSION)
 
 
+
+
+--
+-- Functions below here are samples and test-code by Steve
+--
+-- They might be inspirational, or they might kill your computer
+--
+
 --
 -- Dump details about our buffers
 --
@@ -1079,6 +1239,39 @@ function bd()
    --
    for i,n in ipairs(b) do
       insert( "Buffer " .. i .. " has name " .. n .. "\n" )
+   end
+
+end
+
+
+--
+-- Dump files beneath /etc
+--
+function ls()
+   --
+   -- Create a buffer to show our output
+   --
+   local result = buffer( "*ls*" )
+   if ( result == -1 ) then
+      create_buffer( "*ls*" )
+   end
+
+   --
+   -- Move to the end of the file.
+   --
+   eof()
+
+   --
+   -- Get the buffers
+   --
+   local b = directory_entries( "/etc" )
+   insert( "There are " ..  #b .. " files" .. "\n" )
+
+   --
+   -- Show them.
+   --
+   for i,n in ipairs(b) do
+      insert(  i .. " -> " .. n .. "\n" )
    end
 
 end

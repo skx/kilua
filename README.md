@@ -127,6 +127,8 @@ Right now the following callbacks exist and are invoked via the C-core:
 
 * `get_status_bar()`
     * This function is called to populate the status-bar in the footer.
+* `on_complete(str)`
+    * This function is invoked to implement TAB-completion at the prompt.
 * `on_idle()`
     * Called roughly once a second, can be used to run background things.
     * If this function isn't defined it will not be invoked.
