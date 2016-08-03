@@ -187,6 +187,11 @@ public:
      */
     int menu(std::vector<std::string> choices);
 
+    /**
+     * Get the selected text.
+     */
+    std::wstring get_selection();
+
 private:
 
     /**

@@ -170,8 +170,8 @@ int mark_lua(lua_State *L)
 
     if (lua_isnumber(L, -2) && lua_isnumber(L, -1))
     {
-        int y = lua_tonumber(L, -1) - 1;
-        int x = lua_tonumber(L, -2) - 1;
+        int y = lua_tonumber(L, -1);
+        int x = lua_tonumber(L, -2);
 
         buffer->markx = x;
         buffer->marky = y;
@@ -229,8 +229,8 @@ int point_lua(lua_State *L)
 
     if (lua_isnumber(L, -2) && lua_isnumber(L, -1))
     {
-        int y = lua_tonumber(L, -1) - 1;
-        int x = lua_tonumber(L, -2) - 1;
+        int y = lua_tonumber(L, -1);
+        int x = lua_tonumber(L, -2);
 
         e->warp(x, y);
     }
@@ -658,6 +658,19 @@ int search_lua(lua_State *L)
     return 0;
 }
 
+/*
+ * Get the selection.
+ */
+int selection_lua(lua_State *L)
+{
+    Editor *e = Editor::instance();
+    std::wstring sel = e->get_selection();
+
+    char *tmp = Util::widestr2ascii(sel);
+    lua_pushstring(L, tmp);
+    delete [] tmp;
+    return (1);
+}
 
 /*
  * Update the status-text

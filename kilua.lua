@@ -186,6 +186,10 @@ keymap['^X']['p']     = function() prev_buffer() end
 
 
 
+keymap['^ ']  = function()  set_mark() end
+keymap['M-w'] = function() copy_selection() end
+keymap['^W']  = function()  cut_selection() end
+
 
 
 
@@ -477,6 +481,7 @@ function kill_line()
       -- Bump the count.
       count = count - 1
    end
+   paste_buffer = paste_buffer .. "\n"
 end
 
 
@@ -486,7 +491,7 @@ end
 -- This is currently set by `Ctrl-k` which kills the current line.
 --
 function paste()
-   insert( paste_buffer .. "\n" )
+   insert( paste_buffer )
 end
 
 
@@ -1274,4 +1279,59 @@ function ls()
       insert(  i .. " -> " .. n .. "\n" )
    end
 
+end
+
+
+function set_mark()
+   local mx, my = mark()
+   if ( mx == -1 and my == -1 ) then
+      -- set the mark
+      local x,y = point()
+      mark(x,y)
+   else
+      -- clear the mark
+      mark(-1,-1)
+   end
+end
+
+function copy_selection()
+   local mx, my = mark()
+   if ( mx == -1 and my == -1 ) then
+      status("No selection!")
+      return
+   end
+
+   paste_buffer = selection()
+   mark(-1,-1)
+end
+
+
+function cut_selection()
+   local mx, my = mark()
+   local px, py = point()
+   if ( mx == -1 and my == -1 ) then
+      status("No selection!")
+      return
+   end
+
+   -- save the selected text.
+   paste_buffer = selection()
+
+   -- now we want to move the the "end" of the selection
+   if ( py > my or (px > mx and py == my)) then
+      -- OK
+   else
+      point( mx, my )
+   end
+   move("right")
+
+   -- delete
+   len = #paste_buffer
+   while( len > 0 ) do
+      delete()
+      len = len -1
+   end
+
+   -- remove the mark
+   mark(-1,-1)
 end

@@ -67,6 +67,7 @@ extern int point_lua(lua_State *L);
 extern int prompt_lua(lua_State *L);
 extern int save_lua(lua_State *L);
 extern int search_lua(lua_State *L);
+extern int selection_lua(lua_State *L);
 extern int status_lua(lua_State *L);
 
 /*

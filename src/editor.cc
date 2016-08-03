@@ -118,6 +118,7 @@ Editor::Editor()
     lua_register(m_lua, "prompt", prompt_lua);
     lua_register(m_lua, "save", save_lua);
     lua_register(m_lua, "search", search_lua);
+    lua_register(m_lua, "selection", selection_lua);
     lua_register(m_lua, "sof", sof_lua);
     lua_register(m_lua, "sol", sol_lua);
     lua_register(m_lua, "status", status_lua);
@@ -1562,4 +1563,75 @@ int Editor::menu(std::vector<std::string> choices)
      */
     return 0;
 
+}
+
+std::wstring Editor::get_selection()
+{
+    std::wstring result;
+
+    /*
+     * The current buffer, and row-count.
+     */
+    Buffer *cur = m_state->buffers.at(m_state->current_buffer);
+
+    /*
+     * If there is no mark - return early.
+     */
+    if ((cur->markx == -1) && (cur->marky == -1))
+        return result;
+
+    /*
+     * Count the rows.
+     */
+    int rows = cur->rows.size();
+
+
+    /*
+     * Count of characters which are before the screen position.
+     *
+     * We use this to show the marked region.
+     */
+
+    /*
+     * The position of the point and mark.
+     */
+    int m_pos = pos2offset(cur->markx, cur->marky);
+    int c_pos = pos2offset(cur->cx + cur->coloff,  cur->cy + cur->rowoff);
+
+    /*
+     * The character offsets - the characters between these
+     * two numbers should be in reverse.
+     */
+    int sel_min = std::min(m_pos, c_pos);
+    int sel_max = std::max(m_pos, c_pos);
+
+    /*
+     * Now build up the selection.
+     */
+    int count = 0;
+
+    for (int y = 0; y < rows; y++)
+    {
+        erow *row = cur->rows.at(y);
+        int row_size = row->chars->size();
+
+        /*
+         * NOTE: We add one character to the row
+         * to cope with the trailing newline.
+         */
+        for (int x = 0; x < row_size + 1; x++)
+        {
+            if (count >= sel_min && count <= sel_max)
+            {
+                if (x < row_size)
+                    result += row->chars->at(x);
+                else
+                    result += '\n';
+            }
+
+            count += 1;
+        }
+    }
+
+    return (result);
 }
