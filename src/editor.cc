@@ -807,12 +807,7 @@ void Editor::insert(wchar_t c)
         /*
          * Insert the new row.
          */
-        if (row == 0)
-            cur->rows.push_back(new_row);
-        else
-        {
-            cur->rows.insert(cur->rows.begin() + row + 1 , new_row);
-        }
+        cur->rows.insert(cur->rows.begin() + row + 1 , new_row);
 
         /*
          * Because we've added a new row we need to move down one
