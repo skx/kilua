@@ -39,6 +39,10 @@ Most of these primitives are demonstrated in the default [kilua.lua](https://git
     * Insert the given string into the current buffer.
 * `key()`
     * Read a single (wide) key from the user.
+* `mark()`
+    * Get/Set the position of the mark.
+    * The region between the mark and the cursor/point is the selection-region.
+    * Set to -1,-1 to disable.
 * `menu()`
     * Given a table of strings allow the user to choose one of them, returning the index of the selected choice.
 * `point()`
@@ -52,6 +56,8 @@ Most of these primitives are demonstrated in the default [kilua.lua](https://git
     * If there is a filename given this will be used.
 * `search(regexp)`
     * Search forward for the given regular expression.
+* `selection()`
+    * Return the text between the point and mark.
 * `status(msg)`
     * Set the contents of the status-bar.
 

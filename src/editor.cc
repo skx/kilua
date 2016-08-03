@@ -1565,6 +1565,9 @@ int Editor::menu(std::vector<std::string> choices)
 
 }
 
+/**
+ * Get the selected text.
+ */
 std::wstring Editor::get_selection()
 {
     std::wstring result;
@@ -1585,13 +1588,6 @@ std::wstring Editor::get_selection()
      */
     int rows = cur->rows.size();
 
-
-    /*
-     * Count of characters which are before the screen position.
-     *
-     * We use this to show the marked region.
-     */
-
     /*
      * The position of the point and mark.
      */
@@ -1599,8 +1595,8 @@ std::wstring Editor::get_selection()
     int c_pos = pos2offset(cur->cx + cur->coloff,  cur->cy + cur->rowoff);
 
     /*
-     * The character offsets - the characters between these
-     * two numbers should be in reverse.
+     * The character offsets - the characters between these two offsets
+     * into the buffer are the selection.
      */
     int sel_min = std::min(m_pos, c_pos);
     int sel_max = std::max(m_pos, c_pos);

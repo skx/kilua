@@ -173,7 +173,6 @@ keymap['^X']['i']  = function() insert_contents() end
 --
 -- Working with buffers.
 --
---
 keymap['M-KEY_LEFT']  = function() prev_buffer() end
 keymap['M-KEY_RIGHT'] = function() next_buffer() end
 keymap['^X']['B']     = function() choose_buffer() end
@@ -185,10 +184,12 @@ keymap['^X']['n']     = function() next_buffer() end
 keymap['^X']['p']     = function() prev_buffer() end
 
 
-
-keymap['^ ']  = function()  set_mark() end
+--
+-- Working with the selection
+--
+keymap['^ ']  = function() toggle_mark() end
 keymap['M-w'] = function() copy_selection() end
-keymap['^W']  = function()  cut_selection() end
+keymap['^W']  = function() cut_selection() end
 
 
 
@@ -450,6 +451,44 @@ end
 
 
 --
+-- Call `make` - showing the output in our `*MAKE*` buffer.
+--
+function make()
+   --
+   -- Select the buffer.
+   --
+   local result = buffer( "*Make*" )
+
+   --
+   -- If selecting by name failed then the buffer can't exist.
+   --
+   -- Create it.
+   --
+   if ( result == -1 ) then
+      create_buffer( "*Make*" )
+   end
+
+   -- Ensure we append output
+   eof()
+
+   -- Run the command.
+   insert(cmd_output( "make" ) )
+
+   -- completed
+   insert("completed\n")
+end
+
+
+
+
+--
+--  Handling for cutting the current line, and copying/cutting the
+-- current selection.
+--
+-----------------------------------------------------------------------------
+
+
+--
 -- The paste-buffer
 --
 paste_buffer = ""
@@ -495,34 +534,76 @@ function paste()
 end
 
 
+--
+-- Set the mark, or remove the mark.
+--
+function toggle_mark()
+   local mx, my = mark()
+   if ( mx == -1 and my == -1 ) then
+      -- set the mark
+      local x,y = point()
+      mark(x,y)
+      status("Set mark to " .. x .. "," .. y )
+   else
+      -- clear the mark
+      mark(-1,-1)
+      status("Cleared mark")
+   end
+end
+
 
 --
--- Call `make` - showing the output in our `*MAKE*` buffer.
+-- Copy the selection into the paste-buffer.
 --
-function make()
-   --
-   -- Select the buffer.
-   --
-   local result = buffer( "*Make*" )
-
-   --
-   -- If selecting by name failed then the buffer can't exist.
-   --
-   -- Create it.
-   --
-   if ( result == -1 ) then
-      create_buffer( "*Make*" )
+function copy_selection()
+   local mx, my = mark()
+   if ( mx == -1 and my == -1 ) then
+      status("No selection!")
+      return
    end
 
-   -- Ensure we append output
-   eof()
-
-   -- Run the command.
-   insert(cmd_output( "make" ) )
-
-   -- completed
-   insert("completed\n")
+   paste_buffer = selection()
+   mark(-1,-1)
 end
+
+
+--
+-- Copy the selection into the paste-buffer, then delete it
+--
+function cut_selection()
+   local mx, my = mark()
+   local px, py = point()
+   if ( mx == -1 and my == -1 ) then
+      status("No selection!")
+      return
+   end
+
+   -- save the selected text.
+   paste_buffer = selection()
+
+   -- now we want to move the the "end" of the selection
+   if ( py > my or (px > mx and py == my)) then
+      -- OK
+   else
+      point( mx, my )
+   end
+   move("right")
+
+   -- delete
+   len = #paste_buffer
+   while( len > 0 ) do
+      delete()
+      len = len -1
+   end
+
+   -- remove the mark
+   mark(-1,-1)
+end
+
+
+
+
+
 
 
 
@@ -833,7 +914,7 @@ function get_status_bar()
    --
    -- Format String of what we show.
    --
-   local fmt = "${buffer}/${buffers} - ${file} ${mode} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${markx} ${marky} ${time}"
+   local fmt = "${buffer}/${buffers} - ${file} ${mode} ${modified} #BLANK# Col:${x} Row:${y} [${point}] ${time}"
 
    --
    -- Things we use.
@@ -870,8 +951,6 @@ function get_status_bar()
    else
       t['modified'] = ""
    end
-
-   t['markx'],t['marky'] = mark()
 
    --
    -- Width of console
@@ -1279,59 +1358,4 @@ function ls()
       insert(  i .. " -> " .. n .. "\n" )
    end
 
-end
-
-
-function set_mark()
-   local mx, my = mark()
-   if ( mx == -1 and my == -1 ) then
-      -- set the mark
-      local x,y = point()
-      mark(x,y)
-   else
-      -- clear the mark
-      mark(-1,-1)
-   end
-end
-
-function copy_selection()
-   local mx, my = mark()
-   if ( mx == -1 and my == -1 ) then
-      status("No selection!")
-      return
-   end
-
-   paste_buffer = selection()
-   mark(-1,-1)
-end
-
-
-function cut_selection()
-   local mx, my = mark()
-   local px, py = point()
-   if ( mx == -1 and my == -1 ) then
-      status("No selection!")
-      return
-   end
-
-   -- save the selected text.
-   paste_buffer = selection()
-
-   -- now we want to move the the "end" of the selection
-   if ( py > my or (px > mx and py == my)) then
-      -- OK
-   else
-      point( mx, my )
-   end
-   move("right")
-
-   -- delete
-   len = #paste_buffer
-   while( len > 0 ) do
-      delete()
-      len = len -1
-   end
-
-   -- remove the mark
-   mark(-1,-1)
 end
