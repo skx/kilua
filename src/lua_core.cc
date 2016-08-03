@@ -285,7 +285,32 @@ int prompt_lua(lua_State *L)
         if (res == ERR)
             continue;
 
-        if (ch == '\n')
+        if (ch == '\t')
+        {
+            /*
+             * Pass the current text to the callback.
+             */
+            char *current = Util::wide2ascii(input);
+
+            /*
+             * Call the handler.
+             */
+            char *completed = NULL;
+
+            e->call_lua("on_complete", "s>s", current, &completed);
+
+            if ( completed != NULL )
+            {
+                wchar_t *tmp = Util::ascii2wide(completed);
+                wcscpy(input,  tmp);
+                len = wcslen(tmp);
+                delete[]tmp;
+            }
+
+            delete []current;
+
+        }
+        else if (ch == '\n')
         {
             e->set_status(0, "");
 
