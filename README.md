@@ -271,7 +271,15 @@ The implementation is pretty simple:
     * `RED RED RED RED RED WHITE GREEN GREEN GREEN GREEN`
     * That would make "Steve" red, and "Kemp" green.
 
-Currently we include syntax for C, C++, Lua, Lisp, and plain-text/markdown (which is a simple implementation that just highlights URLs).
+Currently we include syntax-highlighting for:
+
+* C
+* C++
+* Lua
+* Lisp
+* HTML
+* Plain-text/markdown
+    * This is a simple implementation which only highlights URLs and trailing whitespace.
 
 > **Pull-requests** adding more syntax modes would be most welcome.
 
