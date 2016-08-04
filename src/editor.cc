@@ -544,6 +544,10 @@ void Editor::draw_screen()
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
     int rows = cur->rows.size();
 
+    /*
+     * Width of screen.
+     */
+    int w = width();
 
     /*
      * Count of characters which are before the screen position.
@@ -605,16 +609,19 @@ void Editor::draw_screen()
          * The row of characters.
          */
         erow *row = cur->rows.at(y + cur->rowoff);
+        int row_max = row->chars->size();
 
         /*
-         * For each column.
+         * For each possible position in the row
          */
-        for (int x = 0; x < m_state->screencols; x++)
+        int x = 0;
+
+        for (int c = 0; c < row_max; c++)
         {
             /*
-             * If this row has a character here - draw it.
+             * If this character is visible ..
              */
-            if ((x + cur->coloff) < (int)row->chars->size())
+            if ((c >= cur->coloff) && (c < (cur->coloff + w)))
             {
                 /*
                  * Default colour - white.
@@ -624,8 +631,8 @@ void Editor::draw_screen()
                 /*
                  * Get & set the colour.
                  */
-                if ((x + cur->coloff) < (int)row->cols->size())
-                    col = row->cols->at(x + cur->coloff);
+                if (c < (int)row->cols->size())
+                    col = row->cols->at(c);
 
                 color_set(col, NULL);
 
@@ -639,7 +646,7 @@ void Editor::draw_screen()
                 /*
                  * Draw the character.
                  */
-                std::wstring t = row->chars->at(x + cur->coloff);
+                std::wstring t = row->chars->at(c);
 
                 /*
                  * Is it a TAB?  Change to space, because otherwise
@@ -661,6 +668,16 @@ void Editor::draw_screen()
                 if (count >= sel_min && count <= sel_max)
                     attroff(A_STANDOUT);
 
+                count += 1;
+
+                x += 1;
+            }
+            else
+            {
+                /*
+                 *  none visible character in the row, we must
+                 * account for it still.
+                 */
                 count += 1;
             }
         }
@@ -1571,7 +1588,7 @@ int Editor::menu(std::vector<std::string> choices)
 
             for (int i = 0; i < times; i++)
             {
-                if ( selected+offset < max-1 )
+                if (selected + offset < max - 1)
                     selected += 1;
 
                 if (selected >= h)
