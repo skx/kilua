@@ -1571,7 +1571,8 @@ int Editor::menu(std::vector<std::string> choices)
 
             for (int i = 0; i < times; i++)
             {
-                selected += 1;
+                if ( selected+offset < max-1 )
+                    selected += 1;
 
                 if (selected >= h)
                 {
