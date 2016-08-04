@@ -8,8 +8,7 @@
 --   ~/.kilua/$(hostname).lua
 --
 -- If neither file is present then _this_ file will be loaded, as it is
--- embedded into the generated binary, via the file `config.h`, as part
--- of the build-process.
+-- embedded into the generated binary, as part of the build-process.
 --
 -- There are several functions that kilua invokes at various times, these
 -- callbacks are documented later in the file, but in brief they include:
@@ -25,6 +24,9 @@
 --
 --  * on_loaded(filename)
 --     Called when a file is loaded, and enables syntax highlighting.
+--
+--  * on_save(filename)
+--      Called __before__ a file is saved.
 --
 --  * on_saved(filename)
 --      Called __after__ a file is saved.
@@ -135,7 +137,7 @@ keymap['M-x'] = function() eval_lua() end
 
 --
 -- M-! ("Escape", then "!") will run a command and insert the output
--- into your document
+-- into the current buffer.
 --
 keymap['M-!'] = function()
    local cmd = prompt( "execute:" )
@@ -344,6 +346,17 @@ function on_loaded( filename )
       status( "Selected syntax-mode " .. x[ext])
       return
    end
+end
+
+
+
+--
+-- This function is called BEFORE a file is saved.
+--
+-- You might strip trailing whitespace, indent, or similar.
+--
+function on_save( filename )
+   status("About to save ..")
 end
 
 

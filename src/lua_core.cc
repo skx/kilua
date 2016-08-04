@@ -455,6 +455,13 @@ int save_lua(lua_State *L)
         path = new_name;
     }
 
+
+    /*
+     * Call the pre-save handler.
+     */
+    e->call_lua("on_save", ">");
+
+
     FILE *handle;
 
     if ((handle = fopen(path, "w")) == NULL)
@@ -487,9 +494,11 @@ int save_lua(lua_State *L)
     fclose(handle);
 
     /*
-     * Call the handler.
+     * Call the post-save handler.
      */
     e->call_lua("on_saved", "s>", path);
+
+    e->set_status(0, "");
 
     buffer->set_dirty(false);
     return (0);

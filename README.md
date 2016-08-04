@@ -139,6 +139,10 @@ Right now the following callbacks exist and are invoked via the C-core:
     * Called when a file is loaded.
     * This sets up syntax highlighting in our default implementation for C and Lua files.
     * If this function is not defined then it will not be invoked.
+* `on_save(filename)`
+    * Called __before__ a file is saved.
+    * Can be used to strip trailing whitespace, etc.
+    * If this function is not defined then it will not be invoked.
 * `on_saved(filename)`
     * Called __after__ a file is saved.
     * Can be used to make files executable, etc.
