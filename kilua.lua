@@ -302,7 +302,6 @@ do
       --
       insert(k)
       pending_char = nil
-      quit_count   = 2
    end
 end
 
@@ -627,10 +626,6 @@ function confirm_kill_buffer()
 end
 
 
---
--- How many times has Ctrl-q been pressed?
---
-quit_count = 2
 
 --
 -- Called on quit.
@@ -673,14 +668,23 @@ function quit()
    buffer( old_buffer )
 
    --
-   -- Show the dirty/total buffers.
+   -- If there are dirty buffers ..
    --
    if ( dirty_count > 0 ) then
-      if ( quit_count > 0 ) then
-         status( dirty_count .. "/" .. #buffers() .. " buffers are dirty, repeat " .. quit_count .. " more times to exit!")
-         quit_count = quit_count - 1
-      else
+
+      --
+      -- Show the user how many buffers are dirty.
+      --
+      status( dirty_count .. "/" .. #buffers() .. " buffers are dirty.  Really quit?  (y/n)" )
+
+      --
+      -- Await confirmation
+      --
+      k = key()
+      if ( k == 'y' ) or ( k == 'Y' ) then
          exit()
+      else
+         status("Cancelled!")
       end
    else
       exit()
