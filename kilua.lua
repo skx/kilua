@@ -325,17 +325,19 @@ function on_loaded( filename )
    --  Association for suffix to mode.
    --
    local x  = {}
-   x['c']    = "cc"
-   x['cc']   = "cc"
-   x['cpp']  = "cc"
-   x['el']   = "lisp"
-   x['h']    = "cc"
-   x['htm']  = "html"
-   x['html'] = "html"
-   x['ini']  = "ini"
-   x['lua']  = "lua"
-   x['md']   = "markdown"
-   x['txt']  = "markdown"
+   x['c']     = "cc"
+   x['cc']    = "cc"
+   x['cpp']   = "cc"
+   x['el']    = "lisp"
+   x['h']     = "cc"
+   x['htm']   = "html"
+   x['html']  = "html"
+   x['email'] = "email"
+   x['msg']   = "email"
+   x['ini']   = "ini"
+   x['lua']   = "lua"
+   x['md']    = "markdown"
+   x['txt']   = "markdown"
 
    --
    -- Setup syntax. Hack.
