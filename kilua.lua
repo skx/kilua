@@ -325,26 +325,32 @@ function on_loaded( filename )
    --  Association for suffix to mode.
    --
    local x  = {}
-   x['c']     = "cc"
-   x['cc']    = "cc"
-   x['cpp']   = "cc"
-   x['el']    = "lisp"
-   x['h']     = "cc"
-   x['htm']   = "html"
-   x['html']  = "html"
-   x['email'] = "email"
-   x['msg']   = "email"
-   x['ini']   = "ini"
-   x['lua']   = "lua"
-   x['md']    = "markdown"
-   x['txt']   = "markdown"
+   x['c']        = "cc"
+   x['cc']       = "cc"
+   x['cpp']      = "cc"
+   x['el']       = "lisp"
+   x['h']        = "cc"
+   x['htm']      = "html"
+   x['html']     = "html"
+   x['email']    = "email"
+   x['msg']      = "email"
+   x['ini']      = "ini"
+   x['lua']      = "lua"
+   x['md']       = "markdown"
+   x['txt']      = "markdown"
+   x['Makefile'] = "makefile"
 
    --
    -- Setup syntax. Hack.
    --
    if ( x[ext] ) then
       syntax( x[ext] )
-      status( "Selected syntax-mode " .. x[ext])
+      status( "Selected syntax-mode " .. x[ext] .. " via suffix " .. ext )
+      return
+   end
+   if ( x[file] ) then
+      syntax( x[file] )
+      status( "Selected syntax-mode " .. x[ext] .. " via filename " .. file )
       return
    end
 end
