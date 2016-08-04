@@ -465,34 +465,6 @@ function delete_forwards()
 end
 
 
---
--- Call `make` - showing the output in our `*MAKE*` buffer.
---
-function make()
-   --
-   -- Select the buffer.
-   --
-   local result = buffer( "*Make*" )
-
-   --
-   -- If selecting by name failed then the buffer can't exist.
-   --
-   -- Create it.
-   --
-   if ( result == -1 ) then
-      create_buffer( "*Make*" )
-   end
-
-   -- Ensure we append output
-   eof()
-
-   -- Run the command.
-   insert(cmd_output( "make" ) )
-
-   -- completed
-   insert("completed\n")
-end
-
 
 
 
@@ -734,12 +706,9 @@ end
 
 
 --
---  Insert the contents of a file/command at the point.
+--  Insert the contents of a file at the point.
 -----------------------------------------------------------------------------
 
---
--- NOTE: M-! will also insert the contents of a commands' output.
---
 function insert_contents()
 
    local file = prompt( "Insert? " )
@@ -749,18 +718,10 @@ function insert_contents()
       return
    end
 
-   --
-   -- Is this a command?
-   --
-   if ( file:sub( 1, 1 ) == "|" ) then
-      insert( cmd_output( file:sub(2) ) )
-      return
-   else
-      -- File
-      for line in io.lines(file) do
-         insert( line )
-         insert( "\n")
-      end
+   -- Open the file, and insert the contents.
+   for line in io.lines(file) do
+      insert( line )
+      insert( "\n")
    end
 end
 
@@ -1138,58 +1099,6 @@ function on_complete( str )
 end
 
 
---
--- Callback function that handles syntax highlighting.
---
--- Given the text "Steve Kemp" this funciton should return
--- one character for each byte of that input.  The character
--- will be added to '0' and used to colour the input.
---
--- A defualt implementation would return
---
---       WHITE
---
--- For each character.
---
-function on_syntax_highlight( text )
-   --
-   -- Get the syntax mode
-   --
-   local mode = syntax()
-   if ( not mode ) then
-      return ""
-   end
-
-   --
-   -- Load LPEG - if that fails then unset the syntax for this
-   -- buffer, which will ensure we're not called again in the future.
-   --
-   lpeg = load_syntax( 'lpeg' )
-   if ( not lpeg ) then
-      status("Lua LPEG library not available - syntax highlighting disabled")
-      syntax("")
-      return
-   end
-
-
-
-   --
-   -- Load the module, which will be cached the second time around.
-   --
-   -- Again if this fails we'll disable syntax-highlighting for this
-   -- mode, by unsetting `syntax`.
-   --
-   local obj = load_syntax( mode )
-   if ( obj ) then
-      return(tostring(obj.parse(text)))
-   else
-      status("Failed to load syntax-module '" .. syntax() .. "' disabling highlighting.")
-      syntax("")
-      return("")
-   end
-end
-
-
 
 --
 --  Functions relating to movement.
@@ -1296,6 +1205,60 @@ function load_syntax( lang )
    end
 end
 
+
+--
+-- Callback function that handles syntax highlighting.
+--
+-- Given the text "Steve Kemp" this funciton should return
+-- one character for each byte of that input.  The character
+-- will be added to '0' and used to colour the input.
+--
+-- A defualt implementation would return
+--
+--       WHITE
+--
+-- For each character.
+--
+function on_syntax_highlight( text )
+   --
+   -- Get the syntax mode
+   --
+   local mode = syntax()
+   if ( not mode ) then
+      return ""
+   end
+
+   --
+   -- Load LPEG - if that fails then unset the syntax for this
+   -- buffer, which will ensure we're not called again in the future.
+   --
+   lpeg = load_syntax( 'lpeg' )
+   if ( not lpeg ) then
+      status("Lua LPEG library not available - syntax highlighting disabled")
+      syntax("")
+      return
+   end
+
+
+
+   --
+   -- Load the module, which will be cached the second time around.
+   --
+   -- Again if this fails we'll disable syntax-highlighting for this
+   -- mode, by unsetting `syntax`.
+   --
+   local obj = load_syntax( mode )
+   if ( obj ) then
+      return(tostring(obj.parse(text)))
+   else
+      status("Failed to load syntax-module '" .. syntax() .. "' disabling highlighting.")
+      syntax("")
+      return("")
+   end
+end
+
+
+
 --
 -- Show the version
 --
@@ -1304,11 +1267,47 @@ status("Kilua v" .. KILUA_VERSION)
 
 
 
+
+--
+-----------------------------------------------------------------------------
 --
 -- Functions below here are samples and test-code by Steve
 --
 -- They might be inspirational, or they might kill your computer
 --
+-----------------------------------------------------------------------------
+--
+
+
+--
+-- Call `make` - showing the output in our `*MAKE*` buffer.
+--
+function make()
+   --
+   -- Select the buffer.
+   --
+   local result = buffer( "*Make*" )
+
+   --
+   -- If selecting by name failed then the buffer can't exist.
+   --
+   -- Create it.
+   --
+   if ( result == -1 ) then
+      create_buffer( "*Make*" )
+   end
+
+   -- Ensure we append output
+   eof()
+
+   -- Run the command.
+   insert(cmd_output( "make" ) )
+
+   -- completed
+   insert("completed\n")
+end
+
+
 
 --
 -- Dump details about our buffers
@@ -1346,7 +1345,8 @@ end
 --
 -- Dump files beneath /etc
 --
-function ls()
+function ls(path)
+
    --
    -- Create a buffer to show our output
    --
@@ -1361,9 +1361,16 @@ function ls()
    eof()
 
    --
-   -- Get the buffers
+   -- Get the path
    --
-   local b = directory_entries( "/etc" )
+   if ( path == nil ) or ( path == "" ) then
+      path = "/etc"
+   end
+
+   --
+   -- Get the directory entries
+   --
+   local b = directory_entries( path )
    insert( "There are " ..  #b .. " files" .. "\n" )
 
    --
