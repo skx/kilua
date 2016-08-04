@@ -902,8 +902,6 @@ void Editor::delete_char()
 
         /*
          * Now delete the current row.
-         *
-         * TODO: Free the characters
          */
         cur->rows.erase(cur->rows.begin() + row);
 
@@ -1478,8 +1476,10 @@ char *Editor::hostname()
 int Editor::menu(std::vector<std::string> choices)
 {
     int selected = 0;
+    int offset   = 0;
 
     int w = width();
+    int h = height();
 
     /*
      * Hide the cursor & clear the screen.
@@ -1491,15 +1491,22 @@ int Editor::menu(std::vector<std::string> choices)
     {
         int max = choices.size();
 
-        for (int i = 0; i < max ; i++)
+        for (int i = 0; i < h ; i++)
         {
+            int row = offset + i;
+
             if (selected == i)
                 attron(A_STANDOUT);
 
             /*
              * Get the choice.
              */
-            std::string tmp = choices.at(i);;
+            std::string tmp;
+
+            if (row < max)
+                tmp = choices.at(row);
+            else
+                tmp = "~";
 
             /*
              * Pad, where appropriate.
@@ -1526,7 +1533,7 @@ int Editor::menu(std::vector<std::string> choices)
         if (ch == '\n')
         {
             curs_set(1);
-            return (selected);
+            return (offset + selected);
         }
 
         if (ch == 27)
@@ -1535,20 +1542,45 @@ int Editor::menu(std::vector<std::string> choices)
             return (-1);
         }
 
-        if (ch == KEY_UP)
+        if (ch == KEY_HOME)
         {
-            selected -= 1;
-
-            if (selected < 0)
-                selected = max - 1;
+            selected = 0;
+            offset = 0;
         }
 
-        if (ch == KEY_DOWN)
+        if ((ch == KEY_UP) || (ch == KEY_PPAGE))
         {
-            selected += 1;
+            int times = (ch == KEY_PPAGE) ? h - 2 : 1;
 
-            if (selected >= max)
-                selected = 0;
+            for (int i = 0; i < times; i++)
+            {
+                if (selected > 0)
+                    selected -= 1;
+                else if (offset > 0)
+                    offset -= 1;
+            }
+        }
+
+        /*
+         * TAB moves down, because this menu-code is used in
+         * TAB-completion and that saves a hand-movement.
+         */
+        if ((ch == KEY_DOWN) || (ch == KEY_NPAGE) || (ch == '\t'))
+        {
+            int times = (ch == KEY_NPAGE) ? h - 2 : 1;
+
+            for (int i = 0; i < times; i++)
+            {
+                selected += 1;
+
+                if (selected >= h)
+                {
+                    selected = h - 1;
+
+                    if (selected + offset < max - 1)
+                        offset += 1;
+                }
+            }
         }
 
     }
