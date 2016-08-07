@@ -39,7 +39,6 @@ extern "C" {
 #include <lualib.h>
 }
 
-#include "data.h"
 
 
 /*

@@ -1,4 +1,4 @@
-/* data.h - Implementation of our data-structures.
+/* buffer.h - Our buffer/row definitions.
  *
  * -----------------------------------------------------------------------
  *
@@ -149,6 +149,36 @@ public:
 
 
     /**
+     * Get the character offset of the given X,Y coordinate in our
+     * buffer.
+     */
+    int pos2offset(int w_x, int w_y)
+    {
+        int nrows = rows.size();
+        int count = 0;
+
+        for (int y = 0; y < nrows; y++)
+        {
+            erow *row    = rows.at(y);
+            int row_size = row->chars->size();
+
+            /*
+             * NOTE: We add one character to the row
+             * to cope with the trailing newline.
+             */
+            for (int x = 0; x < row_size + 1; x++)
+            {
+                if (x == w_x && y == w_y)
+                    return count;
+
+                count += 1;
+            }
+        }
+
+        return -1;
+    };
+
+    /**
      * Is this buffer dirty?
      */
     bool dirty()
@@ -232,38 +262,3 @@ private:
     /* Modifiction-marker for the buffer. */
     int m_modified;
 };
-
-
-/**
- * This structure represents the global state of the editor.
- */
-class editorState
-{
-public:
-    /*
-     *  Number of rows that we can show.
-     */
-    int screenrows;
-
-    /*
-     * Number of cols that we can show
-     */
-    int screencols;
-
-    /*
-     * The status-message
-     */
-    char statusmsg[255];
-
-    /*
-     * The buffers we have.
-     */
-    std::vector<Buffer *> buffers;
-
-    /*
-     * The currently selected buffer.
-     */
-    int current_buffer ;
-
-}
-;

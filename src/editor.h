@@ -36,9 +36,44 @@
 #include <ncurses.h>
 
 
-#include "data.h"
+#include "buffer.h"
 #include "lua_primitives.h"
 #include "singleton.h"
+
+
+
+/**
+ * This structure represents the global state of the editor.
+ */
+class editorState
+{
+public:
+    /*
+     *  Number of rows that we can show.
+     */
+    int screenrows;
+
+    /*
+     * Number of cols that we can show
+     */
+    int screencols;
+
+    /*
+     * The status-message
+     */
+    char statusmsg[255];
+
+    /*
+     * The buffers we have.
+     */
+    std::vector<Buffer *> buffers;
+
+    /*
+     * The currently selected buffer.
+     */
+    int current_buffer ;
+
+};
 
 
 /**
@@ -198,12 +233,6 @@ private:
      * Lookup the long-name for the given key.
      */
     const char *lookup_key(unsigned int c);
-
-    /**
-     * Get the character offset of the given X,Y coordinate in our
-     * buffer.
-     */
-    int pos2offset(int w_x, int w_y);
 
     /**
      * Our state.

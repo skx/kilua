@@ -481,45 +481,6 @@ void Editor::update_syntax()
 
 
 /**
- * Get the character offset of the given X,Y coordinate in our
- * buffer.
- */
-int Editor::pos2offset(int w_x, int w_y)
-{
-    Buffer *cur = m_state->buffers.at(m_state->current_buffer);
-    int rows = cur->rows.size();
-
-
-    /*
-     * Count of characters which are before the screen position.
-     *
-     * We use this to show the marked region.
-     */
-    int count = 0;
-
-    for (int y = 0; y < rows; y++)
-    {
-        erow *row = cur->rows.at(y);
-        int row_size = row->chars->size();
-
-        /*
-         * NOTE: We add one character to the row
-         * to cope with the trailing newline.
-         */
-        for (int x = 0; x < row_size + 1; x++)
-        {
-            if (x == w_x && y == w_y)
-                return count;
-
-            count += 1;
-        }
-    }
-
-    return -1;
-}
-
-
-/**
  * Draw the screen, as well as the status-bar and the message-area.
  */
 void Editor::draw_screen()
@@ -566,8 +527,8 @@ void Editor::draw_screen()
     /*
      * The position of the point and mark.
      */
-    int m_pos = pos2offset(cur->markx, cur->marky);
-    int c_pos = pos2offset(cur->cx + cur->coloff,  cur->cy + cur->rowoff);
+    int m_pos = cur->pos2offset(cur->markx, cur->marky);
+    int c_pos = cur->pos2offset(cur->cx + cur->coloff,  cur->cy + cur->rowoff);
 
     /*
      * The character offsets - the characters between these
@@ -1636,8 +1597,8 @@ std::wstring Editor::get_selection()
     /*
      * The position of the point and mark.
      */
-    int m_pos = pos2offset(cur->markx, cur->marky);
-    int c_pos = pos2offset(cur->cx + cur->coloff,  cur->cy + cur->rowoff);
+    int m_pos = cur->pos2offset(cur->markx, cur->marky);
+    int c_pos = cur->pos2offset(cur->cx + cur->coloff,  cur->cy + cur->rowoff);
 
     /*
      * The character offsets - the characters between these two offsets
