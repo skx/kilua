@@ -383,7 +383,7 @@ void Editor::update_syntax()
      * a string containing the colour to use for each buffer-position.
      *
      */
-    std::string text = cur->text();;
+    std::string text = cur->text();
     int len = text.size();
 
     /*
