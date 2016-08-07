@@ -598,7 +598,7 @@ void Editor::draw_screen()
     if (result)
         status = result;
     else
-        status = "Please define 'get_status_bar()";
+        status = "Please define 'get_status_bar()'";
 
     while ((int)status.length() < m_state->screencols)
     {
