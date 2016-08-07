@@ -602,18 +602,15 @@ int search_lua(lua_State *L)
         /*
          * Get the text in the row.
          */
-        std::string text;
+        std::wstring row_text = row->text(x);
 
-        while (x < (int)row->chars->size())
-        {
-            std::wstring character = row->chars->at(x);
-            char *c_txt = (char *)malloc(wcslen(character.c_str()) + 1);
-            sprintf(c_txt, "%ls", character.c_str());
+        /*
+         * Convert to a C-string
+         */
+        char *tmp = Util::widestr2ascii(row_text);
+        std::string text(tmp);
+        delete[]tmp;
 
-            text += c_txt;
-            free(c_txt);
-            x++;
-        }
 
         /*
          * regexps match on txt;

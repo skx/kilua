@@ -53,6 +53,23 @@ erow::~erow()
     delete(cols);
 }
 
+/**
+ * The text of the row, from the given character offset.
+ */
+std::wstring erow::text(int offset)
+{
+    int max = chars->size();
+
+    std::wstring ret;
+
+    while (offset < max)
+    {
+        ret += chars->at(offset);
+        offset++;
+    }
+
+    return (ret);
+}
 
 /**
  * Constructor.

@@ -55,6 +55,10 @@ public:
     ~erow();
 
 public:
+    /**
+     * The text of the row, from the given character offset.
+     */
+    std::wstring text(int offset);
 
     /*
      * The character at each position in this row.
