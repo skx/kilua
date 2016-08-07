@@ -44,16 +44,17 @@
 class erow
 {
 public:
-    erow()
-    {
-        chars = new std::vector<std::wstring>;
-        cols  = new std::vector<int>;
-    };
-    ~erow()
-    {
-        delete(chars);
-        delete(cols);
-    };
+    /**
+     * Constructor.
+     */
+    erow();
+
+    /**
+     * Destructor.
+     */
+    ~erow();
+
+public:
 
     /*
      * The character at each position in this row.
@@ -64,7 +65,6 @@ public:
      * The colour to draw at each position.
      */
     std::vector<int> *cols;
-
 };
 
 
@@ -84,158 +84,61 @@ public:
 class Buffer
 {
 public:
-    Buffer(const char *bname)
-    {
-        cx       = 0;
-        cy       = 0;
-        markx    = -1;
-        marky    = -1;
-        rowoff   = 0;
-        coloff   = 0;
-        m_name   = strdup(bname);
-        m_dirty  = false;
-        m_syntax = "";
+    /**
+     * Constructor
+     */
+    Buffer(const char *bname);
 
-        /*
-         * The buffer will have one (empty) row.
-         */
-        erow *row = new erow();
-        rows.push_back(row);
-    };
+    /**
+     * Destructor
+     */
+    ~Buffer();
 
-    ~Buffer()
-    {
-        /*
-         * Remove the rows
-         */
-        for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-        {
-            erow *row = (*it);
-            delete(row);
-        }
-
-        rows.clear();
-
-        if (m_name)
-            free(m_name);
-    };
+public:
 
     /**
      * Remove all text from the buffer.
      */
-    void empty_buffer()
-    {
-        for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
-        {
-            erow *row = (*it);
-            delete(row);
-        }
-
-        rows.clear();
-        cx         = 0;
-        cy         = 0;
-        markx      = -1;
-        marky      = -1;
-        rowoff     = 0;
-        coloff     = 0;
-        m_modified = 0;
-
-        /*
-         * The buffer will have one (empty) row.
-         */
-        erow *row = new erow();
-        rows.push_back(row);
-    }
-
+    void empty_buffer();
 
     /**
-     * Get the character offset of the given X,Y coordinate in our
-     * buffer.
+     * Get the character offset of the given X,Y coordinate in our buffer.
      */
-    int pos2offset(int w_x, int w_y)
-    {
-        int nrows = rows.size();
-        int count = 0;
-
-        for (int y = 0; y < nrows; y++)
-        {
-            erow *row    = rows.at(y);
-            int row_size = row->chars->size();
-
-            /*
-             * NOTE: We add one character to the row
-             * to cope with the trailing newline.
-             */
-            for (int x = 0; x < row_size + 1; x++)
-            {
-                if (x == w_x && y == w_y)
-                    return count;
-
-                count += 1;
-            }
-        }
-
-        return -1;
-    };
+    int pos2offset(int w_x, int w_y);
 
     /**
      * Is this buffer dirty?
      */
-    bool dirty()
-    {
-        // buffers are never dirty, only files.
-        if (m_name && (m_name[0] == '*'))
-            return false;
-
-        return (m_dirty);
-    };
+    bool dirty();
 
 
     /**
      * Mark the buffer as dirty.
      */
-    void set_dirty(bool state)
-    {
-        m_dirty = state;
-    }
+    void set_dirty(bool state);
 
     /**
      * Get the name of the buffer.
      */
-    const char *get_name()
-    {
-        return (m_name);
-    };
-
+    const char *get_name();
 
     /**
      * Set the name of the buffer.
      */
-    void set_name(const char *name)
-    {
-        if (m_name)
-            free(m_name);
-
-        m_name = strdup(name);
-    }
+    void set_name(const char *name);
 
     /**
      * Return the modification-number of the buffer.
      */
-    int updated()
-    {
-        return m_modified;
-    }
+    int updated();
 
     /**
      * Bump the modification number.
      */
-    void touch()
-    {
-        m_modified++;
-    }
+    void touch();
 
 public:
+
     /* Cursor x and y position in characters */
     int cx, cy;
 
