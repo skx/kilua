@@ -271,3 +271,57 @@ std::string Buffer::text()
 
     return (text);
 }
+
+
+/**
+ * Update the colours of the current buffer, via the
+ * result of the lua callback.
+ */
+void Buffer::update_syntax(const char *colours)
+{
+    /*
+     * Length of the output.
+     */
+    int len = strlen(colours);
+
+    /*
+     * Free the current colour, if any.
+     */
+    int row_count = rows.size();
+
+    for (int y = 0; y < row_count; y++)
+        rows.at(y)->cols->clear();
+
+    /*
+     * Now we'll update the colour of each character.
+     */
+    int done = 0;
+
+    for (int y = 0; y < row_count; y++)
+    {
+        /*
+         * The current row.
+         */
+        erow *crow = rows.at(y);
+
+        /*
+         * For each character in the row, set the colour
+         * to be the return value.
+         */
+        for (int x = 0; x < (int)crow->chars->size(); x++)
+        {
+            if (done < len)
+                crow->cols->push_back(colours[done] - '0');
+            else
+                crow->cols->push_back(7) ; /* white */
+
+            done += 1;
+        }
+
+        /*
+         * those damn newlines.
+         */
+        done += 1;
+    }
+
+}

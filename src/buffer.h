@@ -147,6 +147,12 @@ public:
      */
     std::string text();
 
+    /**
+     * Update the colours of the current buffer, via the
+     * result of the lua callback.
+     */
+    void update_syntax(const char *colours);
+
 public:
 
     /* Cursor x and y position in characters */

@@ -354,9 +354,6 @@ void Editor::update_syntax()
      */
     Buffer *cur = m_state->buffers.at(m_state->current_buffer);
 
-    if (cur == NULL)
-        return;
-
     /*
      * If there is no syntax-mode set then we abort.
      */
@@ -376,24 +373,20 @@ void Editor::update_syntax()
 
 
     /*
-     * Now update via lua.
-     *
      * We'll pass the (string) contents of the buffer to the
-     * on_syntax_highlight(txt) function, and that will return
-     * a string containing the colour to use for each buffer-position.
+     * on_syntax_highlight(txt) function.
+     *
+     * The user-function will return a string containing the colour-code
+     * to use for each buffer-position.
      *
      */
     std::string text = cur->text();
-    int len = text.size();
+
+    if (text.empty())
+        return;
 
     /*
-     * Is there no input?  Then abort
-     */
-    if (len <= 0)
-        return ;
-
-    /*
-     * Now we've built up the string, pass it over and get the results.
+     * Invoke the callback.
      */
     const char *out = NULL;
     call_lua("on_syntax_highlight", "s>s", text.c_str(), &out);
@@ -405,51 +398,9 @@ void Editor::update_syntax()
         return;
 
     /*
-     * Length of the output.
+     * Otherwise update the syntax of the buffer.
      */
-    int out_len = strlen(out);
-
-
-    /*
-     * For each row - free the current colour, if any.
-     */
-    int rows = cur->rows.size();
-
-    for (int y = 0; y < rows; y++)
-        cur->rows.at(y)->cols->clear();
-
-
-    /*
-     * Now we'll update the colour of each character.
-     */
-    int done = 0;
-
-    for (int y = 0; y < rows; y++)
-    {
-        /*
-         * The current row.
-         */
-        erow *crow = cur->rows.at(y);
-
-        /*
-         * For each character in the row, set the colour
-         * to be the return value.
-         */
-        for (int x = 0; x < (int)crow->chars->size(); x++)
-        {
-            if (done < out_len)
-                crow->cols->push_back(out[done] - '0');
-            else
-                crow->cols->push_back(7) ; /* white */
-
-            done += 1;
-        }
-
-        /*
-         * those damn newlines.
-         */
-        done += 1;
-    }
+    cur->update_syntax(out);
 }
 
 
