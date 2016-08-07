@@ -85,30 +85,50 @@ local keyword = lpeg_utils.tokens({
                                      "local",
                                      "nil",
                                      "not",
-                                     "or" ,
-                                     "repeat" ,
-                                     "return" ,
+                                     "or",
+                                     "repeat",
+                                     "return",
                                      "then",
-                                     "true" ,
-                                     "until" ,
+                                     "true",
+                                     "until",
                                      "while"
                                   }) / function(...) add(CYAN, ... ) end
 
+
 --
--- Functions
+-- Functions from the standard-library
 --
--- TODO: Add more
+local func = {
+   "ipairs",
+   "load",
+   "pairs",
+   "print",
+   "require",
+   "tonumber",
+   "tostring",
+   "type"
+}
+
 --
-local functions = lpeg_utils.tokens({
-                                       "load",
-                                       "require",
-                                       "pairs",
-                                       "ipairs",
-                                       "tonumber",
-                                       "tostring",
-                                       "print",
-                                       "type"
-                                    })  / function(...) add(BLUE, ... ) end
+--  Add the functions from the standard-packages to our function-table
+--
+local packages = {
+   "io",
+   "math",
+   "os",
+   "string",
+   "table"
+}
+for i,n in pairs(packages) do
+   for k,v in pairs(_G[n]) do
+      table.insert( func,  n .. "." .. k)
+   end
+end
+
+--
+-- Now highlight the functions
+--
+local functions = lpeg_utils.tokens(func)  / function(...) add(GREEN, ... ) end
 
 
 --
