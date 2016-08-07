@@ -1,6 +1,9 @@
 --
 -- Trivial highlighting for emails
 --
+-- This does not use LPEG, instead it parses line-by-line, as this
+-- is simpler.
+--
 
 
 
