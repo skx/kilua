@@ -1,3 +1,4 @@
 kilua
 core
 src/config.h
+src/*.o
