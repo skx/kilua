@@ -1,7 +1,7 @@
 #
 # Compilation flags and libraries we use.
 #
-CPPFLAGS+=-fsanitize=address -fno-omit-frame-pointer -std=c++11 -ggdb -Wall -Werror -I/usr/include/ncursesw -lncursesw -I/usr/include/lua5.2 -llua5.2 -DKILUA_VERSION="\"0.5\""
+CPPFLAGS+=-fsanitize=address -fno-omit-frame-pointer -std=c++11 -ggdb -Wall -Werror -I/usr/include/ncursesw -I/usr/include/lua5.2 -DKILUA_VERSION="\"0.5\""
 LDLIBS+=$(shell pkg-config --libs ncursesw) $(shell pkg-config --libs lua5.2)  -fsanitize=address -fno-omit-frame-pointer -lstdc++
 
 #
