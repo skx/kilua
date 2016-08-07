@@ -115,7 +115,6 @@ public:
      */
     bool dirty();
 
-
     /**
      * Mark the buffer as dirty.
      */
@@ -140,6 +139,13 @@ public:
      * Bump the modification number.
      */
     void touch();
+
+    /**
+     * Get the buffer contents, as text.
+     *
+     * NOTE: NOT wide-text.
+     */
+    std::string text();
 
 public:
 

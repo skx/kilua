@@ -229,3 +229,45 @@ void Buffer::touch()
 {
     m_modified++;
 }
+
+
+/**
+ * Get the buffer contents, as text.
+ *
+ * NOTE: NOT wide-text.
+ */
+std::string Buffer::text()
+{
+    std::string text;
+
+    int row_count = rows.size();
+
+    for (int y = 0; y < row_count; y++)
+    {
+        int chars = rows.at(y)->chars->size();
+
+        for (int x = 0; x < chars; x++)
+        {
+            /*
+             * We append the character at the row,col position.
+             *
+             * NOTE This might be an N-byte character string, we
+             * deliberately only use the first because LPEG doesn't
+             * even handle UTF-8, so it doesn't matter.
+             *
+             * We could have said this instead:
+             *
+             *   if (cur->rows.at(y)->chars->at(x)->size() > 1 )
+             *      text += "?";
+             *   else
+             *      text += cur->rows.at(y)->chars->at(x);
+             *
+             */
+            text += rows.at(y)->chars->at(x)[0];
+        }
+
+        text += '\n';
+    }
+
+    return (text);
+}
