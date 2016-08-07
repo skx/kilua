@@ -278,6 +278,7 @@ Currently we include syntax-highlighting for:
 * Lua
 * Lisp
 * HTML
+* `Makefile`s.
 * Plain-text/markdown
     * This is a simple implementation which only highlights URLs and trailing whitespace.
 
