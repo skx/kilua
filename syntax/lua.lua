@@ -4,6 +4,12 @@
 
 
 --
+-- Require our helper-library
+--
+local lpeg_utils = require( "lpeg_utils" )
+
+
+--
 -- This file is a Lua module.
 --
 local mymodule = {}
@@ -36,31 +42,17 @@ local S = lpeg.S
 local C = lpeg.C
 
 
-local digit = R'09'
-local letter = R('az', 'AZ') + P'_'
-local alphanum = letter + digit
-local hex = R('af', 'AF', '09')
-local exp = S'eE' * S'+-'^-1 * digit^1
-local fs = S'fFlL'
-local is = S'uUlL'^0
-
-local hexnum = P'0' * S'xX' * hex^1 * is^-1
-local octnum = P'0' * digit^1 * is^-1
-local decnum = digit^1 * is^-1
-local floatnum = digit^1 * exp * fs^-1 +
-   digit^0 * P'.' * digit^1 * exp^-1 * fs^-1 +
-   digit^1 * P'.' * digit^0 * exp^-1 * fs^-1
-local numlit = hexnum + octnum + floatnum + decnum
-
-
+--
 -- Numbers
-local numbers = (numlit) / function(...) add(YELLOW, ... ) end
+--
+local numbers = lpeg_utils.numbers() / function(...) add(YELLOW, ... ) end
 
+--
 -- Character-strings
+--
 local charlit   = P'L'^-1 * P"'" * (P'\\' * P(1) + (1 - S"\\'"))^1 * P"'"
 local stringlit = P'L'^-1 * P'"' * (P'\\' * P(1) + (1 - S'\\"'))^0 * P'"'
 local strings   = (charlit + stringlit) / function(...) add(BLUE, ... ) end
-
 
 --
 -- Single & multi-line comments.
@@ -69,49 +61,54 @@ local ccomment   = P'--[[' * (1 - P'--]]')^0 * P'--]]'
 local newcomment = P'--' * (1 - P'\n')^0
 local comment    = (ccomment + newcomment) / function(...)  add(RED, ... ) end
 
+--
 -- Show trailing-whitespace with a `cyan` background.
+--
 local trailing_space = S' \t'^1 * S'\n'/ function(...) add(REV_CYAN,... ) end
 
-
+--
 -- Keywords
-local keyword = C(
-   P"and" +
-   P"break" +
-   P"do" +
-   P"else" +
-   P"elseif" +
-   P"end" +
-   P"false" +
-   P"for" +
-   P"function" +
-   P"goto" +
-   P"if" +
-   P"in"+
-   P"local" +
-   P"nil" +
-   P"not" +
-   P"or" +
-   P"repeat" +
-   P"return" +
-   P"then"+
-   P"true" +
-   P"until" +
-   P"while"
-                 ) / function(...) add(CYAN, ... ) end
+--
+local keyword = lpeg_utils.tokens({
+                                     "and",
+                                     "break",
+                                     "do",
+                                     "else",
+                                     "elsif",
+                                     "end",
+                                     "false",
+                                     "for",
+                                     "function",
+                                     "goto",
+                                     "if",
+                                     "in",
+                                     "local",
+                                     "nil",
+                                     "not",
+                                     "or" ,
+                                     "repeat" ,
+                                     "return" ,
+                                     "then",
+                                     "true" ,
+                                     "until" ,
+                                     "while"
+                                  }) / function(...) add(CYAN, ... ) end
 
-
+--
 -- Functions
-local functions = C(
-   P"load" +
-   P"require" +
-   P"pairs" +
-   P"ipairs" +
-   P"pairs" +
-   P"tonumber" +
-   P"tostring" +
-   P"print" +
-   P"type"
-                   ) / function(...) add(BLUE, ... ) end
+--
+-- TODO: Add more
+--
+local functions = lpeg_utils.tokens({
+                                       "load",
+                                       "require",
+                                       "pairs",
+                                       "ipairs",
+                                       "tonumber",
+                                       "tostring",
+                                       "print",
+                                       "type"
+                                    })  / function(...) add(BLUE, ... ) end
 
 
 --

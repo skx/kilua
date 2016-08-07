@@ -3,6 +3,13 @@
 --
 
 
+
+--
+-- Require our helper-library
+--
+local lpeg_utils = require( "lpeg_utils" )
+
+
 --
 -- This file is a Lua module.
 --
@@ -35,26 +42,12 @@ local S = lpeg.S
 local C = lpeg.C
 
 
-local digit = R'09'
-local letter = R('az', 'AZ') + P'_'
-local alphanum = letter + digit
-local hex = R('af', 'AF', '09')
-local exp = S'eE' * S'+-'^-1 * digit^1
-local fs = S'fFlL'
-local is = S'uUlL'^0
-
-local hexnum = P'0' * S'xX' * hex^1 * is^-1
-local octnum = P'0' * digit^1 * is^-1
-local decnum = digit^1 * is^-1
-local floatnum = digit^1 * exp * fs^-1 +
-   digit^0 * P'.' * digit^1 * exp^-1 * fs^-1 +
-   digit^1 * P'.' * digit^0 * exp^-1 * fs^-1
-local numlit = hexnum + octnum + floatnum + decnum
 
 --
 -- Numbers
 --
-local numbers = (numlit) / function(...) add(YELLOW, ... ) end
+local numbers = lpeg_utils.numbers() / function(...) add(YELLOW, ... ) end
+
 
 --
 -- Character-strings
@@ -71,84 +64,86 @@ local ccomment   = P'/*' * (1 - P'*/')^0 * P'*/'
 local newcomment = P'//' * (1 - P'\n')^0
 local comment    = (ccomment + newcomment) / function(...)  add(RED, ... ) end
 
+--
 -- Show trailing-whitespace with a `cyan` background.
+--
 local trailing_space = S' \t'^1 * S'\n'/ function(...) add(REV_CYAN,... ) end
 
+--
 -- Literals
-local literal = (numlit + charlit + stringlit) / function(...) add(BLUE, ... ) end
+--
+local literal = ( charlit + stringlit) / function(...) add(BLUE, ... ) end
 
+--
 -- Keywords
-local keyword = C(
-      P"auto" +
-      P"_Bool" +
-      P"break" +
-      P"case" +
-      P"char" +
-      P"const" +
-      P"continue" +
-      P"default" +
-      P"do" +
-      P"double" +
-      P"else" +
-      P"enum" +
-      P"extern" +
-      P"float" +
-      P"for" +
-      P"goto" +
-      P"if" +
-      P"inline" +
-      P"int" +
-      P"long" +
-      P"register" +
-      P"restrict" +
-      P"return" +
-      P"short" +
-      P"signed" +
-      P"sizeof" +
-      P"static" +
-      P"struct" +
-      P"switch" +
-      P"typedef" +
-      P"union" +
-      P"unsigned" +
-      P"void" +
-      P"volatile" +
-      P"while"
-                 ) / function(...) add(CYAN, ... ) end
+--
+local keyword = lpeg_utils.tokens({
+                                     "auto",
+                                     "bool",
+                                     "break",
+                                     "case",
+                                     "char",
+                                     "const",
+                                     "continue",
+                                     "default",
+                                     "do",
+                                     "double",
+                                     "else",
+                                     "enum",
+                                     "extern",
+                                     "float",
+                                     "for",
+                                     "goto",
+                                     "if",
+                                     "inline",
+                                     "int",
+                                     "long",
+                                     "register",
+                                     "restrict",
+                                     "return",
+                                     "short",
+                                     "signed",
+                                     "sizeof",
+                                     "static",
+                                     "struct",
+                                     "switch",
+                                     "typedef",
+                                     "union",
+                                     "unsigned",
+                                     "void",
+                                     "volatile",
+                                     "while"
+                                  } ) / function(...) add(CYAN, ... ) end
 
--- Functions
-local functions = C(
-   P"stderr" +
-   P"stdout" +
-   P"printf" +
-   P"strlen" +
-   P"wcslen" +
-   P"malloc" +
-      P"free" +
-   P"delete" +
-      P"fprintf" +
-   P"vsnprintf" +
-   P"strcpy" +
-   P"strncpy" +
-   P"sprintf" +
-      P"getenv" +
-      P"ioctl" +
-      P"lua_register"+
-      P"lua_pushinteger"+
-      P"lua_pushstring"+
-      P"lua_isstring"+
-      P"lua_isinteger"+
-      P"lua_setglobal"+
-      P"luaL_newstate"+
-      P"luaopen_base"+
-      P"luaL_openlibs"
-                   ) / function(...) add(GREEN, ... ) end
+--
+-- Functions :
+--   TODO: Add more
+--
+local functions = lpeg_utils.tokens({
+                                       "stderr",
+                                       "stdout",
+                                       "printf",
+                                       "strlen",
+                                       "wcslen",
+                                       "malloc",
+                                       "free",
+                                       "delete",
+                                       "new",
+                                       "fprintf",
+                                       "vsnprintf",
+                                       "strcpy",
+                                       "strncpy",
+                                       "sprintf",
+                                       "getenv",
+                                       "ioctl"
+                                    } ) / function(...) add(GREEN, ... ) end
 
 
 --
 -- Match any single character
 --
 local any = C(P(1) )/ function(...) add(WHITE,... ) end
+
 
 
 --
