@@ -34,9 +34,6 @@
 --  * on_key(key)
 --     Called when input is received.
 --
---  * on_syntax_highlight(txt)
---     Called to perform the syntax highlighting of the current buffer.
---
 -- Otherwise the only magic here is the `keymap` table.  Kilua will lookup
 -- every keypress in this table, and if there is a matching function defined
 -- it will be invoked, otherwise the literal character will be inserted.
@@ -346,11 +343,19 @@ function on_loaded( filename )
    if ( x[ext] ) then
       syntax( x[ext] )
       status( "Selected syntax-mode " .. x[ext] .. " via suffix " .. ext )
+
+      -- Trigger immediate re-redender.
+      on_idle()
+
       return
    end
    if ( x[file] ) then
       syntax( x[file] )
       status( "Selected syntax-mode " .. x[ext] .. " via filename " .. file )
+
+      -- Trigger immediate re-redender.
+      on_idle()
+
       return
    end
 end
@@ -871,6 +876,11 @@ end
 -- background.
 --
 function on_idle()
+   local text    = text()
+   local colours = on_syntax_highlight( text );
+   if ( colours ~= nil and colours ~= "" ) then
+      update_colours( colours )
+   end
 end
 
 

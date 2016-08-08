@@ -56,7 +56,6 @@ int delete_lua(lua_State *L)
      */
     Buffer *buffer = e->current_buffer();
     buffer->set_dirty(true);
-    buffer->touch();
 
     return 0;
 }
@@ -118,7 +117,6 @@ int insert_lua(lua_State *L)
      */
     Buffer *buffer = e->current_buffer();
     buffer->set_dirty(true);
-    buffer->touch();
     return 0;
 }
 
@@ -687,4 +685,17 @@ int status_lua(lua_State *L)
     Editor *e = Editor::instance();
     e->set_status(1, x);
     return (0);
+}
+
+
+/*
+ * Get the text of the buffer.
+ */
+int text_lua(lua_State *L)
+{
+    Editor *e      = Editor::instance();
+    Buffer *buffer = e->current_buffer();
+
+    lua_pushstring(L, buffer->text().c_str());
+    return 1;
 }

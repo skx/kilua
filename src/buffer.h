@@ -131,16 +131,6 @@ public:
     void set_name(const char *name);
 
     /**
-     * Return the modification-number of the buffer.
-     */
-    int updated();
-
-    /**
-     * Bump the modification number.
-     */
-    void touch();
-
-    /**
      * Get the buffer contents, as text.
      *
      * NOTE: NOT wide-text.
@@ -177,7 +167,4 @@ private:
 
     /* The name of this buffer */
     char *m_name;
-
-    /* Modifiction-marker for the buffer. */
-    int m_modified;
 };

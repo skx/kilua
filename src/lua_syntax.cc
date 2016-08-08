@@ -56,3 +56,19 @@ int syntax_lua(lua_State *L)
     lua_pushstring(L, buffer->m_syntax.c_str());
     return 1;
 }
+
+
+
+
+/**
+ * Update the colours of each row.
+ */
+int update_colours_lua(lua_State *L)
+{
+    Editor *e = Editor::instance();
+    Buffer *buffer = e->current_buffer();
+
+    const char *colours = lua_tostring(L, -1);
+    buffer->update_syntax(colours);
+    return 0;
+}

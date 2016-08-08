@@ -133,7 +133,6 @@ void Buffer::empty_buffer()
     marky      = -1;
     rowoff     = 0;
     coloff     = 0;
-    m_modified = 0;
 
     /*
      * The buffer will have one (empty) row.
@@ -212,22 +211,6 @@ void Buffer::set_name(const char *name)
         free(m_name);
 
     m_name = strdup(name);
-}
-
-/**
- * Return the modification-number of the buffer.
- */
-int Buffer::updated()
-{
-    return m_modified;
-}
-
-/**
- * Bump the modification number.
- */
-void Buffer::touch()
-{
-    m_modified++;
 }
 
 

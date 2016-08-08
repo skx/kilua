@@ -19,7 +19,8 @@ kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many upda
    * You can define functions in your [init-files](#lua-support), and invoke them via `M-x function()`.
 * Regular expression support for searching.
 * The adition of [syntax-highlighting](#syntax-highlighting) via the `lua-lpeg` library.
-   * **NOTE**: You should see the [installation](#installation) section for caveats here.
+    * **NOTE**: You should see the [installation](#installation) section for caveats here.
+    * Syntax-highlighting is updated in the background, when the editor is idle, to avoid stalls and redraw delays.
 * The notion of [named marks](#bookmarks).
 * The [status bar](#status-bar) is configured via Lua.
 * Several bugfixes.
@@ -132,6 +133,7 @@ Right now the following callbacks exist and are invoked via the C-core:
 * `on_idle()`
     * Called roughly once a second, can be used to run background things.
     * If this function isn't defined it will not be invoked.
+    * This is used to update syntax in the background.
 * `on_key(key)`
     * Called to process a single key input.
     * If this function isn't defined then input will not work, it is required.
@@ -147,8 +149,6 @@ Right now the following callbacks exist and are invoked via the C-core:
     * Called __after__ a file is saved.
     * Can be used to make files executable, etc.
     * If this function is not defined then it will not be invoked.
-* `on_syntax_highlight( text )`
-    * Invoked to run [syntax-highlighting](#syntax-highlighting).
 
 
 
@@ -265,11 +265,24 @@ for in these locations:
 
 The implementation is pretty simple:
 
-* The function `on_syntax_highlight(text)` is invoked.
-* That function will return a string containing the colour-code to set for each corresponding byte of the string.
-* For example given input "Steve Kemp" you might return:
-    * `RED RED RED RED RED WHITE GREEN GREEN GREEN GREEN`
-    * That would make "Steve" red, and "Kemp" green.
+* A buffer consists of rows of text.
+     * Each row contains both the character(s) in the row and the colour of each character.
+     * The Lua function `update_colours` will allow the colour of each single character in the buffer to be set.
+
+To avoid delays when inserting text the rendering is updated in the background,
+via the `on_idle()` callback.  This function does the obvious thing:
+
+* Retrieves the current contents of the buffer, via `text()`.
+* Invokes the LPEG parser on it.
+    * This will generate a long string containing the colour of each byte of the text.
+* Set those colours, via `update_colours()`.
+
+As a concrete example, if the buffer contains the string "Steve Kemp" then
+the call to `update_colours` should contain:
+
+     `RED RED RED RED RED WHITE GREEN GREEN GREEN GREEN`
+
+That would result in "Steve" being displayed in red, and "Kemp" in green.
 
 Currently we include syntax-highlighting for:
 

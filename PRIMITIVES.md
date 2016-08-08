@@ -60,6 +60,8 @@ Most of these primitives are demonstrated in the default [kilua.lua](https://git
     * Return the text between the point and mark.
 * `status(msg)`
     * Set the contents of the status-bar.
+* `text()`
+    * Retrieve the (ASCII) text in the buffer.
 
 
 ## File Primitives
@@ -106,3 +108,5 @@ of movement facilities built upon this one.
 
 * `syntax()`
     * Get/Set the syntax-mode.
+* `update_colours()`
+    * Update the syntax-highlighting results of the current buffer.

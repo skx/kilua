@@ -68,6 +68,7 @@ extern int save_lua(lua_State *L);
 extern int search_lua(lua_State *L);
 extern int selection_lua(lua_State *L);
 extern int status_lua(lua_State *L);
+extern int text_lua(lua_State *L);
 
 /*
  * Files.
@@ -86,6 +87,7 @@ extern int width_lua(lua_State *L);
  * Syntax
  */
 extern int syntax_lua(lua_State *L);
+extern int update_colours_lua(lua_State *L);
 
 /*
  * Buffers

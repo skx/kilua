@@ -123,6 +123,8 @@ Editor::Editor()
     lua_register(m_lua, "sol", sol_lua);
     lua_register(m_lua, "status", status_lua);
     lua_register(m_lua, "syntax", syntax_lua);
+    lua_register(m_lua, "text", text_lua);
+    lua_register(m_lua, "update_colours", update_colours_lua);
     lua_register(m_lua, "width", width_lua);
 
     /*
@@ -340,84 +342,10 @@ void Editor::set_status(int log, const char *fmt, ...)
 
 
 /**
- * Update the syntax of the current buffer.
- */
-void Editor::update_syntax()
-{
-    /*
-     * The last time we've rendered the buffer.
-     */
-    static int last_render = -1;
-
-    /*
-     * Get the current buffer.
-     */
-    Buffer *cur = m_state->buffers.at(m_state->current_buffer);
-
-    /*
-     * If there is no syntax-mode set then we abort.
-     */
-    if (cur->m_syntax.empty())
-        return;
-
-    /*
-     * Check to see if we've already rendered for this version
-     * of the buffer.
-     */
-    time_t modified = cur->updated();
-
-    if (last_render == modified)
-        return;
-    else
-        last_render = modified;
-
-
-    /*
-     * We'll pass the (string) contents of the buffer to the
-     * on_syntax_highlight(txt) function.
-     *
-     * The user-function will return a string containing the colour-code
-     * to use for each buffer-position.
-     *
-     */
-    std::string text = cur->text();
-
-    if (text.empty())
-        return;
-
-    /*
-     * Invoke the callback.
-     */
-    const char *out = NULL;
-    call_lua("on_syntax_highlight", "s>s", text.c_str(), &out);
-
-    /*
-     * No result?  Then abort.
-     */
-    if (out == NULL)
-        return;
-
-    /*
-     * Otherwise update the syntax of the buffer.
-     */
-    cur->update_syntax(out);
-}
-
-
-/**
  * Draw the screen, as well as the status-bar and the message-area.
  */
 void Editor::draw_screen()
 {
-
-    /*
-     * Update the syntax-highlighting of the buffer.
-     *
-     * This will terminate early if the buffer hasn't changed
-     * since the last time it was called.
-     */
-    update_syntax();
-
     /*
      * Clear the screen.
      */
