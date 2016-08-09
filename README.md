@@ -21,6 +21,7 @@ kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many upda
 * The adition of [syntax-highlighting](#syntax-highlighting) via the `lua-lpeg` library.
     * **NOTE**: You should see the [installation](#installation) section for caveats here.
     * Syntax-highlighting is updated in the background, when the editor is idle, to avoid stalls and redraw delays.
+    * Syntax-highlighting supports up to 256 colours, if your terminal supports them too.
 * The notion of [named marks](#bookmarks).
 * The [status bar](#status-bar) is configured via Lua.
 * Several bugfixes.
