@@ -99,6 +99,7 @@ local keyword = lpeg_utils.tokens({
 -- Functions from the standard-library
 --
 local func = {
+   "assert",
    "ipairs",
    "load",
    "pairs",
