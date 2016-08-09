@@ -141,7 +141,7 @@ public:
      * Update the colours of the current buffer, via the
      * result of the lua callback.
      */
-    void update_syntax(const char *colours);
+    void update_syntax(const char *colours, size_t len);
 
 public:
 

@@ -68,7 +68,17 @@ int update_colours_lua(lua_State *L)
     Editor *e = Editor::instance();
     Buffer *buffer = e->current_buffer();
 
-    const char *colours = lua_tostring(L, -1);
-    buffer->update_syntax(colours);
+    /*
+     * Our string might contain "\0" so we need
+     * to get the string length explicitly.
+     */
+    size_t size;
+    const char *buff = lua_tolstring(L, -1, &size);
+
+    /*
+     * Update the syntax - again we pass the size
+     * to cope with embedded NULL (i.e. colour 0).
+     */
+    buffer->update_syntax(buff, size);
     return 0;
 }

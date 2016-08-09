@@ -260,13 +260,8 @@ std::string Buffer::text()
  * Update the colours of the current buffer, via the
  * result of the lua callback.
  */
-void Buffer::update_syntax(const char *colours)
+void Buffer::update_syntax(const char *colours, size_t len)
 {
-    /*
-     * Length of the output.
-     */
-    int len = strlen(colours);
-
     /*
      * Free the current colour, if any.
      */
@@ -293,8 +288,8 @@ void Buffer::update_syntax(const char *colours)
          */
         for (int x = 0; x < (int)crow->chars->size(); x++)
         {
-            if (done < len)
-                crow->cols->push_back(colours[done] - '0');
+            if (done < (int)len)
+                crow->cols->push_back(colours[done]);
             else
                 crow->cols->push_back(7) ; /* white */
 
