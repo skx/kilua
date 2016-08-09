@@ -1246,7 +1246,7 @@ function on_syntax_highlight( text )
    -- Get the syntax mode
    --
    local mode = syntax()
-   if ( not mode ) then
+   if ( mode == nil or mode == "" ) then
       return ""
    end
 
