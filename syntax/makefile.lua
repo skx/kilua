@@ -71,7 +71,7 @@ function mymodule.parse(input)
       --
       len = #l
       while( len > 0 ) do
-         ret = ret .. colour
+         ret = ret .. string.char( colour )
          len = len - 1
       end
 

@@ -28,9 +28,7 @@ local retval = ""
 function add( colour, str )
    length = string.len(str)
    while( length >0 ) do
-      -- The colour has "0" subtracted from it.
-      local val = ( string.char( ( string.byte('0') + colour ) ) )
-      retval = retval .. val
+      retval = retval .. string.char( colour )
       length = length -1
    end
 end
