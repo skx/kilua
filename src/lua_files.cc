@@ -30,8 +30,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string.h>
+#include <string>
 #include <algorithm>
+#include <vector>
 #include <sys/stat.h>
 #include <dirent.h>
 
