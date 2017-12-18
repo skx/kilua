@@ -734,6 +734,7 @@ void Editor::delete_char()
          * Now delete the current row.
          */
         cur->rows.erase(cur->rows.begin() + row);
+        delete c_row;
 
         /*
          * Finally we need to move the cursor to the correct location.
@@ -1159,7 +1160,9 @@ void Editor::kill_current_buffer()
     /*
      * Kill the current buffer.
      */
-    m_state->buffers.erase(m_state->buffers.begin() + m_state->current_buffer);
+    auto it = m_state->buffers.begin() + m_state->current_buffer;
+    delete *it;
+    m_state->buffers.erase(it);
 
     if (count_buffers() < 1)
     {
