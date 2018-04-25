@@ -180,7 +180,7 @@ Editor::Editor()
  */
 Editor::~Editor()
 {
-    delete(m_state);
+    delete (m_state);
 }
 
 
@@ -537,7 +537,7 @@ void Editor::draw_screen()
      * Enable reverse.
      */
     attron(A_STANDOUT);
-    mvwaddstr(stdscr, m_state->screenrows  , 0, status.c_str());
+    mvwaddstr(stdscr, m_state->screenrows, 0, status.c_str());
     attroff(A_STANDOUT);
 
     /*
@@ -637,7 +637,7 @@ void Editor::insert(wchar_t c)
         /*
          * Insert the new row.
          */
-        cur->rows.insert(cur->rows.begin() + row + 1 , new_row);
+        cur->rows.insert(cur->rows.begin() + row + 1, new_row);
 
         /*
          * Because we've added a new row we need to move down one
@@ -664,7 +664,7 @@ void Editor::insert(wchar_t c)
     /*
      * Insert the new character at the correct position.
      */
-    cur_row->chars->insert(cur_row->chars->begin() + col , x);
+    cur_row->chars->insert(cur_row->chars->begin() + col, x);
 
     /*
      * Move right - this handles scrolling correctly.

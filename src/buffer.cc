@@ -49,8 +49,8 @@ erow::erow()
  */
 erow::~erow()
 {
-    delete(chars);
-    delete(cols);
+    delete (chars);
+    delete (cols);
 }
 
 /**
@@ -105,7 +105,7 @@ Buffer::~Buffer()
     for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
     {
         erow *row = (*it);
-        delete(row);
+        delete (row);
     }
 
     rows.clear();
@@ -123,7 +123,7 @@ void Buffer::empty_buffer()
     for (std::vector<erow *>::iterator it = rows.begin(); it != rows.end(); ++it)
     {
         erow *row = (*it);
-        delete(row);
+        delete (row);
     }
 
     rows.clear();

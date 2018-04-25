@@ -121,9 +121,9 @@ int exists_lua(lua_State *L)
     struct stat sb;
 
     if ((stat(str, &sb) == 0))
-        lua_pushboolean(L , 1);
+        lua_pushboolean(L, 1);
     else
-        lua_pushboolean(L , 0);
+        lua_pushboolean(L, 0);
 
     return 1;
 }
