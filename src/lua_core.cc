@@ -357,8 +357,11 @@ int prompt_lua(lua_State *L)
         }
         else if (len < (int)sizeof(input))
         {
-            input[len] = ch;
-            len ++;
+            if (isprint(ch))
+            {
+                input[len] = ch;
+                len ++;
+            }
         }
     }
 
