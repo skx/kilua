@@ -8,7 +8,7 @@ Kilua is an small, extensible, and Lua-powered text editor.
 
 [![screenshot](kilua.png)]()
 
-The project was orginally based upon the minimal [kilo editor](https://github.com/antirez/kilo) originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108), but now shares no code with that project, just ancestry.
+The project was originally based upon the minimal [kilo editor](https://github.com/antirez/kilo) originally written by @antirez, and [introduced here on his blog](http://antirez.com/news/108), but now shares no code with that project, just ancestry.
 
 kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many updates and additions compared to the original project:
 
@@ -18,7 +18,7 @@ kilua was written by [Steve Kemp](https://steve.kemp.fi/) and features many upda
 * The addition of an embedded Lua instance.
    * You can define functions in your [init-files](#lua-support), and invoke them via `M-x function()`.
 * Regular expression support for searching.
-* The adition of [syntax-highlighting](#syntax-highlighting) via the `lua-lpeg` library.
+* The addition of [syntax-highlighting](#syntax-highlighting) via the `lua-lpeg` library.
     * **NOTE**: You should see the [installation](#installation) section for caveats here.
     * Syntax-highlighting is updated in the background, when the editor is idle, to avoid stalls and redraw delays.
     * Syntax-highlighting supports up to 256 colours, if your terminal supports them too.
@@ -116,7 +116,7 @@ the [supplied lua primitives](PRIMITIVES.md), and then copy into
 Without any changes you'll get a functional editor which follows my
 particular preferences.
 
-> **Pull-requests** implementing useful functionality will be recieved with thanks, even if just to add syntax-highlighting for additional languages.
+> **Pull-requests** implementing useful functionality will be received with thanks, even if just to add syntax-highlighting for additional languages.
 
 
 
@@ -184,7 +184,7 @@ what you expect:
 * Select the buffer with the name `*uptime*`.
      * If that buffer doesn't exist then create it.
 * Move to the end of the buffer.
-     * Insert the output of runing `/usr/bin/uptime` into the buffer.
+     * Insert the output of running `/usr/bin/uptime` into the buffer.
 
 Uptime sample:
 
@@ -249,7 +249,7 @@ Each buffer has an associated syntax-highlighting mode, which is a string
 such as "c", "markdown", or "lua".  The default configuration file sets
 the mode based upon the suffix of the file you're editing.
 
-If you wish to change the mode interactivally to Lua, for example, then run:
+If you wish to change the mode interactively to Lua, for example, then run:
 
     M-x syntax("lua")
 
