@@ -66,6 +66,8 @@ int directory_entries_lua(lua_State *L)
         }
     }
 
+    closedir(dp);
+
     /*
      * Sort them, to be nice.
      */
@@ -127,3 +129,4 @@ int exists_lua(lua_State *L)
 
     return 1;
 }
+
