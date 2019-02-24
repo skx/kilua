@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/skx/kilua.png)](https://travis-ci.org/skx/kilua)
 [![license](https://img.shields.io/github/license/skx/kilua.svg)]()
 
 
