@@ -817,8 +817,11 @@ end
 function next_buffer()
    local max = #buffers()
    local cur = buffer()
-   if ( cur < max ) then
-      buffer( cur + 1)
+
+   if ( (cur +1) < max ) then
+      buffer(cur + 1)
+   else
+      buffer(0)
    end
 end
 
@@ -829,6 +832,9 @@ function prev_buffer()
    local cur = buffer()
    if ( cur > 0 ) then
       buffer( cur - 1)
+   else
+      local max = #buffers()
+      buffer(max-1)
    end
 end
 
