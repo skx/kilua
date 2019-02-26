@@ -102,7 +102,7 @@ local keyword = lpeg_utils.tokens({
       'struct',
       'switch',
       'type',
-      'var'
+      'var',
 
       -- types
       'bool',
