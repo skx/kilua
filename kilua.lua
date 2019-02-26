@@ -97,7 +97,24 @@ do
       end
 
       if ( term ) then
-         search( term )
+
+         -- get the point
+         local x,y = point();
+
+         -- if we matched
+         if ( search( term ) ) then
+            -- get the new point
+            local x2,y2 = point()
+
+            -- did they change?  If not we move one to the right
+            -- and try again
+            if ( x == x2 and y == y2 ) then
+               move("right")
+               search(term)
+            end
+         end
+
+         -- save the search term
          search_term = term
       end
    end

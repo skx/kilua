@@ -651,7 +651,9 @@ int search_lua(lua_State *L)
             /* Avoid leaking our compiled regular expression object. */
             regfree(&regex);
 
-            return 0;
+            /* true-result == matched */
+            lua_pushboolean(L, 1);
+            return 1;
         }
 
 
@@ -669,7 +671,9 @@ int search_lua(lua_State *L)
     /* Avoid leaking our compiled regular expression object. */
     regfree(&regex);
 
-    return 0;
+    /* false-result == matched */
+    lua_pushboolean(L, 0);
+    return 1;
 }
 
 /*
