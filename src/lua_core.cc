@@ -648,6 +648,9 @@ int search_lua(lua_State *L)
                 pos--;
             }
 
+            /* Avoid leaking our compiled regular expression object. */
+            regfree(&regex);
+
             return 0;
         }
 
@@ -662,6 +665,10 @@ int search_lua(lua_State *L)
     }
 
     e->set_status(1, "No match found!");
+
+    /* Avoid leaking our compiled regular expression object. */
+    regfree(&regex);
+
     return 0;
 }
 
