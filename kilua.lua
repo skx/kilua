@@ -166,8 +166,12 @@ keymap['M-b'] = {}
 keymap['^X'] = {}
 keymap['^X']['^C'] = function() quit() end
 keymap['^X']['^S'] = save
-keymap['^X']['^O'] = function() open_file() end
 keymap['^X']['i']  = function() insert_contents() end
+
+-- ^X ^O open file in new buffer
+-- ^X ^V open file in existing buffer
+keymap['^X']['^O'] = function() open_file(true) end
+keymap['^X']['^V'] = function() open_file(false) end
 
 --
 -- Working with buffers.
@@ -411,7 +415,22 @@ end
 --
 -- Prompt for a name and open it.
 --
-function open_file()
+function open_file(new_buff)
+
+   --
+   -- If we're opening in a new buffer prompt for file
+   -- then open it
+   --
+   if new_buff then
+      local name = prompt( "Open:" )
+      if ( name and name ~= "" ) then
+         create_buffer()
+         open(name)
+      else
+         status( "Cancelled" )
+      end
+      return
+   end
 
    --
    -- Is there a currently dirty file?
@@ -438,7 +457,7 @@ function open_file()
    --
    -- Either no dirty-buffer, or the user didn't care
    --
-   local name = prompt( "Open:" )
+   local name = prompt( "Replace with:" )
    if ( name and name ~= "" ) then
       open(name)
    end
