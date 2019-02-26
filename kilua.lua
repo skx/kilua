@@ -1095,7 +1095,12 @@ function on_complete( str )
       if ( exists( dir ) ) then
          entries = directory_entries( dir )
          for i,v in ipairs(entries) do
-            tmp[v] = v
+
+            if ( exists( v .. "/." ) ) then
+               tmp[v .. "/" ] = v .. "/"
+            else
+               tmp[v] = v
+            end
          end
       end
    end
