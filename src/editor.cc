@@ -1386,7 +1386,7 @@ int Editor::menu(std::vector<std::string> choices)
         {
             // end
             selected = 0;
-            offset = max-1;
+            offset = max - 1;
         }
 
         if ((ch == KEY_UP) || (ch == KEY_PPAGE))
