@@ -71,18 +71,6 @@ Editor::Editor()
      */
     memset(m_state->statusmsg, '\0', sizeof(m_state->statusmsg));
 
-    /*
-     * Get the dimensions of the screen.
-     */
-    struct winsize w;
-    ioctl(0, TIOCGWINSZ, &w);
-
-    /*
-     * Take off two for the status-area.
-     */
-    m_state->screenrows = w.ws_row - 2;
-    m_state->screencols = w.ws_col;
-
 
     /*
      * Setup lua.
@@ -249,6 +237,10 @@ void Editor::main_loop()
          */
         const char *name = lookup_key(ch);
 
+
+        if ( strcmp(name, "KEY_RESIZE" ) == 0 )
+            continue;
+
         /*
          * This is a bit horrid.
          *
@@ -402,7 +394,7 @@ void Editor::draw_screen()
     /*
      * For each row ..
      */
-    for (int y = 0; y < m_state->screenrows;  y++)
+    for (int y = 0; y < m_state->screenrows();  y++)
     {
         /*
          * If this row is past the end of our list - draw "~" and exit.
@@ -528,7 +520,7 @@ void Editor::draw_screen()
     else
         status = "Please define 'get_status_bar()'";
 
-    while ((int)status.length() < m_state->screencols)
+    while ((int)status.length() < m_state->screencols())
     {
         status += " ";
     }
@@ -537,7 +529,7 @@ void Editor::draw_screen()
      * Enable reverse.
      */
     attron(A_STANDOUT);
-    mvwaddstr(stdscr, m_state->screenrows, 0, status.c_str());
+    mvwaddstr(stdscr, m_state->screenrows(), 0, status.c_str());
     attroff(A_STANDOUT);
 
     /*
@@ -545,21 +537,21 @@ void Editor::draw_screen()
      */
     std::string s = get_status();
 
-    if ((int)s.length() >  m_state->screencols)
-        s = s.substr(s.length() - m_state->screencols + 1);
+    if ((int)s.length() >  m_state->screencols())
+        s = s.substr(s.length() - m_state->screencols() + 1);
 
-    while ((int)s.length() < m_state->screencols)
+    while ((int)s.length() < m_state->screencols())
     {
         s += " ";
     }
 
-    mvwaddstr(stdscr, m_state->screenrows + 1, 0, s.c_str());
+    mvwaddstr(stdscr, m_state->screenrows() + 1, 0, s.c_str());
 
     /*
      * The cursor can't be in the bottom two lines.
      */
-    if (cur->cy >= (m_state->screenrows))
-        cur->cy  = (m_state->screenrows - 1);
+    if (cur->cy >= (m_state->screenrows()))
+        cur->cy  = (m_state->screenrows() - 1);
 
     /*
      * Show the cursor in the right location.
@@ -1188,7 +1180,7 @@ std::vector<Buffer *> Editor::get_buffers()
  */
 int Editor::height()
 {
-    return (m_state->screenrows);
+    return (m_state->screenrows());
 }
 
 /**
@@ -1196,7 +1188,7 @@ int Editor::height()
  */
 int Editor::width()
 {
-    return (m_state->screencols);
+    return (m_state->screencols());
 }
 
 

@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include <ncurses.h>
+#include <sys/ioctl.h>
 
 
 #include "buffer.h"
@@ -47,16 +48,26 @@
  */
 class editorState
 {
+
 public:
     /*
      *  Number of rows that we can show.
      */
-    int screenrows;
+    int screenrows() {
+        struct winsize w;
+        ioctl(0, TIOCGWINSZ, &w);
+        return(w.ws_row - 2);
+    };
 
     /*
      * Number of cols that we can show
      */
-    int screencols;
+    int screencols() {
+        struct winsize w;
+        ioctl(0, TIOCGWINSZ, &w);
+        return(w.ws_col);
+
+    }
 
     /*
      * The status-message
