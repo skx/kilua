@@ -878,10 +878,12 @@ function record_mark()
    -- Ensure the values persist
    local x
    local y
+   local b
    x,y = point()
+   b = buffer()
 
-   keymap['M-b'][k] = function() point(x,y) end
-   status( "M-b-" .. k .. " will now take you to " .. x .. "," .. y )
+   keymap['M-b'][k] = function() buffer(b) point(x,y) end
+   status( "M-b-" .. k .. " will now take you to " .. x .. "," .. y .. " in buffer " .. (b+1) )
 end
 
 
