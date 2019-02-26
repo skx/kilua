@@ -343,6 +343,7 @@ function on_loaded( filename )
    x['cc']       = "cc"
    x['cpp']      = "cc"
    x['el']       = "lisp"
+   x['go']       = "go"
    x['h']        = "cc"
    x['htm']      = "html"
    x['html']     = "html"
