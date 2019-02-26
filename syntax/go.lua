@@ -1,5 +1,5 @@
 --
--- Syntax Highlighting for C/C++
+-- Syntax Highlighting for go
 --
 
 
@@ -133,8 +133,12 @@ local keyword = lpeg_utils.tokens({
 local functions = lpeg_utils.tokens({
 
       -- misc
-      'true', 'false', 'iota', 'nil',
+      'true',
+      'false',
+      'iota',
+      'nil',
 
+      -- real functions
       'append',
       'cap',
       'close',
