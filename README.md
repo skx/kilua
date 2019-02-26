@@ -32,7 +32,7 @@ Launching `kilua` works as you would expect:
 Once launched the arrow keys will move you around, and the main keybindings
 to learn are:
 
-    Ctrl-x Ctrl-o Open a new file in the current buffer.
+    Ctrl-x Ctrl-o Open a new file.
     Ctrl-x Ctrl-s Save the current file.
     Ctrl-x Ctrl-c Quit.
 
@@ -42,7 +42,7 @@ to learn are:
     Ctrl-x b      Select buffer from a list
 
     M-x           Evaluate lua at the prompt.
-    Ctrl-r:       Regular expression search.
+    Ctrl-s:       Regular expression search.
 
 
 
