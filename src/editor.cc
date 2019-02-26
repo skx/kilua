@@ -238,7 +238,7 @@ void Editor::main_loop()
         const char *name = lookup_key(ch);
 
 
-        if ( strcmp(name, "KEY_RESIZE" ) == 0 )
+        if (strcmp(name, "KEY_RESIZE") == 0)
             continue;
 
         /*
