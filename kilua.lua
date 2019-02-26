@@ -80,13 +80,26 @@ keymap['KEY_DC']        = function() delete_forwards() end
 keymap['^H']            = delete
 keymap['^D']            = function() delete_forwards() end
 
---
--- Ctrl-s is (regexp) search
---
-keymap['^S'] = function()
-   local term = prompt("(regexp) Search? " )
-   if ( term ) then
-      search( term )
+
+do
+   --
+   -- This is the value that the user entered previously, and is
+   -- the default if nothing is entered again.
+   --
+   local search_term = ''
+
+   keymap['^S'] = function()
+      local term = prompt("(regexp) Search? " )
+
+      -- If nothing entered default to the previous value
+      if term == nil or term == "" then
+         term = search_term
+      end
+
+      if ( term ) then
+         search( term )
+         search_term = term
+      end
    end
 end
 
