@@ -1466,3 +1466,15 @@ function ls(path)
    end
 
 end
+
+
+
+function a()
+   buffer_data("name", "steve")
+end
+function b()
+   buffer_data("name", "Bob")
+end
+function c()
+   insert(buffer_data("name"))
+end

@@ -92,6 +92,7 @@ extern int update_colours_lua(lua_State *L);
 /*
  * Buffers
  */
+extern int buffer_data_lua(lua_State *L);
 extern int buffer_lua(lua_State *L);
 extern int buffer_name_lua(lua_State *L);
 extern int buffers_lua(lua_State *L);
