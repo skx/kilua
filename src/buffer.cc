@@ -303,3 +303,21 @@ void Buffer::update_syntax(const char *colours, size_t len)
     }
 
 }
+
+
+/**
+ * Get per-buffer data.
+ */
+std::string Buffer::get_data(std::string key)
+{
+    return (m_data[key]);
+}
+
+
+/**
+ * Set per-buffer data.
+ */
+void Buffer::set_data(std::string key, std::string value)
+{
+    m_data[key] = value;
+}
