@@ -14,6 +14,9 @@ Most of these primitives are demonstrated in the default [kilua.lua](https://git
     * `buffer(1)` will select buffer 1.
     * `buffer("name")` will select the buffer with the given name, returning `-1` if it doesn't exist.
     * `buffer()` returns the index of the currently selected buffer.
+* `buffer_data()`
+    * Get/Set buffer-specific data.
+    * This is used for bookmarks, and per-buffer search-strings.
 * `buffers()`
     * Return a table of all known buffers.
     * The table will contain the integer-offset, along with the name.
