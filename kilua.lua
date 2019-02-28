@@ -81,6 +81,10 @@ keymap['^H']            = delete
 keymap['^D']            = function() delete_forwards() end
 
 
+--
+-- This is a complex binding, more than it needs to be, just to
+-- show how we can maintain state and bind a function.
+--
 do
    --
    -- This is the value that the user entered previously, and is
@@ -374,7 +378,7 @@ function on_loaded( filename )
    x['Makefile'] = "makefile"
 
    --
-   -- Setup syntax. Hack.
+   -- Setup syntax, based upon suffix.
    --
    if ( x[ext] ) then
       syntax( x[ext] )
@@ -385,6 +389,13 @@ function on_loaded( filename )
 
       return
    end
+
+   --
+   -- Setup syntax, based upon filename.
+   --
+   -- This is used to allow us to handle files like `Makefile`, with no
+   -- suffix, or otherwise with a fixed name.
+   --
    if ( x[file] ) then
       syntax( x[file] )
       status( "Selected syntax-mode " .. x[ext] .. " via filename " .. file )
@@ -517,14 +528,29 @@ end
 -- Delete forwards
 --
 function delete_forwards()
+
+   -- Get the current position.
    local x,y = point();
+
+   -- Move forwards one space.
    move("right")
+
+   -- Get the position.
    local nx,ny = point()
+
+   --
+   -- If the cursor position didn't change then we're done.
+   --
+   -- Basically this means we tried to move, but couldn't, because
+   -- we're at the end of the file.
+   --
    if ( nx == x and   ny == y  ) then
       return
-   else
-      delete()
    end
+
+   --
+   -- Delete (backwards) a character.
+   delete()
 end
 
 
@@ -575,7 +601,7 @@ end
 
 
 --
--- Paste in our paste-buffer.
+-- Paste the contents of our paste-buffer into the current buffer.
 --
 -- This is currently set by `Ctrl-k` which kills the current line.
 --
@@ -863,7 +889,7 @@ end
 
 
 --
--- Move to the next buffer
+-- Move to the next buffer; wrapping around.
 --
 function next_buffer()
    local max = #buffers()
@@ -877,7 +903,7 @@ function next_buffer()
 end
 
 --
--- Move to the previous buffer.
+-- Move to the previous buffer; wrapping around.
 --
 function prev_buffer()
    local cur = buffer()
@@ -980,8 +1006,29 @@ end
 -- background.
 --
 function on_idle()
+
+   --
+   -- Here we handle the syntax-highlighting, but if there
+   -- is no syntax set then we can return early to avoid the
+   -- overhead.
+   local s = syntax()
+   if ( s == nil or s == "" ) then
+      return
+   end
+
+   --
+   -- Get the text
+   --
    local text    = text()
+
+   --
+   -- Transform that into a series of colours
+   --
    local colours = on_syntax_highlight( text );
+
+   --
+   -- If it worked then set the colours.
+   --
    if ( colours ~= nil and colours ~= "" ) then
       update_colours( colours )
    end
@@ -1083,6 +1130,8 @@ function get_status_bar()
    -- Too large?
    --
    if ( #out > w ) then
+      -- Remove the marker.
+      out = out:gsub( "#BLANK#", "" )
       return( out:sub(0,w) )
    end
 
