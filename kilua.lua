@@ -381,6 +381,8 @@ function on_loaded( filename )
    -- Setup syntax, based upon suffix.
    --
    if ( x[ext] ) then
+
+      -- Load the syntax
       syntax( x[ext] )
       status( "Selected syntax-mode " .. x[ext] .. " via suffix " .. ext )
 
@@ -1019,7 +1021,7 @@ function on_idle()
    --
    -- Get the text
    --
-   local text    = text()
+   local text = text()
 
    --
    -- Transform that into a series of colours
