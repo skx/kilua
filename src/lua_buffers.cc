@@ -39,6 +39,47 @@
 
 
 /*
+ * Get/Set per-buffer data.
+ */
+int buffer_data_lua(lua_State *L)
+{
+    /*
+     * Get the buffer.
+     */
+    Editor *e      = Editor::instance();
+    Buffer *buffer = e->current_buffer();
+
+    /*
+     * One argument is a lookup.
+     */
+    if (lua_gettop(L) == 1)
+    {
+        const char *key = lua_tostring(L, -1);
+        lua_pushstring(L, buffer->get_data(key).c_str());
+        return 1;
+    }
+
+    /*
+     * Two arguments means to set.
+     */
+    if (lua_gettop(L) == 2)
+    {
+        const char *key = lua_tostring(L, -2);
+        const char *val = lua_tostring(L, -1);
+        buffer->set_data(key, val);
+        return 0;
+    }
+
+    /*
+     * Anything else is an error
+     */
+    e->set_status(1, "Invalid argument count!");
+    return 0;
+
+
+}
+
+/*
  * Get/Set current buffer.
  */
 int buffer_lua(lua_State *L)

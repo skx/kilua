@@ -143,6 +143,16 @@ public:
      */
     void update_syntax(const char *colours, size_t len);
 
+    /**
+     * Get per-buffer data.
+     */
+    std::string get_data(std::string key);
+
+    /**
+     * Set per-buffer data.
+     */
+    void set_data(std::string key, std::string value);
+
 public:
 
     /* Cursor x and y position in characters */
@@ -167,4 +177,8 @@ private:
 
     /* The name of this buffer */
     char *m_name;
+
+    /* per-buffer key/value data */
+    std::unordered_map<std::string, std::string> m_data;
+
 };

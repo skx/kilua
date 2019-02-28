@@ -177,7 +177,7 @@ end
 --
 -- M-m will record a bookmark.
 --
-keymap['M-m'] = function() record_mark() end
+keymap['M-m'] = function() bookmark_save() end
 
 --
 -- Prefix-map for jumping to recorded bookmark.
@@ -198,9 +198,10 @@ keymap['^X']['^C'] = function() quit() end
 keymap['^X']['^S'] = save
 keymap['^X']['i']  = function() insert_contents() end
 
--- ^X ^O open file in new buffer
+-- ^X ^O or ^X ^F both open a file in new buffer
 -- ^X ^V open file in existing buffer
 keymap['^X']['^O'] = function() open_file(true) end
+keymap['^X']['^F'] = function() open_file(true) end
 keymap['^X']['^V'] = function() open_file(false) end
 
 --
@@ -897,24 +898,69 @@ end
 
 
 --
+-- Load the bookmark stored in the given key.
+--
+function bookmark_load(key)
+
+   -- Save the current-buffer in case we can't find the bookmark
+   local old_buffer = buffer()
+
+   for index,name in ipairs(buffers()) do
+      --
+      -- Select the buffer
+      --
+      buffer( index - 1 )
+
+      --
+      -- Are there x/y coord set?
+      --
+      local x = buffer_data( "bookmark_" .. k .. "_x" )
+      local y = buffer_data( "bookmark_" .. k .. "_y" )
+
+      if ( x ~= "" and y ~= "" ) then
+         point(x,y)
+         return
+      end
+   end
+
+   --
+   -- Failed to find the bookmark
+   --
+   status("Failed to find bookmark for '" .. key .. "'" )
+
+   --
+   -- Remove the binding
+   --
+   keymap['M-b'][key] = nil
+
+   --
+   -- Restore the old-current buffer
+   --
+   buffer( old_buffer )
+
+end
+
+
+--
 -- Read a character, then use that to set a mark.
 --
 -- Marks are bound to `M-m XX` where XX is the key
 -- the user entered.
 --
-function record_mark()
+function bookmark_save()
    status( "Press key to use for bookmark")
    k = key()
 
-   -- Ensure the values persist
-   local x
-   local y
-   local b
-   x,y = point()
-   b = buffer()
+   -- Get the point
+   local x,y = point()
 
-   keymap['M-b'][k] = function() buffer(b) point(x,y) end
-   status( "M-b-" .. k .. " will now take you to " .. x .. "," .. y .. " in buffer " .. (b+1) )
+   -- store in the per-buffer data
+   buffer_data( "bookmark_" .. k .. "_x", x )
+   buffer_data( "bookmark_" .. k .. "_y", y )
+
+   -- Allow it to be recalled
+   keymap['M-b'][k] = function() bookmark_load(k) end
+   status( "M-b-" .. k .. " will now take you to " .. x .. "," .. y .. " in this buffer")
 end
 
 
