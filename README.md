@@ -32,8 +32,11 @@ Launching `kilua` works as you would expect:
 Once launched the arrow keys will move you around, and the main keybindings
 to learn are:
 
-    Ctrl-x Ctrl-o Open a new file.
+    Ctrl-x Ctrl-o Open an existing file.
+    Ctrl-x Ctrl-f Open an existing file.
+
     Ctrl-x Ctrl-s Save the current file.
+
     Ctrl-x Ctrl-c Quit.
 
     Ctrl-x c      Create a new buffer
@@ -42,7 +45,8 @@ to learn are:
     Ctrl-x b      Select buffer from a list
 
     M-x           Evaluate lua at the prompt.
-    Ctrl-s:       Regular expression search.
+
+    Ctrl-s        Regular expression search.
 
 
 
@@ -69,7 +73,7 @@ Installation should be straight-forward, to build the code run:
 
     make
 
-Once built you can run this in a portable fashion, like so:
+Once built you can run the binary in a portable fashion, like so:
 
     ./kilua --syntax-path ./syntax [options] [file1] [file2] .. [fileN]
 
@@ -81,7 +85,7 @@ directory to either:
 * `~/.kilua/syntax/`
 
 If you don't specify the location of the syntax-highlighting libraries,
-and you don't install them then you'll have zero syntax-highlighting support.
+or you don't install them then you'll have zero syntax-highlighting support.
 
 This is a consequence of placing the syntax-highlighting code in external
 libraries: If you can't load those libraries then the functionality will
@@ -102,7 +106,7 @@ On startup the following configuration-files are read if present:
    * You can use the `*Messages*` buffer to see which was found, if any.
 
 If neither file is read then the embedded copy of `kilua.lua`, which
-was generated at build-time will be executed, which ensures that the
+was generated at build-time, will be executed, which ensures that the
 minimum functionality is present.  (i.e. If you load zero config
 files then there won't be any keybindings setup so you can neither
 navigate nor edit!)
@@ -205,7 +209,7 @@ later jump to it, just like in `vi`.
 
 To record the current position use `M-m`, and press the key
 you wish to use.  To return to it use `M-b XX` where XX was the
-key you chose.
+key you chose. (Marks record the buffer, as well as the current cursor-position.)
 
 
 ## Status Bar
@@ -288,9 +292,10 @@ Currently we include syntax-highlighting for:
 
 * C
 * C++
+* Go
+* HTML
 * Lua
 * Lisp
-* HTML
 * `Makefile`s.
 * Plain-text/markdown
     * This is a simple implementation which only highlights URLs and trailing whitespace.
@@ -316,3 +321,4 @@ I think it could be done reasonably cleanly.
 Steve
 \--
 https://steve.kemp.fi/
+

@@ -198,9 +198,10 @@ keymap['^X']['^C'] = function() quit() end
 keymap['^X']['^S'] = save
 keymap['^X']['i']  = function() insert_contents() end
 
--- ^X ^O open file in new buffer
+-- ^X ^O or ^X ^F both open a file in new buffer
 -- ^X ^V open file in existing buffer
 keymap['^X']['^O'] = function() open_file(true) end
+keymap['^X']['^F'] = function() open_file(true) end
 keymap['^X']['^V'] = function() open_file(false) end
 
 --
@@ -1510,16 +1511,4 @@ function ls(path)
       insert(  i .. " -> " .. n .. "\n" )
    end
 
-end
-
-
-
-function a()
-   buffer_data("name", "steve")
-end
-function b()
-   buffer_data("name", "Bob")
-end
-function c()
-   insert(buffer_data("name"))
 end
